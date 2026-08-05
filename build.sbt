@@ -16,6 +16,13 @@
 ThisBuild / scalaVersion := "3.8.4"
 ThisBuild / organization := "io.github.edadma"
 
+// The compiler and two of its own dependencies were built against different patch releases of
+// `cross_platform`, and sbt's default is to refuse that outright. It is a warning in the compiler's
+// own build for the same reason it is one here: the versions are semver-compatible, the highest
+// wins, and what would otherwise happen is that this site cannot be built until three unrelated
+// libraries have been re-released in lockstep.
+ThisBuild / evictionErrorLevel := Level.Warn
+
 // The compiler release this site documents. Raising it is how the docs follow the language.
 //
 // It must be a release that is **both** on Maven Central (for the jar) and tagged in the compiler's
