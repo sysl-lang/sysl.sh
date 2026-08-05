@@ -69,12 +69,30 @@ lazy val root = project
     resolvers += "GitHub Packages" at "https://maven.pkg.github.com/sysl-lang/sysl",
 
     // GitHub Packages authenticates every request, a public package included, so a build here needs
-    // a token with `read:packages`. CI has one already as `GITHUB_TOKEN`; a checkout without either
-    // still builds whenever Central has the version, which after a release is always.
+    // a token with `read:packages`. Two places to find one, because the two machines that run this
+    // keep it differently: a workstation has a file, and **CI has `GITHUB_TOKEN` and cannot have a
+    // file**.
+    //
+    // CI is the case this exists for. The resolver above is only reached in the window where Central
+    // has not propagated a new release yet — which is precisely when someone has bumped
+    // `syslVersion` and pushed, so a CI run with no credentials would 401 on the one occasion the
+    // fallback was supposed to help.
+    //
+    // The file wins where it exists, so a workstation set up before this behaves as it did.
     credentials ++= {
       val f = Path.userHome / ".sbt" / "github-credentials"
 
-      if (f.exists) Seq(Credentials(f)) else Nil
+      if (f.exists)
+        Seq(Credentials(f))
+      else
+        sys.env.get("GITHUB_TOKEN").toSeq.map { token =>
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            sys.env.getOrElse("GITHUB_ACTOR", "edadma"),
+            token,
+          )
+        }
     },
 
     // Forked because the suites set `SYSL_LIB`, and because a compilation shells out to clang and
