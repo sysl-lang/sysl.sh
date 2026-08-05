@@ -52,10 +52,33 @@ jobs:
 
       # A page with an `output` block is a whole compile, link and run. `llvm-ar` is wanted as well
       # as clang: building the standard module into an artifact goes through an archiver.
+      #
+      # **The version is pinned, and it has to be.** sysl emits textual LLVM IR naming intrinsics in
+      # the spelling of the LLVM it was written against -- `llvm.va_start.p0`, the overloaded form.
+      # An older LLVM does not recognise that name as an intrinsic at all: it accepts the module,
+      # treats the call as an ordinary external, and the link fails with `undefined reference to
+      # llvm.va_start.p0`. That is a version disagreement wearing a linker error, and the
+      # distribution's default `clang` is whatever the distribution chose -- which is what the three
+      # varargs pages on `reference/ffi` were failing on. The compiler's own CI pins the same way.
       - name: Install the toolchain
+        env:
+          LLVM_VERSION: "20"
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang llvm
+          set -euo pipefail
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh "$LLVM_VERSION"
+          sudo apt-get install -y "llvm-$LLVM_VERSION"
+          echo "/usr/lib/llvm-$LLVM_VERSION/bin" >> "$GITHUB_PATH"
+
+      # Printed rather than assumed. The failure this pins against is a disagreement between what
+      # sysl emits and what the toolchain understands, and the first thing anyone reading a failed
+      # run needs is which toolchain it was.
+      - name: Report the toolchain
+        run: |
+          which clang llvm-ar
+          clang --version | head -2
+          llvm-ar --version | head -2
 
       # The published jar carries the compiler and NOT the standard library, which the compiler reads
       # off disk — so it has to come from somewhere, at exactly the version the jar is.
