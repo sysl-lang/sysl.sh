@@ -30,12 +30,12 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // were tagged and released without ever reaching Central, and 0.0.4 reached Central with no tag and
 // no GitHub release.
 //
-// **0.0.6 is the first release these pages can pass on**, which is not a coincidence: the site's own
-// CI is what found the bug it fixes. Every page that prints failed to link on Linux, because the
+// **0.0.6 was the first release these pages could pass on**, which is not a coincidence: the site's
+// own CI is what found the bug it fixes. Every page that prints failed to link on Linux, because the
 // standard-module artifact and the program each defined `sysl$stdout` and GNU `ld` refuses that
 // where `ld64` quietly takes the first. Nothing about it was macOS-specific except the consequence,
 // which is why a suite that had only ever run on the author's machine was green throughout.
-val syslVersion = "0.0.6"
+val syslVersion = "0.0.7"
 
 lazy val root = project
   .in(file("."))
