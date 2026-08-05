@@ -26,11 +26,16 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // The compiler release this site documents. Raising it is how the docs follow the language.
 //
 // It must be a release that is **both** on Maven Central (for the jar) and tagged in the compiler's
-// repository (for the standard library's source). No version satisfies that yet: 0.0.1-0.0.3 are
-// tagged and released but were never published to Central, and 0.0.4 is on Central with no tag and
-// no GitHub release. 0.0.5 is the first that will be both, and until it is cut this build cannot
-// resolve.
-val syslVersion = "0.0.5"
+// repository (for the standard library's source). 0.0.5 was the first to satisfy that; 0.0.1-0.0.3
+// were tagged and released without ever reaching Central, and 0.0.4 reached Central with no tag and
+// no GitHub release.
+//
+// **0.0.6 is the first release these pages can pass on**, which is not a coincidence: the site's own
+// CI is what found the bug it fixes. Every page that prints failed to link on Linux, because the
+// standard-module artifact and the program each defined `sysl$stdout` and GNU `ld` refuses that
+// where `ld64` quietly takes the first. Nothing about it was macOS-specific except the consequence,
+// which is why a suite that had only ever run on the author's machine was green throughout.
+val syslVersion = "0.0.6"
 
 lazy val root = project
   .in(file("."))
