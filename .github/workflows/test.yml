@@ -100,7 +100,7 @@ jobs:
       - name: Fetch the standard library at that tag
         uses: actions/checkout@v6
         with:
-          repository: edadma/sysl
+          repository: sysl-lang/sysl
           ref: v${{ steps.sysl.outputs.version }}
           path: sysl-src
           sparse-checkout: lib

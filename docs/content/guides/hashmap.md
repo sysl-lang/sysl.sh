@@ -54,5 +54,5 @@ that wanted it.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/hashmap) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/hashmap) ·
 Next: [bytecode](/guides/bytecode/) — the module system, end to end.

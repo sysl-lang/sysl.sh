@@ -4,7 +4,7 @@
 # own repo, pointed at this directory):
 #
 #   cd ~/dev/juicer
-#   sbt 'juicerJVM/run serve -s ~/dev/sysl/docs -L'
+#   sbt 'juicerJVM/run serve -s ~/dev/sysl.sh/docs -L'
 #
 # Production: pushed to `dev`, built and deployed by .github/workflows/docs.yml.
 # (`dev` rather than `stable` because sysl has no `stable` branch.)
@@ -14,7 +14,7 @@ author      = "Ed Maxedon"
 baseURL     = "https://sysl.sh/"
 description = "A modern, ref-counted, general-purpose systems language — easier than Rust. Four ways to name storage, no garbage collector, no borrow checker."
 
-repoURL = "https://github.com/edadma/sysl"
+repoURL = "https://github.com/sysl-lang/sysl"
 
 favicon = "favicon.svg"
 

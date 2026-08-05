@@ -52,5 +52,5 @@ under.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/fft) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/fft) ·
 Next: [sha2](/guides/sha2/) — one algorithm at two widths.

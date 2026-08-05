@@ -7,7 +7,7 @@ weight: 10
 ## Install
 
 ```bash
-brew install edadma/tap/sysl
+brew install sysl-lang/tap/sysl
 ```
 
 That is a native binary — there is no JVM under it and nothing to start up. It brings LLVM with it,
@@ -63,7 +63,7 @@ its own format and silently drops the rest. On a Mac, Homebrew keeps its LLVM de
 `PATH`, so sysl looks in `/opt/homebrew/opt/llvm/bin` as well. `--ar` names one anywhere else.
 
 ```bash
-git clone https://github.com/edadma/sysl.git
+git clone https://github.com/sysl-lang/sysl.git
 cd sysl
 sbt syslJVM/compile
 ```

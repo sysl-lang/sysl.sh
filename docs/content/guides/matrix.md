@@ -34,5 +34,5 @@ because the operator work in the first half means the algorithm reads as the alg
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/matrix) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/matrix) ·
 Next: [ring](/guides/ring/) — ranges, attributes, contracts, and invariants.

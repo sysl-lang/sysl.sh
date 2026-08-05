@@ -46,5 +46,5 @@ a test that fails for a reason unrelated to the language.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/png) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/png) ·
 Next: [fft](/guides/fft/) — a type the program defined, and floating point.

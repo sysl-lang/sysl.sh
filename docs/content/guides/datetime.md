@@ -67,5 +67,5 @@ and an unpack-recompute-repack on packed fields.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/datetime) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/datetime) ·
 Next: [matrix](/guides/matrix/) — an operator whose result is neither operand's type.

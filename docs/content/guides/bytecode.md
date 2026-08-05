@@ -56,5 +56,5 @@ always a promise that the expression goes on.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/bytecode) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/bytecode) ·
 Next: [png](/guides/png/) — somebody else's format, byte by byte.

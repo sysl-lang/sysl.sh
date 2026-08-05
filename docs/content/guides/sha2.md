@@ -38,5 +38,5 @@ what it is for.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/sha2) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/sha2) ·
 Next: [shapes](/guides/shapes/) — the dynamic half of the trait system.

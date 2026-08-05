@@ -73,5 +73,5 @@ rather than a run of statements.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/kernel) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/kernel) ·
 Next: [datetime](/guides/datetime/) — a conversion that can succeed twice.

@@ -1,6 +1,6 @@
 # sysl.sh
 
-The documentation site for [sysl](https://github.com/edadma/sysl), and the tests that keep it
+The documentation site for [sysl](https://github.com/sysl-lang/sysl), and the tests that keep it
 honest.
 
 **A fenced block on a page is not a picture of a program — it is the program.** Every ```sysl block
@@ -46,7 +46,7 @@ They need a toolchain, because they build and run real programs:
 ```sh
 VERSION=$(sed -n 's/^val syslVersion = "\(.*\)"/\1/p' build.sbt)
 git clone --depth 1 --branch "v$VERSION" --filter=blob:none --sparse \
-  https://github.com/edadma/sysl.git sysl-src
+  https://github.com/sysl-lang/sysl.git sysl-src
 git -C sysl-src sparse-checkout set lib
 mv sysl-src/lib lib
 ```
@@ -79,7 +79,7 @@ Production builds and deploys from `dev` — see `.github/workflows/docs.yml`.
 ## What is not here
 
 The **specification** — the numbered design chapters — stays with the compiler, at
-[`design/`](https://github.com/edadma/sysl/tree/dev/design). It is not the website: nothing renders
+[`design/`](https://github.com/sysl-lang/sysl/tree/dev/design). It is not the website: nothing renders
 it, and a chapter belongs in the same commit as the code that implements it.
 
 The **guide programs** stay there too, in `guide/` and `examples/`, where they are gated against the

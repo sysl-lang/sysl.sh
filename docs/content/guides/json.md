@@ -69,5 +69,5 @@ address, and being usable where a constant is *demanded* is exactly what that bu
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/json) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/json) ·
 Next: [hashmap](/guides/hashmap/) — the trait system under load.

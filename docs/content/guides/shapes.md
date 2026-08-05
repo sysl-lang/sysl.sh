@@ -43,5 +43,5 @@ sight is a trait object, and the reason the file says so out loud.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/shapes) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/shapes) ·
 Next: [scheduler](/guides/scheduler/) — OS shapes, and reference graphs mutated through references.

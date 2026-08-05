@@ -85,5 +85,5 @@ and the other two need a heap this program is written without.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/slab) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/slab) ·
 Back to [the guide programs](/guides/), or on to the [reference](/reference/).

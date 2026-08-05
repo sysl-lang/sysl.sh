@@ -6,7 +6,7 @@ weight: 50
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-fourteen programs in [`guide/`](https://github.com/edadma/sysl/tree/dev/guide) that were written to
+fourteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written to
 **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,

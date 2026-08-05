@@ -64,5 +64,5 @@ is wrong in a way that only shows up once two objects are named alike.
 
 ---
 
-[Source](https://github.com/edadma/sysl/tree/dev/guide/scheduler) ·
+[Source](https://github.com/sysl-lang/sysl/tree/dev/guide/scheduler) ·
 Next: [kernel](/guides/kernel/) — the same machine with no heap at all.
