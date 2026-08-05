@@ -359,28 +359,38 @@ other does not.
 
 ```sysl
 #if posix
-greeting() -> string = "a posix machine"
+line_ending() -> string = "\n"
 #else
-greeting() -> string = "something else"
+line_ending() -> string = "\r\n"
 #endif
 
-#if aarch64 && macos
-width() -> int = 64
-#elif x86_64
-width() -> int = 32
-#else
-width() -> int = 0
-#endif
-
-print(greeting(), width())
+print("a posix machine", line_ending().len)
 ```
 
 ```output
-a posix machine 64
+a posix machine 1
 ```
 
-*(That output is what this documentation's own build produces; on another machine the same program
-prints what that machine's branches say.)*
+**What differs between the branches is the implementation, not the answer.** That is the shape most
+uses of `#if` have: a syscall number, a struct a header lays out two ways, a symbol one libc exports
+and the other does not — chosen per machine so that everything above the choice can stop caring.
+
+`#elif` chains, and `#else` catches what nothing named:
+
+```sysl
+#if aarch64
+machine() -> string = "aarch64"
+#elif x86_64
+machine() -> string = "x86_64"
+#elif riscv64
+machine() -> string = "riscv64"
+#else
+machine() -> string = "something else"
+#endif
+```
+
+That one is quoted rather than run, because what it prints is *supposed* to depend on the machine —
+which is the whole point of the construct and exactly what a page cannot pin to one answer.
 
 `#if` / `#elif` / `#else` / `#endif`, nesting freely, and **the branches are exclusive** — the first
 whose condition holds is the one that contributes, and a group inside a branch that was not taken

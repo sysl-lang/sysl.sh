@@ -100,7 +100,7 @@ The x86-64 build compiles that. A build for a processor the arm covers is refuse
 travels into the diagnostic — which is the whole of what this form buys over leaving the arm out,
 since leaving it out fails *every* build instead:
 
-```sysl
+```sysl target=aarch64-macos
 port_out()
     asm
         [x86_64] "outb %al, %dx"

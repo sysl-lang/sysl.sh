@@ -853,7 +853,7 @@ two — the same shape as `@link` naming a library rather than a flag, and the s
 
 **On a processor without it, the annotation is refused rather than ignored:**
 
-```sysl
+```sysl target=aarch64-macos
 interrupt timer()
     print("tick")
 ```

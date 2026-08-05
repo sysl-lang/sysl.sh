@@ -280,16 +280,22 @@ var below = Complex(-1.0, -0.0)
 
 print(above.ln(), below.ln())
 print(Complex(-4.0, 0.0).sqrt(), Complex(-4.0, -0.0).sqrt())
-print(Complex(2.0, 0.0).asin(), Complex(0.5, 0.0).asin())
+print(Complex(2.0, 0.0).asin(), Complex(0.5, 0.0).asin().re)
 print(Complex(1.0, 0.0).atanh().re, Complex(-1.0, 0.0).atanh().re)
 ```
 
 ```output
 0+3.14159i 0-3.14159i
 0+2i 0-2i
-1.5708-1.31696i 0.523599+1.11022e-16i
+1.5708-1.31696i 0.523599
 inf -inf
 ```
+
+The third line's second value is printed as its real part alone, and deliberately. `asin` of a point
+*inside* `[-1, 1]` is real, so the imaginary part is zero — but it is zero by cancellation, and which
+zero a platform's libm lands on is its own business: this machine answers `1.11022e-16` and glibc
+answers `-0`. Both are zero to within an ulp and neither is wrong. Pinning the digits would make the
+page a record of one C library rather than of sysl.
 
 A function that is many-valued over the complex numbers is made single-valued by choosing where to
 cut, and **which cut a library chose is the one thing a caller cannot work out from a signature**. So

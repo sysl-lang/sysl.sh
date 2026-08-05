@@ -44,13 +44,27 @@ trait DocsSupport extends Matchers { this: Assertions =>
 
   /** One `sysl` block, with where it came from — a failure has to be able to name the page and the
    * position on it, because a reader of the failure has only the page to go and fix.
+   *
+   * `target` is the machine the block is *about*, from a `target=` on the fence, and is `None` for
+   * the ordinary case of a block about the language rather than about a processor.
    */
-  case class Snippet(page: String, nth: Int, source: String, claim: Claim) {
+  case class Snippet(page: String, nth: Int, source: String, claim: Claim, target: Option[String]) {
     def display: String = s"$page, sysl block $nth"
   }
 
-  /** A fenced block as the markdown holds it: the word after the backticks, and the body. */
-  private case class Fence(lang: String, body: String)
+  /** A fenced block as the markdown holds it: the word after the backticks, whatever else was on
+   * that line, and the body.
+   */
+  private case class Fence(lang: String, info: String, body: String) {
+
+    /** The `key=value` pairs after the language word. Anything else on the line is ignored, since
+     * the info string is also where a highlighter's own words go.
+     */
+    def options: Map[String, String] =
+      info.split("\\s+").filter(_.contains('=')).map(_.split("=", 2)).collect { case Array(k, v) =>
+        k -> v
+      }.toMap
+  }
 
   /** Every markdown page under `docs/content`, deepest last, so a failure list reads in the order a
    * reader would meet the pages.
@@ -91,7 +105,7 @@ trait DocsSupport extends Matchers { this: Assertions =>
       .map { case (f, i) => (f, i) }
       .zipWithIndex
       .map { case ((fence, position), nth) =>
-        Snippet(page, nth + 1, fence.body, claimAfter(fences.drop(position + 1)))
+        Snippet(page, nth + 1, fence.body, claimAfter(fences.drop(position + 1)), fence.options.get("target"))
       }
   }
 
@@ -106,8 +120,8 @@ trait DocsSupport extends Matchers { this: Assertions =>
    */
   private def claimAfter(rest: List[Fence]): Claim =
     rest.takeWhile(_.lang != "sysl").find(f => f.lang == "output" || f.lang == "error") match {
-      case Some(Fence("output", body)) => Claim.Prints(body)
-      case Some(Fence("error", body))  => Claim.Refused(body)
+      case Some(Fence("output", _, body)) => Claim.Prints(body)
+      case Some(Fence("error", _, body))  => Claim.Refused(body)
       case _                           => Claim.Fragment
     }
 
@@ -122,16 +136,19 @@ trait DocsSupport extends Matchers { this: Assertions =>
     val fences  = List.newBuilder[Fence]
     var open    = false
     var lang    = ""
+    var rest    = ""
     val body    = StringBuilder()
 
     for (line <- lines)
       if line.startsWith("```") then
         if open then
-          fences += Fence(lang, body.toString)
+          fences += Fence(lang, rest, body.toString)
           body.clear()
           open = false
         else
-          lang = line.stripPrefix("```").trim.takeWhile(!_.isWhitespace)
+          val info = line.stripPrefix("```").trim
+          lang = info.takeWhile(!_.isWhitespace)
+          rest = info.drop(lang.length).trim
           open = true
       else if open then body ++= line + "\n"
 
@@ -146,6 +163,14 @@ trait DocsSupport extends Matchers { this: Assertions =>
    * each one six minutes long.
    */
   protected def check(s: Snippet): Option[String] = s.claim match {
+    case _ if s.target.isDefined && !s.claim.isInstanceOf[Claim.Refused] =>
+      // A `target=` says "this block is about that machine", and the only honest thing that can be
+      // done with a block about another machine is compile it. Running it would need that machine.
+      // So this is refused rather than ignored: a page that pinned a target on something it expects
+      // to print would otherwise be silently checked against the runner instead, which is exactly
+      // the confusion `target=` exists to remove.
+      Some(s"${s.display}: 'target=' belongs on a block with an 'error' under it, which is compiled and not run")
+
     case Claim.Fragment => None
 
     case Claim.Prints(expected) =>
@@ -166,19 +191,38 @@ trait DocsSupport extends Matchers { this: Assertions =>
       }
 
     case Claim.Refused(expected) =>
-      Compiler.compileToLlvm(s.source) match {
-        case Right(_) =>
-          Some(s"${s.display}: the page says the compiler refuses this, and it compiled")
+      refusalTarget(s) match {
+        case Left(why) => Some(s"${s.display}: $why")
+        case Right(target) =>
+          Compiler.compileToLlvm(s.source, target = target) match {
+            case Right(_) =>
+              Some(s"${s.display}: the page says the compiler refuses this, and it compiled")
 
-        case Left(diagnostic) if !diagnostic.contains(expected.trim) =>
-          Some(
-            s"${s.display}: the compiler refused it, but not in the words the page quotes.\n" +
-              s"page:\n${indent(expected)}\ncompiler:\n${indent(diagnostic)}"
-          )
+            case Left(diagnostic) if !diagnostic.contains(expected.trim) =>
+              Some(
+                s"${s.display}: the compiler refused it, but not in the words the page quotes.\n" +
+                  s"page:\n${indent(expected)}\ncompiler:\n${indent(diagnostic)}"
+              )
 
-        case Left(_) => None
+            case Left(_) => None
+          }
       }
   }
+
+  /** The machine a refusal is about: what the fence named, or the one this suite is running on.
+   *
+   * **This exists because some refusals are facts about a processor rather than about the
+   * language.** `interrupt` is refused on AArch64 because AArch64 has no such concept, and refused
+   * on x86-64 for the unrelated reason that its handler must take the frame the hardware pushed —
+   * two correct diagnostics, and a page quoting either one is wrong on the other machine. Before
+   * `target=`, such a page passed on its author's laptop and failed in CI, which reads as a broken
+   * page rather than as a page that never said which machine it meant.
+   *
+   * An unknown name is a failure of the page and not of the compiler, so it is reported the same way
+   * a wrong diagnostic is — `Target.named` already answers with the list of what it knows.
+   */
+  private def refusalTarget(s: Snippet): Either[String, Target] =
+    s.target.fold(Right(Target.default))(Target.named)
 
   /** The compilation an ordinary `sysl run` performs — against the prebuilt standard module where
    * the toolchain can build one.
