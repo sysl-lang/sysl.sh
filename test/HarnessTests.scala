@@ -1,4 +1,4 @@
-package io.github.edadma.sysl
+package sh.sysl
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers

@@ -35,7 +35,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // standard-module artifact and the program each defined `sysl$stdout` and GNU `ld` refuses that
 // where `ld64` quietly takes the first. Nothing about it was macOS-specific except the consequence,
 // which is why a suite that had only ever run on the author's machine was green throughout.
-val syslVersion = "0.0.7"
+val syslVersion = "0.0.8"
 
 lazy val root = project
   .in(file("."))
@@ -53,8 +53,8 @@ lazy val root = project
     Test / unmanagedResourceDirectories := Nil,
 
     libraryDependencies ++= Seq(
-      "io.github.edadma" %% "sysl"      % syslVersion,
-      "org.scalatest"    %% "scalatest" % "3.2.20" % Test,
+      "sh.sysl"       %% "sysl"      % syslVersion,
+      "org.scalatest" %% "scalatest" % "3.2.20" % Test,
     ),
 
     // Forked because the suites set `SYSL_LIB`, and because a compilation shells out to clang and

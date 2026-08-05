@@ -1,4 +1,4 @@
-package io.github.edadma.sysl
+package sh.sysl
 
 import io.github.edadma.cross_platform.*
 
