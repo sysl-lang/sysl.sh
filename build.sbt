@@ -57,6 +57,26 @@ lazy val root = project
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,
     ),
 
+    // A second place to find the compiler, because Central can take hours to propagate and these
+    // pages cannot be written until one resolves. `~/dev/sysl` publishes the same artifacts to
+    // GitHub Packages as well (`SYSL_PUBLISH_GITHUB=1 sbt publish`), which answers in minutes.
+    //
+    // **Listed after Central deliberately.** Once Central has the version it is what resolves, so
+    // this is a head start and not a fork in the road — the ordinary state of this build is that
+    // the resolver below is never reached. What it must never become is the reason a release looks
+    // finished: a Central upload that silently failed would still build green here, so the check
+    // against `maven-metadata.xml` stays a step of the release rather than something this implies.
+    resolvers += "GitHub Packages" at "https://maven.pkg.github.com/sysl-lang/sysl",
+
+    // GitHub Packages authenticates every request, a public package included, so a build here needs
+    // a token with `read:packages`. CI has one already as `GITHUB_TOKEN`; a checkout without either
+    // still builds whenever Central has the version, which after a release is always.
+    credentials ++= {
+      val f = Path.userHome / ".sbt" / "github-credentials"
+
+      if (f.exists) Seq(Credentials(f)) else Nil
+    },
+
     // Forked because the suites set `SYSL_LIB`, and because a compilation shells out to clang and
     // leaves temporary files — neither belongs in sbt's own JVM.
     Test / fork := true,
