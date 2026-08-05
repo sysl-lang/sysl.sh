@@ -1,0 +1,28 @@
+*.class
+*.log
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+
+# The rendered site, written by juicer.
+_site/
+
+# The standard library's source, unpacked from the release tarball by CI. It is a copy of something
+# published elsewhere at a version this build already names, so committing it would be a second
+# statement of the same fact -- and one that could disagree with `syslVersion`.
+lib/
+
+*~
+.directory

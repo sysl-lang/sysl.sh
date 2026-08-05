@@ -1,0 +1,93 @@
+# Run every program on every page against the compiler this site documents.
+#
+# This job is the reason the pages can leave the compiler's repository at all. Nothing else checks
+# that a fenced block still compiles: a page that has rotted looks exactly like a page that has not.
+#
+# It runs on a schedule as well as on pushes, and that is deliberate. The other two triggers fire
+# when *this* repository changes, and the failure mode worth catching is the opposite one — the
+# compiler moved, a release was cut, and nothing here has been touched since. A weekly run turns
+# that from something somebody has to remember into something the repository notices.
+
+name: Test
+
+on:
+  push:
+    branches: ["dev"]
+  pull_request:
+    branches: ["dev"]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "test-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Cache sbt
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.sbt
+            ~/.cache/coursier
+          key: ${{ runner.os }}-sbt-${{ hashFiles('build.sbt', 'project/**') }}
+          restore-keys: ${{ runner.os }}-sbt-
+
+      # A page with an `output` block is a whole compile, link and run. `llvm-ar` is wanted as well
+      # as clang: building the standard module into an artifact goes through an archiver.
+      - name: Install the toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm
+
+      # The published jar carries the compiler and NOT the standard library, which the compiler reads
+      # off disk — so it has to come from somewhere, at exactly the version the jar is.
+      #
+      # It comes from the compiler's repository **at the release tag**, sparsely. A tag is an exact
+      # version match, which is the whole requirement; the release tarball is not usable here because
+      # its assets are per-platform (`sysl-0.0.3-darwin-arm64.tar.gz`) and this runner is not that
+      # platform — the library is plain `.sysl` source and has no platform, so downloading a
+      # machine's binary distribution to extract text out of it would be the wrong shape of answer.
+      - name: Read the release under test
+        id: sysl
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^val syslVersion = "\(.*\)"$/\1/p' build.sbt)
+          test -n "$version"
+          echo "documenting sysl $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the standard library at that tag
+        uses: actions/checkout@v6
+        with:
+          repository: edadma/sysl
+          ref: v${{ steps.sysl.outputs.version }}
+          path: sysl-src
+          sparse-checkout: lib
+          sparse-checkout-cone-mode: false
+
+      - name: Put the library where the build looks for it
+        run: |
+          set -euo pipefail
+          mv sysl-src/lib lib
+          test -d lib/sysl
+
+      - name: Test
+        run: sbt test
