@@ -431,9 +431,11 @@ This is Rust's orphan rule, and it costs nothing:
   module licenses it;
 - **`impl Show for int` still works** — a built-in has no module of its own, so its owner key belongs
   to the library, and every `impl` on one is licensed by its trait's module instead;
-- **a composed type is the module's when anything named in it is** — `impl Display for []Point` is
-  licensed by `Point`, while `impl Display for []int` names nothing outside the library and has no
-  home;
+- **a composed type is the module's when anything named in it is** — `override impl Display for
+  []Point` is licensed by `Point`, while a block for `[]int` names nothing outside the library and
+  has no home. (It says `override` because the library implements `Display` for every slice; the two
+  rules are separate, and a slice of your own struct needs both — coherence to have a home, and
+  [`override`](#override--when-the-overlap-is-deliberate) to outrank the block already covering it);
 - **a type parameter is not a local type**, so `impl[T: Display] Display for []T` is refused however
   its bound is written. Making every printable slice printable is the library's job.
 

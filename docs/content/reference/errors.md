@@ -1327,7 +1327,7 @@ struct Meter
         else self.written += n
 
 impl Fallible for Meter
-    failed(*self) -> bool = self.bad
+    override failed(*self) -> bool = self.bad
 
 var m = Meter(0, false)
 

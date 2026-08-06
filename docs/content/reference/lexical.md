@@ -48,18 +48,24 @@ correctly on a page.
 
 ## Reserved words
 
-Forty words are reserved and may not be used as identifiers:
+Thirty-nine words are reserved and may not be used as identifiers:
 
 | | | | | |
 |---|---|---|---|---|
-| `alignof` | `alloc` | `as` | `break` | `const` |
-| `continue` | `defer` | `do` | `elif` | `else` |
-| `ensure` | `enum` | `extern` | `false` | `for` |
-| `if` | `impl` | `import` | `in` | `loop` |
-| `match` | `module` | `no` | `null` | `private` |
-| `ref` | `require` | `requires` | `return` | `self` |
-| `sizeof` | `struct` | `then` | `trait` | `true` |
-| `type` | `val` | `var` | `weak` | `while` |
+| `alignof` | `as` | `break` | `const` | `continue` |
+| `defer` | `do` | `elif` | `else` | `ensure` |
+| `enum` | `extern` | `false` | `for` | `if` |
+| `impl` | `import` | `in` | `loop` | `match` |
+| `module` | `null` | `override` | `private` | `ref` |
+| `require` | `return` | `self` | `sizeof` | `static` |
+| `struct` | `then` | `trait` | `true` | `type` |
+| `val` | `var` | `weak` | `while` | |
+
+**`alloc`, `no` and `requires` are *not* among them**, though they read like keywords where they
+appear. A capability is written as an [attribute](/reference/attributes/) — `@no_alloc`,
+`@requires(os)` — and an attribute's words are matched as ordinary identifiers, which is the point of
+spelling capabilities that way: no word is spent, so an allocator may still call its function
+`alloc`.
 
 **Type names are deliberately not among them.** `int`, `usize`, `f32`, `bool`, `string` and the rest
 are *predeclared identifiers* that the analyzer resolves, exactly as in Go and Swift. That is what

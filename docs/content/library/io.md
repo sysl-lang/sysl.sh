@@ -149,7 +149,7 @@ struct Flaky
 end Flaky
 
 impl Fallible for Flaky
-    failed(*self) -> bool = self.bad
+    override failed(*self) -> bool = self.bad
 
 impl Reader for Flaky
     read(*self, into: []u8) -> []const u8
