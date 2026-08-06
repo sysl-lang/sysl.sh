@@ -39,9 +39,9 @@ afterwards — `run` leaves nothing behind.
 sysl run report.sysl -- --verbose report.txt
 ```
 
-The split is made *before* sysl's own options are parsed, which is the point: `--verbose` is one of
-the program's arguments even though it looks like it could have been one of sysl's, and neither side
-has to know what the other's flags are called. What arrives at
+The split is made *before* sysl's own options are parsed, which is the point: `--verbose` really is
+one of sysl's own options, so without the `--` sysl would have taken it — after it, it belongs to the
+program, and neither side has to know what the other's flags are called. What arrives at
 [`main(args: []string)`](/library/args/) is the executable's own path followed by those two words,
 so `args.len` is 3 — `args[0]` is the program, exactly as C's `argv[0]` is.
 
@@ -172,10 +172,11 @@ parameterize yet — and a reader who names it is better told that than told the
 |---|---|
 | `--target <name>` | the machine to build for; defaults to this one |
 | `--lib <path>` | a library to compile against; may be given more than once |
-| `--core-lib <path>` | a prebuilt standard module |
-| `--no-core-lib` | the copy of the standard module built into the compiler |
+| `--std-lib <path>` | a prebuilt standard module |
+| `--no-std-lib` | compile the standard module from source rather than linking a prebuilt one |
 | `--ar <path>` | the `llvm-ar` to build a library with |
 | `-O <level>` | the optimization level handed to clang |
+| `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines |
 | `--explain-escapes` | report every local array promoted to the heap |
 
 The standard-module flags and `-O` are covered in
@@ -207,6 +208,24 @@ A name the registry does not have is answered with the names it does:
 ```
 sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, x86-linux
 ```
+
+### `-v`, `--verbose`
+
+What the build decided, on stderr — which is where `wrote <exe>` goes, so stdout stays whatever the
+build was for:
+
+```
+sysl: 1 source file(s) under hello
+sysl:   read hello/hello.sysl
+sysl: standard module linked from ~/Library/Caches/sysl/0.0.19-…/std.syslib
+sysl: link: clang --target=arm64-apple-macosx -Wno-override-module -O1 …
+```
+
+Three things, and they are the three that have actually been the answer to a question: **which
+standard module** the compilation got and whether it was linked or compiled from source, the **files
+it read**, and the **command lines** handed to clang together with the `--lib`, `--link-path` and
+`--include-path` searches behind them. There are no phase timings: a build that is slow is diagnosed
+by asking what it *did*.
 
 ### `--explain-escapes`
 

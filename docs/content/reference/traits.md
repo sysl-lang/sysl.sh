@@ -998,10 +998,16 @@ the offending member came from. A **built-in** that satisfies a requirement by t
 cannot be erased through it either — a table holds function pointers, and a scalar's `add` is an
 instruction.
 
-`Hash` is the only trait where that bites, since every other compiler-provided membership is an
-operator and already excluded above. **`Display` is not one of them**: every built-in reaches it
-through an `impl`, so a `*Display` carries an `int`, a `u256`, a `string` or a float alike, and a
-heterogeneous array of them is ordinary code.
+**What that bites is the operator catalog at written arguments**, and only that. `Add[int, int]`
+declares `add(self, rhs: int) -> int` — no `Self` anywhere — so it is a formable object type, and an
+`int` belongs to it by the compiler's rule; `&Add[int, int] = 3` is therefore refused, and the
+diagnostic says why rather than reporting a plain mismatch.
+
+**`Display` and `Hash` are not among them**: every built-in reaches both through an `impl`, so a
+`*Display` carries an `int`, a `u256`, a `string` or a float alike, a `&Hash` carries anything that
+hashes, and a heterogeneous array of either is ordinary code. The rest of the catalog — `Eq`, `Ord`,
+`Bits`, `Signed` — names `Self` away from the receiver, so object safety refuses the *type* before a
+value gets that far.
 
 ### Forming and using one
 

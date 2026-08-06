@@ -1,6 +1,6 @@
 ---
 title: The math module
-summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits` over the open integer family, the constants, `min`/`max`/`clamp` over anything ordered, and the integer arithmetic above the operators."
+summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits` over the open integer family, the constants, `min`/`max`/`clamp` over anything ordered, the float comparisons, and the integer arithmetic above the operators."
 weight: 60
 ---
 
@@ -357,6 +357,36 @@ can observe. Taking the first is what makes a fold over a sequence stable.
 `clamp` tests the low end first, so an inverted range answers `low`. There is no check that the two
 bounds are the right way round: a bound is nearly always a constant or a length at the call site, and
 a [contract](/reference/errors/) is the tool for saying so where it is not.
+
+## Comparing floats that were computed
+
+Binary floating point does not hold `0.1 + 0.2 == 0.3`, so a program that checks a computation
+against a written-down number needs a tolerance rather than an equality:
+
+```sysl
+import sysl.math.{approx_eq, approx_eq_rel, nan, infinity, Float}
+
+print(approx_eq(0.1 + 0.2, 0.3, 1e-12), approx_eq(1.0, 1.5, 0.1))
+print(approx_eq(infinity(), infinity(), 0.0), approx_eq(nan(), nan(), 1.0))
+print(approx_eq_rel(1e18, 1e18 + 1000.0, 1e-6), approx_eq_rel(1.0, 1.5, 1e-6))
+```
+
+```output
+true false
+true false
+true false
+```
+
+`approx_eq` takes an **absolute** tolerance, which is what a delta comparison is. `approx_eq_rel`
+scales it to the larger of the two operands, so the tolerance reads as a fraction — `0.001` means
+"within a tenth of a percent" whatever the magnitude — and is the one to reach for when the values
+could be any size. Near zero the relative form becomes strict, since the scale goes to zero with the
+operands; that is the case the absolute form is for.
+
+Two behaviours are worth knowing rather than discovering. **Identical infinities are close**, because
+both functions test equality before subtracting — `inf - inf` is a NaN, and the subtraction alone
+would call a value unequal to itself. And **a NaN is close to nothing, including another NaN**,
+whatever the tolerance, which falls out of the comparisons and agrees with `==`.
 
 Mixing types is refused, as everywhere else in the language:
 

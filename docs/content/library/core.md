@@ -555,8 +555,10 @@ trait Hash
 **A `u64` rather than a `usize`**, so a hash means the same thing on every target — a table moved
 between a 32-bit and a 64-bit machine does not rebucket because the word size changed.
 
-As with rendering, the built-ins have no `impl` and reach a named mixer instead. Those mixers are
-public, which is what lets a `Hash` written for a struct mix its own fields:
+As with rendering, the built-ins reach a named mixer — through written `impl`s, one per closed type
+and a single blanket over the integers, which is what makes a built-in erasable to a `&Hash` rather
+than merely usable under a `Hash` bound. Those mixers are public, which is what lets a `Hash` written
+for a struct mix its own fields:
 
 | mixer | for | what it is |
 |---|---|---|
@@ -597,6 +599,25 @@ true
 The multiply-then-xor is the shape to copy: `0x100000001b3` is FNV's prime, and mixing with it before
 the xor is what makes **order** matter. A plain xor of the field hashes would give `Key("a", 1)` and
 a hypothetical `Key` with the fields swapped the same bucket.
+
+Because the memberships are `impl`s, a built-in can be **erased** to a trait object — a method table
+holds function pointers, and an `impl` is what supplies one:
+
+```sysl
+val xs: [3]&Hash = [7, "abc", true]
+
+for h in xs do print(h.hash() != 0u64)
+```
+
+```output
+true
+true
+true
+```
+
+The widening is the law rather than an implementation detail: `1u8` and `1i64` are the same number,
+they compare equal across widths, and so they hash equal — each becomes the same `u64` before it
+reaches the mixer.
 
 ## Subscripting a type of your own
 

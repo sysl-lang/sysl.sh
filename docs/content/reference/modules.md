@@ -519,19 +519,39 @@ That is the reason C reserves the name: it is not a name the program calls, it i
 *platform* calls, so two would leave which one the program **is** to whichever was emitted last.
 Otherwise it is an ordinary function, and may be called by the program too.
 
-**A result is not yet spelled:**
+**A `main` may answer with a `Result[unit, E]`**, which is what lets `?` reach the top of a program:
+
+```sysl
+import sysl.fs.{read_text, IoError}
+
+main() -> Result[unit, IoError]
+    val text = read_text("/nonexistent/file")?
+
+    print(text)
+
+    Ok(())
+```
+
+That program prints nothing and exits **1**, having written `error: no such file or directory` to
+stderr. Without the form, every fallible call in `main` ends in `.unwrap()`, which reports the
+failure as a panic naming the line that gave up rather than the thing that went wrong.
+
+Three parts of it are decided rather than incidental. The `unit` is not decoration — a value `main`
+answered with would have nowhere to go, since what the platform takes is a status. `E` must be
+[`Display`](/library/core/), because the report is the whole point and an error nobody can render
+would exit non-zero having said nothing. And the status is `1` rather than something read off the
+error: a status is one byte and an error is a value, so mapping one onto the other is the program's
+business, and `exit` is how a program that wants to choose says so.
+
+**Nothing else is admitted:**
 
 ```sysl
 main() -> int = 0
 ```
 
 ```error
-'main' yields nothing, so it may not result in int — a program's exit status is not something a signature can say
+'main' yields nothing or a 'Result[unit, E]', so it may not result in int — a program's exit status is not something a signature can say
 ```
-
-A program's exit status is a whole question — which values mean what, what a trap leaves behind,
-whether a `val` initializer can set one — and reading a result type as one now would answer it by
-accident. Until it is decided, a program that must choose its status calls `exit`.
 
 **A program in which no file carries a statement is a complete program that does nothing.** The entry
 point exists, runs nothing, and succeeds. That is what a tree of pure declarations compiles to, which

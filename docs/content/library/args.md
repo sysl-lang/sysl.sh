@@ -90,8 +90,8 @@ main(args: []const string)
 1
 ```
 
-**A result is refused**, because a result from `main` would be an exit status, and an exit status is
-not something a sysl signature spells:
+**A result other than a `Result[unit, E]` is refused**, because it would be an exit status, and an
+exit status is not something a sysl signature spells:
 
 ```sysl
 main() -> int
@@ -99,8 +99,12 @@ main() -> int
 ```
 
 ```error
-'main' yields nothing, so it may not result in int — a program's exit status is not something a signature can say
+'main' yields nothing or a 'Result[unit, E]', so it may not result in int — a program's exit status is not something a signature can say
 ```
+
+The one result a `main` may have is [`Result[unit, E]`](/reference/modules/), which is not an exit
+status but an error to report: a failure travels out as a value, is printed on stderr, and the status
+is `1`.
 
 **The platform's own pair is refused**, which is the refusal this module exists to make unnecessary:
 
