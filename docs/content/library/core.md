@@ -447,6 +447,83 @@ print(Scale(3))
 cannot print a Scale value — write an 'impl sysl.Display for Scale' to say how it renders
 ```
 
+### A slice of anything printable
+
+One `impl[T: Display] Display for []T` covers every slice, so the element type only has to render
+itself. A slice of a type you wrote works the moment that type does:
+
+```sysl
+struct Rect
+    w: int
+    h: int
+
+impl Display for Rect
+    display(self, out: *Writer, fmt: FormatSpec) = display_str("a rect", out, fmt)
+
+var ns = [1, 2, 3]
+var rs = [Rect(3, 4), Rect(1, 2)]
+
+print(ns[..])
+print(rs[..])
+print(f"[${ns[..]}%14s]")
+```
+
+```output
+[1, 2, 3]
+[a rect, a rect]
+[     [1, 2, 3]]
+```
+
+**A fixed-size array is not a slice**, so `print(ns)` is refused and `ns[..]` is how you say it. An
+`impl` cannot be written once for every length, and the whole-array view costs nothing.
+
+**The elements are written as they are met**, never gathered. Gathering would need a growable buffer,
+`sysl.buf` is built *on* this module rather than under it, and an allocation on the printing path is
+the one thing printing does not have — so a slice prints under `@no_alloc` exactly as a number does.
+
+That leaves the width, which has to be known before the first byte goes out. It is learned by
+rendering once into a sink that adds up what it is given and keeps none of it, so the cost of a
+padded slice is a second pass rather than a buffer, and an unpadded one is a single pass.
+
+### Saying how a slice of *your* type renders
+
+The block above covers every slice, which would ordinarily be the end of the matter: two
+implementations for one type are refused, and a program writing `impl Display for []Rect` would be
+told the library got there first. Say **`override`** and it is yours:
+
+```sysl
+struct Rect
+    w: int
+    h: int
+
+impl Display for Rect
+    display(self, out: *Writer, fmt: FormatSpec) = display_str("a rect", out, fmt)
+
+override impl Display for []Rect
+    display(self, out: *Writer, fmt: FormatSpec) =
+        display_str(str(self.len) + " rects", out, fmt)
+
+var rs = [Rect(3, 4), Rect(1, 2)]
+
+print(rs[..])
+print(rs[0])
+```
+
+```output
+2 rects
+a rect
+```
+
+The keyword goes on the **overriding** side, and that is the whole of it — nothing in the library
+had to permit this in advance. A more specific implementation is found first, so `[]Rect` reaches
+yours and every other slice still reaches the library's.
+
+Two things it deliberately does not do. It does not let you replace an implementation for a type that
+is not yours — `override impl Display for []int` is refused, because `[]int` names nothing of your
+program's and [coherence](/reference/traits/) puts that block in the library or nowhere. And it does
+not silence the ordinary duplicate: leave the keyword off and the second implementation is refused
+exactly as it always was, which is how a block written twice by accident still gets found.
+
 ## Hashing
 
 ```sysl

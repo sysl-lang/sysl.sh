@@ -38,7 +38,7 @@ explicit about which one it works in.
 
 ## What is in it
 
-The module is six files, and the boundaries between them are arguments rather than filing:
+The module is seven files, and the boundaries between them are arguments rather than filing:
 
 | file | holds | why it is a file |
 |---|---|---|
@@ -48,6 +48,7 @@ The module is six files, and the boundaries between them are arguments rather th
 | `edit.sysl` | `split`, `fields`, `join`, `repeat`, `replace_all`, `to_upper`, `to_lower` | everything that **does** — so it needs an allocator |
 | `parse.sysl` | `ParseError`, `parse_bool`/`int`/`long`/`uint`/`ulong`/`real` and the `_base` forms | the direction `str(x)` does not go |
 | `build.sysl` | `StrBuilder`, `CString`, `str_builder_with_capacity` | gathering text, and the copy C reads |
+| `width.sysl` | `columns`, `char_columns` | how wide text **looks**, which is a third question from bytes and characters |
 
 Two of those rows carry the module's whole design, and they are worth reading before anything else.
 
@@ -73,6 +74,7 @@ demonstrated [below](#the-half-that-allocates), because the compiler enforces it
 | substring | `s[a..b] -> string` | O(1), shares; bounds-checked **and** boundary-checked |
 | the bytes | `s.bytes -> []const u8` | O(1) view |
 | the characters | `s.chars -> Chars` | O(1) per step |
+| the terminal columns | `columns(s.bytes) -> usize` | O(n), a binary search per character |
 | concatenation | `a + b` | O(n), allocates |
 
 Every row but one yields a value or a view. `s.chars` yields a **sequence**, and it has to: the
@@ -187,6 +189,57 @@ after the loop the cursor is untouched: 0 5
 
 `src[start..<cur.offset]` is an O(1) substring sharing the source's bytes — a token costs a retain
 and no copy.
+
+## The third measurement: terminal columns
+
+```sysl
+columns(text: []const u8) -> usize
+char_columns(c: char) -> usize
+```
+
+Bytes and characters both answer questions about *storage*. A program laying anything out — a table,
+a progress bar, anything with a border on the right — is asking a third question, and neither of the
+first two answers it:
+
+```sysl
+import sysl.text.*
+
+var words = ["cafe", "café", "日本", "naïveté"]
+
+for s in words
+    print(s.len, s.chars.count(), columns(s.bytes))
+```
+
+```output
+4 4 4
+5 4 4
+6 2 4
+9 7 7
+```
+
+`日本` is the row that makes the point: **six bytes, two characters, and four columns**, because the
+East Asian wide forms are drawn double-width. A combining mark goes the other way and occupies none,
+so a decomposed `café` — five characters, one of them a combining acute — is four columns like the
+composed one.
+
+**This is why a `FormatSpec` width cannot lay out a column.** That field counts bytes, as C's does —
+see [the core module](/library/core/) — so a cell padded to a field of five is short by one for
+`café` and short by *two* for `naïveté`. The error differs from cell to cell of the same column, so
+the table comes out ragged rather than merely narrow, and there is no correction to apply afterwards.
+A program laying text out therefore ignores the specifier's width, hands each cell the neutral spec,
+and does its own padding over `columns`. Only the caller knows where the next border falls.
+
+**It is data rather than algorithm**, which is the whole reason it is in the library. The rule is two
+lines long; what makes it right is 499 ranges out of the Unicode Character Database, which no program
+should be carrying its own copy of. The tables are static and the search allocates nothing, so all of
+this is reachable under [`@no_alloc`](/reference/modules/) — and a program that calls neither
+function links neither table.
+
+`columns` takes bytes rather than a `string` so that text being assembled — what a sink has gathered,
+what a slice of a larger buffer holds — can be measured without being copied into one first;
+`s.bytes` is what a caller holding a `string` passes. A control character answers zero, which is the
+honest answer to a question it does not really have: a terminal does not draw a newline in a column,
+it acts on it.
 
 ## Validating bytes into text
 

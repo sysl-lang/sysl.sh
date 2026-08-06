@@ -124,6 +124,80 @@ That is monomorphization with `Self` for the parameter, so everything downstream
 table slot, the escape summary — finds a function that exists and needs to know nothing about where it
 came from.
 
+### Replacing a default says `override`
+
+An implementation may write the member itself instead of taking the trait's body, and when it does it
+says so — replacing a default is the same act as [replacing an implementation](#override--when-the-overlap-is-deliberate),
+and takes the same keyword:
+
+```sysl
+trait Loud
+    volume(self) -> int = 11
+
+struct Amp
+    n: int
+end Amp
+
+impl Loud for Amp
+    override volume(self) -> int = self.n
+
+var a = Amp(4)
+
+print(a.volume())
+```
+
+```output
+4
+```
+
+Leave it off and the member is refused, because the reader of an `impl` block wants to know which of
+its members are replacing something and which are supplying what the trait asked for — a question
+that otherwise means opening the trait to find out:
+
+```sysl
+trait Loud
+    volume(self) -> int = 11
+
+struct Amp
+    n: int
+end Amp
+
+impl Loud for Amp
+    volume(self) -> int = self.n
+
+print(1)
+```
+
+```error
+trait 'Loud' supplies a body for method 'volume', so writing one here replaces it — say 'override volume', or leave the member out to keep the trait's
+```
+
+**And it is refused where nothing is replaced.** A member answering a bare requirement — the ordinary
+case, and every member of most `impl` blocks — supplies what the trait asked for rather than
+replacing a body, so the keyword would be saying something untrue:
+
+```sysl
+trait Sized
+    size -> int
+
+struct Box
+    w: int
+    h: int
+end Box
+
+impl Sized for Box
+    override size -> int = self.w * self.h
+
+print(1)
+```
+
+```error
+trait 'Sized' declares property 'size' without a body, so this member supplies what the trait asked for rather than replacing anything — 'override' says a body was replaced
+```
+
+The rule costs almost nothing, because an implementation content with a default writes no member at
+all — across the whole of sysl's own library, guides and examples, exactly two members replace one.
+
 ## Conformance is explicit, always
 
 A type that happens to have a member of the right name and shape does **not** satisfy a trait. There
@@ -516,8 +590,9 @@ makes one; a lookup finding nothing under the type's own key falls back to it. A
 is the whole difference between it and a `[]u8` — a block written for every slice has said nothing
 about it. `"hi".bytes` is a `[]u8` and is covered.
 
-**A shape and a written-out type may not overlap.** Both would say how a `[]int` renders, and neither
-is more specific than the other, because being more specific is not something sysl knows how to be:
+**A shape and a written-out type overlap, and an unmarked overlap is refused.** Both blocks would say
+how a `[]int` renders, so whichever is written second is refused and the diagnostic names the one
+already there:
 
 ```sysl
 trait Show2
@@ -536,10 +611,93 @@ print(1)
 '[]int' already implements 'Show2', and this 'impl' would implement it for every slice — including that one
 ```
 
-Whichever is written second is refused, and the diagnostic names the one already there. The choice is
-between saying how every slice behaves and saying it slice type by slice type; not both. Refusing the
-overlap is the conservative choice and can be relaxed; shipping a rule that picks between two
-implementations cannot be walked back.
+That is the default and it is worth keeping: two blocks that overlap are usually a mistake — a
+duplicate written by accident, or one put in the wrong module — and refusing them is how that gets
+found.
+
+### `override` — when the overlap is deliberate
+
+An implementation may say **`override`**, and then it wins:
+
+```sysl
+trait Show2
+    show2(self) -> int
+
+impl[T] Show2 for []T
+    show2(self) -> int = 2
+
+override impl Show2 for []int
+    show2(self) -> int = 1
+
+var xs: []int = [7, 8]
+var ss: []string = ["a"]
+
+print(xs.show2(), ss.show2())
+```
+
+```output
+1 2
+```
+
+**The keyword goes on the overriding side, not the overridden one.** That is the whole of the design,
+and it is the opposite of C#'s `virtual`/`override` pair and of Rust's unstable `default`: both of
+those make the general implementation grant permission in advance, and a library author cannot know
+which of their implementations somebody will need to replace. Intent is something the writer of the
+override has and the writer of the original does not.
+
+It grants no permission, so what it buys is the diagnostic. An unmarked second implementation is
+still refused exactly as above.
+
+**The overriding side is always a type written out in full.** A shape is one key and so is a generic
+type's name, and the blocks that would sit *under* those are already refused — `impl[T] Show2 for
+[][]T` matches a shape's argument by its shape, and `impl Show2 for Box[int]` fixes one instantiation
+of a block covering every instantiation. So there is nothing below either of them to be more specific
+than, and marking one says so:
+
+```sysl
+trait Show2
+    show2(self) -> int
+
+override impl[T] Show2 for []T
+    show2(self) -> int = 2
+
+print(1)
+```
+
+```error
+'override' says this block replaces a more general one, and '[]T' is the general kind — an implementation for a shape or for a generic type covers every type it matches at once, so there is nothing below it. The override is written on the block for one type spelled out in full
+```
+
+**An `override` that overrides nothing is refused**, which is the check in the other direction and
+the one that earns its keep later: a library drops or narrows the implementation a program was
+overriding, and without this the override silently becomes the only one while still claiming to
+replace something.
+
+```sysl
+trait Show2
+    show2(self) -> int
+
+override impl Show2 for []int
+    show2(self) -> int = 1
+
+print(1)
+```
+
+```error
+'[]int' says 'override', but nothing else implements 'Show2' for it — an override replaces an implementation that covers the type more generally, and there is none to replace
+```
+
+**What keeps this sound is coherence rather than the keyword.** The hazard a rule like this usually
+brings is two method tables for one type — a `[]Point` erased to a `*Show2` picking one
+implementation at one site and the other elsewhere. An `impl` may live only in the module declaring
+the trait or in one declaring a type named in the subject, so a program cannot write
+`impl[T] Display for []T` at all — `[]T` names no type of its own. **The only override anybody can
+write across a module boundary is one that names their own type**, so there is exactly one per type
+and it lives with that type; and any site that can write `[]Point` down already depends on the module
+declaring `Point`. One type, one table.
+
+The cost that remains, stated plainly: a library can no longer rely on its own implementations. What
+`override` buys is that every such site is greppable rather than invisible.
 
 ## A trait may take type parameters
 
