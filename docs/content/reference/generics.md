@@ -755,6 +755,130 @@ parameter — and the written-out one is more specific, so it is found first. A 
 wins over a block for `[N]T` on arrays of two, which is the same "written-out beats a parameter"
 ordering `override` uses.
 
+## A parameter may stand for a list of types
+
+A type parameter stands for one type and a `const` parameter for one value. A parameter written `..`
+stands for a **list of types** — a *pack* — which is what lets one declaration cover every tuple:
+
+```sysl
+joined[..A: Display](t: (..A)) -> string
+    var s = ""
+
+    for const i in 0..<A.len
+        if i > 0usize then s = s + "-"
+
+        s = s + str(t.i)
+
+    s
+
+print(joined((1, 2)))
+print(joined((1, "two", true, 4.5)))
+```
+
+```output
+1-2
+1-two-true-4.5
+```
+
+Three things are new there and each does one job.
+
+**`..A` declares the pack**, and `(..A)` is the tuple of it — the only place a pack may be written.
+It matches a tuple of any arity, and the arity is inferred from the argument exactly as an array's
+length is: a `(int, string, bool)` matched against `(..A)` binds `A` to those three.
+
+**The bound distributes over the members.** `[..A: Display]` says every type in `A` implements
+`Display`, and that is the whole of the bound syntax a pack needs — the ordinary `[T: Display]` read
+over a list. It is what makes the membership answerable before any body is compiled, so a tuple
+holding something unprintable is refused where it is written:
+
+```sysl
+struct Point
+    x: int
+    y: int
+
+joined[..A: Display](t: (..A)) -> string = str(t.0)
+
+print(joined((1, Point(2, 3))))
+```
+
+```error
+Display
+```
+
+**`for const` is unrolled.** Its range must be known when the program is compiled — `A.len` is how
+many types the pack stands for — and the body is repeated once per value, with `i` folded in as a
+compile-time `usize`. Each copy is type-checked **on its own**, which is the point: the parts of a
+tuple have different types, so `t.i` is a different selection in each copy and one written line
+covers all of them.
+
+`t.i` at a compile-time `i` is the selection `t.0` already is, with the position arriving as a
+constant rather than as a literal. It reaches the parts of a tuple and nothing else — a struct's
+fields have names, and a number does not address one.
+
+### What a `for const` will not do
+
+A range computed at run time cannot be unrolled, and the ordinary `for` is what walks one:
+
+```sysl
+f(n: usize)
+    for const i in 0..<n
+        print(i)
+
+f(3usize)
+```
+
+```error
+must be known at compile time
+```
+
+`break` and `continue` are refused as well. There is no loop at run time for either to act on: the
+copies are straight-line code inside whatever the `for const` was written in, so a `break` would
+leave *that* loop — one copy at a time, and silently. A loop written inside the body is an ordinary
+loop and breaks out of itself as usual.
+
+`return` does work, and it is what `Eq` and `Ord` on a tuple are written with — an unrolled copy is
+straight-line code in the enclosing function, so a `return` in one is an ordinary return.
+
+### What it is for: the catalog covers every tuple
+
+`impl[..A: Display] Display for (..A)` is one block covering every tuple there is, and `Eq`, `Ord`
+and `Hash` are each one more. Before this, a tuple's arity was part of its *shape*: a pair and a
+triple were two shapes with no way to be generic over the difference, so the library wrote a row per
+arity and stopped at three — and a tuple of four parts implemented nothing.
+
+A tuple now has three shapes an `impl` may match, and they are found most specific first: the tuple
+written out in full, then one arity, then every arity.
+
+```sysl
+trait Tag
+    tag(self) -> string
+
+impl[..A: Display] Tag for (..A)
+    tag(self) -> string = "any"
+
+impl[A: Display, B: Display] Tag for (A, B)
+    tag(self) -> string = "pair"
+
+impl Tag for (int, int)
+    tag(self) -> string = "two ints"
+
+print((1, 2).tag(), (1, "x").tag(), (1, 2, 3).tag())
+```
+
+```output
+two ints pair any
+```
+
+That is the same "written-out beats a parameter" ordering an array's two shapes have, one rung
+longer.
+
+### This is not variadic functions
+
+A pack is a compile-time list of *types*. C's ellipsis is a run-time walk over untyped storage
+([ffi](/reference/ffi/)), and the two share nothing. There is also no pack **expansion**: a pack
+cannot be spread into a call's arguments, and `(..A, int)` cannot append to one. The unrolled loop
+stands in for expansion, in the one direction the catalog needs.
+
 ## What is deliberately not here
 
 | absent | why, and what to write instead |
@@ -762,6 +886,7 @@ ordering `override` uses.
 | explicit call-site type arguments | `id[int](7)` collides with indexing; annotate what receives the result |
 | `where` clauses | the inline `[T: A + B]` list is the settled baseline; an out-of-line form is a possible ergonomic addition |
 | type-level arithmetic (`[N + 1]T`) | a value parameter may stand as a length but not be computed with in a type; deciding that `N + 1` and `1 + N` are one type is a feature of its own |
+| pack expansion (`f(..a)`, `(..A, int)`) | a pack may be matched and walked, not spread into an argument list or appended to; `for const` is what stands in for it |
 | higher-kinded parameters (`F[_]`) | **excluded**, not deferred — it pushes inference toward undecidable, and abstraction over containers is served by traits and bounds |
 
 The first of those has one position where the annotation costs more than a word. A **nullary** generic

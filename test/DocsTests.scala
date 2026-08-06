@@ -61,7 +61,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/arrays.md"                -> (18, 9, 1),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
-    "docs/content/reference/generics.md"              -> (16, 10, 0),
+    "docs/content/reference/generics.md"              -> (18, 12, 0),
     "docs/content/reference/modules.md"                -> (13, 10, 6),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
@@ -88,7 +88,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     "docs/content/guides/lisp.md"                      -> (0, 0, 2),
     "docs/content/guides/table.md"                     -> (0, 0, 1),
-    "docs/content/library/core.md"                     -> (18, 4, 8),
+    "docs/content/library/core.md"                     -> (19, 4, 9),
     "docs/content/library/text.md"                      -> (16, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (8, 6, 3),

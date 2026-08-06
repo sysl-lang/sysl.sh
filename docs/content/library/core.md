@@ -814,13 +814,40 @@ true true true
 [    (3, 4)]
 ```
 
-`Ord` on a tuple is lexicographic, and is written as a ladder rather than as `<` on each part in
-turn, because deciding a position takes **two** comparisons: this one is less, or it is greater, or
-the two agree and the next position decides.
+**Every arity, not a list of them.** The four rows are written over a
+[type pack](/reference/generics/#a-parameter-may-stand-for-a-list-of-types), so one block each
+covers a tuple of any width:
 
-**Only arities 2 and 3 are written.** A tuple's arity is part of its type and there is no variadic
-`impl` to write, so each one is a block of source; two and three cover what a program reaches for,
-and a wider tuple is a struct with field names, which is the better thing to have written anyway.
+```sysl
+impl[..A: Eq] Eq for (..A)
+    eq(self, rhs: Self) -> bool
+        for const i in 0..<A.len
+            if self.i != rhs.i then return false
+
+        true
+    end eq
+```
+
+That is the library's own source, quoted for its shape, and it is worth reading as what a pack is
+for: `..A` stands for the parts, the bound on it is asked of every one of them, and `for const` is
+unrolled so `self.i` is an ordinary field selection at whatever type that part has.
+
+```sysl
+print((1, "a", true, 2.5, 'z'))
+print((1, 2, 3, 4) == (1, 2, 3, 4), (1, 1, 1, 2) < (1, 1, 1, 3))
+```
+
+```output
+(1, a, true, 2.5, z)
+true true
+```
+
+`Ord` on a tuple is lexicographic, and each position runs a ladder rather than a single `<`, because
+deciding a position takes **two** comparisons: this one is less, or it is greater, or the two agree
+and the next position decides. Every position agreeing is not-less, which is where the loop ends.
+
+A wide tuple is still usually worse code than a struct with field names — `.3` says nothing and
+`.hue` says everything. What has changed is that the language is no longer the thing telling you so.
 
 ## Operators are here, and are documented elsewhere
 
