@@ -52,3 +52,15 @@ Most of the features documented above exist because one of them could not be wri
 The [specification](https://github.com/sysl-lang/sysl/tree/dev/design) is the other kind of
 document — numbered chapters that say what the language *is* and why, written for someone deciding
 the design rather than someone learning it.
+
+## Getting in touch
+
+**Bugs and questions belong on [GitHub](https://github.com/sysl-lang/sysl/issues)**, where the answer
+is visible to whoever asks next.
+
+For anything else — [hello@sysl.sh](mailto:hello@sysl.sh).
+
+**A security problem goes to [security@sysl.sh](mailto:security@sysl.sh) instead of to an issue**,
+because an issue is public from the moment it is filed. The
+[policy](https://github.com/sysl-lang/.github/blob/main/SECURITY.md) says what to include and what to
+expect.
