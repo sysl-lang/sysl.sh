@@ -36,6 +36,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.time`](/library/time/) | `Instant` and `Duration`, the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, and the ISO 8601 renderers and parsers | — |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.thread`](/library/thread/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `threads`, `posix` |
+| [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 

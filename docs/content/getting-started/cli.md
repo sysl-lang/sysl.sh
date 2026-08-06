@@ -57,9 +57,14 @@ sysl build hello.sysl -o hello
 The same compilation, stopping at the executable instead of running it. `wrote hello` goes to
 stderr so that stdout stays whatever the build was for.
 
-**`-o` is optional.** Given none, the name is the source path's last segment with its extension
-dropped — `src/tools/fmt.sysl` becomes `fmt` in the current directory — and `a.out` if that leaves
-nothing.
+**`-o` is optional, and where it writes depends on what you named.** Given a **file**, the name is
+that file's, with its extension dropped, in the current directory: `src/tools/fmt.sysl` becomes
+`fmt` beside you.
+
+Given a **directory**, the executable goes *inside* it, named after it. `sysl build .`,
+`sysl build fmt` and `sysl build ../fmt` are three ways of naming one project, and all three write
+`fmt/fmt` — so the answer does not depend on where you were standing when you asked. `build-lib`
+follows the same rule, writing `fmt/fmt.syslib` into the root it was built from.
 
 **A project whose `package.hocon` names dependencies gets them fetched here**, if this machine has
 not got them already — see [packages](/reference/packages/). `run` and `test` do the same; there is
