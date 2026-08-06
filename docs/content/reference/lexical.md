@@ -130,9 +130,9 @@ print(where())
 print(where())
 ```
 
-```
-2
+```output
 3
+4
 ```
 
 That is how the standard library's `assert` names the line it failed on, and why its message is
