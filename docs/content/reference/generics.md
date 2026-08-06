@@ -625,13 +625,143 @@ print(hear(c))
 difficulty that afflicts languages with nominal subtyping, and it should stay deleted: polymorphism
 over a set of types is expressed by a bound or a trait object, never by a covariant container.
 
+## A parameter may stand for a value
+
+A type parameter stands for a **type**. A parameter written `const` stands for a **value** — which is
+what lets one declaration cover every array length:
+
+```sysl
+total[const N: usize](xs: [N]int) -> int
+    var t = 0
+    for i in 0..<N do t = t + xs[i]
+    t
+
+var a: [3]int = [1, 2, 3]
+var b: [5]int = [10, 20, 30, 40, 50]
+
+print(total(a))
+print(total(b))
+```
+
+```output
+6
+150
+```
+
+`N` is inferred from the argument exactly as a type parameter is: matching `[3]int` against `[N]int`
+binds `N` to 3, the way matching `Box[int]` against `Box[T]` binds `T`. Inside the body `N` is an
+ordinary `usize` — it can be looped to, computed with, and passed on.
+
+`total` at `N = 3` and at `N = 5` are two functions, the same way `id` at `int` and at `real` are
+two: the value joins the type arguments the instantiation is keyed on, so the length is a constant
+inside each copy.
+
+### It is the same `const` as everywhere else
+
+A constant is declared `const NAME: Type = expr`. A value parameter is that declaration with the
+initializer left for the caller, so `[const N: usize]` is existing grammar in a new position rather
+than a new idea.
+
+The marker is not decoration. `[N: usize]` on its own is indistinguishable from a bounded type
+parameter — `[T: Ord]` has the same shape — and only name resolution could tell them apart, by asking
+whether the thing after the colon is a trait or a type. A trait name misspelled into a type name
+would then silently change what kind of parameter it is.
+
+### Which values
+
+**Integers, `bool`, `char`, and a simple enum's variants.** A value parameter puts a value into a
+type's *identity*, so the compiler has to decide when two of them are the same value and has to write
+one into a mangled name — and each of these compares and mangles.
+
+A **type** declares its value parameters the same way, and its arguments are written out rather than
+inferred, because a type has no call to infer them from:
+
+```sysl
+struct Buf[const N: usize]
+    data: [N]byte
+
+struct Flag[const B: bool]
+    v: int
+
+var buf: Buf[4] = Buf([1u8, 2u8, 3u8, 4u8])
+var on: Flag[true] = Flag(1)
+
+print(buf.data.len, on.v)
+```
+
+```output
+4 1
+```
+
+`Buf[2]` and `Buf[4]` are two types with two layouts, and neither stands where the other is wanted.
+
+Floats are excluded: `NaN != NaN` under the ordinary comparison, which would make a type unequal to
+itself. Strings are excluded until two spellings of one text are one value.
+
+### What may be written with `N`
+
+`N` may stand as an array's length, and a body may compute with it freely. What neither may do is
+carry the result of a computation into a **type**:
+
+```sysl
+f[const N: usize](xs: [N]int) -> [N + 1]int = xs
+
+print(1)
+```
+
+```error
+this length does arithmetic on 'N'
+```
+
+Deciding that `N + 1` and `1 + N` are one type — and that `2 * N` and `N + N` are — is type-level
+arithmetic, which is a feature of its own.
+
+Writing a **type** parameter where a length belongs is refused for the mirror reason, since a length
+is a value:
+
+```sysl
+f[T](xs: [T]int) -> usize = 0
+
+print(1)
+```
+
+```error
+'T' is a type parameter, and an array's length is a value rather than a type
+```
+
+### What it is for: a fixed array renders
+
+`impl[const N: usize, T: Display] Display for [N]T` is one block covering every array there is, which
+is why `print` takes one:
+
+```sysl
+var a: [3]int = [1, 2, 3]
+var b: [2]string = ["x", "y"]
+
+print(a)
+print(b)
+```
+
+```output
+[1, 2, 3]
+[x, y]
+```
+
+Before this, a length was part of a type's *shape*: `[2]T` and `[3]T` were two shapes with no way to
+be generic over the difference, so no library could implement a trait for arrays in general.
+
+An array still has two shapes an `impl` may match — the length written out, and the length as a
+parameter — and the written-out one is more specific, so it is found first. A block for `[2]T` still
+wins over a block for `[N]T` on arrays of two, which is the same "written-out beats a parameter"
+ordering `override` uses.
+
 ## What is deliberately not here
 
 | absent | why, and what to write instead |
 |---|---|
 | explicit call-site type arguments | `id[int](7)` collides with indexing; annotate what receives the result |
 | `where` clauses | the inline `[T: A + B]` list is the settled baseline; an out-of-line form is a possible ergonomic addition |
-| const generics (`[N: usize]`) | array lengths are literals today; deferred until the array story calls for it |
+| type-level arithmetic (`[N + 1]T`) | a value parameter may stand as a length but not be computed with in a type; deciding that `N + 1` and `1 + N` are one type is a feature of its own |
 | higher-kinded parameters (`F[_]`) | **excluded**, not deferred — it pushes inference toward undecidable, and abstraction over containers is served by traits and bounds |
 
 The first of those has one position where the annotation costs more than a word. A **nullary** generic

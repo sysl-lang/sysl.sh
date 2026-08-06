@@ -462,7 +462,7 @@ print(Scale(3))
 cannot print a Scale value — write an 'impl sysl.Display for Scale' to say how it renders
 ```
 
-### A slice of anything printable
+### A slice or an array of anything printable
 
 One `impl[T: Display] Display for []T` covers every slice, so the element type only has to render
 itself. A slice of a type you wrote works the moment that type does:
@@ -478,7 +478,7 @@ impl Display for Rect
 var ns = [1, 2, 3]
 var rs = [Rect(3, 4), Rect(1, 2)]
 
-print(ns[..])
+print(ns)
 print(rs[..])
 print(f"[${ns[..]}%14s]")
 ```
@@ -489,8 +489,14 @@ print(f"[${ns[..]}%14s]")
 [     [1, 2, 3]]
 ```
 
-**A fixed-size array is not a slice**, so `print(ns)` is refused and `ns[..]` is how you say it. An
-`impl` cannot be written once for every length, and the whole-array view costs nothing.
+**A fixed-size array renders too**, and by one block rather than one per length:
+`impl[const N: usize, T: Display] Display for [N]T`. A length is a *value parameter*, so it is an
+argument to the array shape rather than part of it, and one implementation covers every array there
+is. It delegates to the block above, so an array and its `[..]` view render identically — which is
+why `print(ns)` and `print(ns[..])` are the same line of output.
+
+Before value generics a length was part of a type's shape: `[2]T` and `[3]T` were two shapes with no
+way to be generic over the difference, so printing a fixed array meant taking the view by hand.
 
 **The elements are written as they are met**, never gathered. Gathering would need a growable buffer,
 `sysl.buf` is built *on* this module rather than under it, and an allocation on the printing path is

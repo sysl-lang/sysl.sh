@@ -757,9 +757,10 @@ constant 'a' is defined in terms of itself: a → b → a
 
 Two things a constant is **not**. Not an **enumeration** — a set of related named values is a simple
 enum, which is the type-safe replacement for a pile of constants; if a second constant would be the
-obvious neighbour of the first, the declaration wanted was an `enum`. And not **const generics** —
-parameterizing over a length stays deferred, though this is its prerequisite, since a value cannot be
-passed as an argument before it can be named.
+obvious neighbour of the first, the declaration wanted was an `enum`. And not a **value generic** —
+parameterizing over a length is `[const N: usize]`, which is this declaration with the initializer
+left to the caller. The two are one idea in two positions, and this one had to come first: a value
+cannot be passed as an argument before it can be named.
 
 ## `val` — a thing
 
