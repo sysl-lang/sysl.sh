@@ -359,9 +359,15 @@ by stopping the program**, and `@test(should_trap: "past the end")` additionally
 in what the run printed. That is how a trap gets tested at all — there is no catching it, so the
 runner is the thing that survives it.
 
-`assert(cond, msg)` traps when the condition is false, and its message is **required** rather than
-optional. There is no stringizer in the language, so nothing can reconstruct the expression that
-failed; a message you had to write is better than a source line you did not.
+`assert(cond)` traps when the condition is false, and names the file and line it failed on: its
+`file` and `line` parameters default to the [reserved identifiers](/reference/lexical/) `__FILE__`
+and `__LINE__`, and a default is evaluated at the call, so they report your line rather than the
+library's.
+
+The message is **optional**, and worth writing where it says something the condition does not — as
+`"above the ceiling"` does above, naming the case rather than restating the comparison. There is
+still no stringizer, so nothing reconstructs the expression that failed; what changed is that a
+failure carrying no message is now a location instead of the bare words "assertion failed".
 
 ---
 

@@ -50,27 +50,42 @@ program can do; rewriting `?` is not.
 Two functions stop a program on purpose, and both are ordinary sysl:
 
 ```sysl
-panic(msg: string) -> never
-    print("panic:", msg)
+panic(msg: string, file: string = __FILE__, line: long = __LINE__) -> never
+    prints("panic: ")
+    prints(msg)
+    prints(" (")
+    prints(file)
+    prints(":")
+    printi(line)
+    prints(")\n")
     exit(1)
 
-assert(cond: bool, msg: string)
-    if !cond then panic(msg)
+assert(cond: bool, msg: string = "", file: string = __FILE__, line: long = __LINE__)
+    if !cond then
+        if msg.len == 0 then panic("assertion failed", file, line)
+        else panic(msg, file, line)
 ```
 
 `panic` returns [`never`](/reference/types/), so a call to it is an expression of any type — which
 is what lets it sit in one arm of a `match` whose other arms produce values, exactly as `unwrap`
 does.
 
-**The message on `assert` is required rather than defaulted, and that is a deliberate cost.** The
-condition's *source text* is not available to print: sysl has no `#cond` stringizer and no macro that
-could capture one, so an assert with no message could only ever say "assertion failed" — which sends
-its reader looking through the file for which one. Being made to write the message is being made to
-say what you believed.
+**The message is optional, because a failure names the line it happened on.** `__FILE__` and
+`__LINE__` are [reserved identifiers](/reference/lexical/), and a default is evaluated at the call —
+so a parameter defaulted to one reports the *caller's* position rather than the library's. Write a
+message where it says something the condition does not; leave it out where the condition speaks for
+itself.
+
+Two details of that are worth copying if you write a checking function of your own. `assert` passes
+`file` and `line` **on** to `panic` rather than letting `panic` fill its own defaults — otherwise
+every assertion in every program would report the line inside the library that calls `panic`. And the
+location is composed with `prints` and `printi` instead of an interpolated string, because building a
+string makes heap storage, which would put `assert` out of reach of a module that declared
+[`@no_alloc`](/reference/attributes/) — the module that wants an assertion most.
 
 ```sysl
 divide(a: int, b: int) -> int
-    assert(b != 0, "divide called with a zero divisor")
+    assert(b != 0)
     a / b
 
 print(divide(84, 2))

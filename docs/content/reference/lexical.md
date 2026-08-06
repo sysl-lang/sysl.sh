@@ -76,6 +76,71 @@ A few words are **contextual** — special only where the grammar expects one, a
 everywhere else: `is`, `not`, `invariant`, `new`, `within`, `where`. You may name a variable `where`;
 you may not name one `while`.
 
+## Reserved identifiers
+
+**An identifier that begins and ends with `__`, holding only capitals and underscores in between,
+belongs to the language.** Nothing may declare one — not a function, a type, a `val`, a field, a
+parameter, a type parameter, or a local.
+
+```
+__FILE__        reserved
+__MY_THING__    reserved — and not a built-in, which is a different thing from being available
+____            reserved — the middle may be empty
+___             not reserved — the markers may not overlap, so four characters is the shortest
+__file__        not reserved — the middle is not capitals
+__FILE_         not reserved — one underscore short, and so an ordinary name
+```
+
+The shape is reserved rather than the names in it, which is what makes every future addition
+non-breaking: a release that adds a new built-in cannot collide with a name you already declared,
+because the shape was never yours to declare. C reserves the same territory and diagnoses nothing in
+it; here taking it is refused where it is written.
+
+These are **predeclared identifiers**, like the type names above — not reserved words, and absent from
+the table.
+
+The restriction is on sysl names only. The string an `extern` links to is untouched, which matters
+because a C library's own symbols live in exactly this space:
+
+```sysl
+private extern "__errno_location" errno_location() -> *i32
+```
+
+### The built-ins
+
+| identifier | type | value |
+|---|---|---|
+| `__FILE__` | `string` | the file's name, as a diagnostic prints it |
+| `__LINE__` | integer | 1-based line |
+| `__COLUMN__` | integer | 1-based column |
+| `__FUNCTION__` | `string` | the enclosing function's name |
+| `__DATE__` | `string` | build date, `Mmm dd yyyy` (UTC) |
+| `__TIME__` | `string` | build time, `hh:mm:ss` (UTC) |
+
+`__LINE__` and `__COLUMN__` are ordinary integer literals, so each takes the type its context asks
+for and is range-checked with it.
+
+**A built-in written as a default argument reports the caller.** A default is evaluated at the call,
+standing where the argument would have been written, so this needs no special mechanism:
+
+```sysl
+where(line: int = __LINE__) -> int = line
+
+print(where())
+print(where())
+```
+
+```
+2
+3
+```
+
+That is how the standard library's `assert` names the line it failed on, and why its message is
+optional. Where a default fills another default, the outermost call is the one reported.
+
+`__DATE__` and `__TIME__` make a build non-reproducible, in the way C's do. They are worth having for
+a firmware build stamp and worth not reaching for otherwise.
+
 ## Literals
 
 ### Integers

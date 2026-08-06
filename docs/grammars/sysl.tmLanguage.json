@@ -195,6 +195,11 @@
         {
           "name": "constant.language.sysl",
           "match": "\\b(true|false|null)\\b"
+        },
+        {
+          "comment": "A reserved identifier. The __NAME__ *shape* belongs to the language, so the shape is what is matched rather than the built-ins that currently occupy it — a later release adding one needs no change here.",
+          "name": "constant.language.builtin.sysl",
+          "match": "\\b__[A-Z_]*__\\b"
         }
       ]
     },
