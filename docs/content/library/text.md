@@ -38,7 +38,7 @@ explicit about which one it works in.
 
 ## What is in it
 
-The module is six files, and the boundaries between them are arguments rather than filing:
+The module is seven files, and the boundaries between them are arguments rather than filing:
 
 | file | holds | why it is a file |
 |---|---|---|
@@ -48,6 +48,7 @@ The module is six files, and the boundaries between them are arguments rather th
 | `edit.sysl` | `split`, `fields`, `join`, `repeat`, `replace_all`, `to_upper`, `to_lower` | everything that **does** — so it needs an allocator |
 | `parse.sysl` | `ParseError`, `parse_bool`/`int`/`long`/`uint`/`ulong`/`real` and the `_base` forms | the direction `str(x)` does not go |
 | `build.sysl` | `StrBuilder`, `CString`, `str_builder_with_capacity` | gathering text, and the copy C reads |
+| `width.sysl` | `char_columns`, `columns` | **data, not algorithm** — 499 ranges of the Unicode Character Database |
 
 Two of those rows carry the module's whole design, and they are worth reading before anything else.
 
@@ -801,6 +802,47 @@ UTF-8, and a C library reporting in a non-UTF-8 locale is the ordinary case rath
 
 For a **literal**, none of this is needed — `c"…"` is a plain `*u8` pointing at read-only data, with
 no allocation and no copy. That form is on [foreign functions](/reference/ffi/).
+
+## How wide is it on screen: `columns`
+
+`s.len` is bytes and a `Chars` walk counts scalar values. **Neither is what a terminal draws**, and a
+program laying anything out in columns — a table, a progress bar, anything with a border on the
+right — is asking a third question:
+
+```sysl
+import sysl.text.{columns, char_columns}
+
+print(columns("café".bytes))
+print(char_columns('日'))
+print(columns("日本".bytes))
+```
+
+```output
+4
+2
+4
+```
+
+- **`char_columns(c: char) -> usize`** — **two** for the East Asian wide and fullwidth forms, **none**
+  for a combining mark or a format character, one for everything else. A control character answers
+  zero, which is the honest answer to a question it does not really have: a terminal does not draw
+  `\n` in a column, it acts on it.
+- **`columns(text: []const u8) -> usize`** — the sum over a run of UTF-8. It takes bytes rather than a
+  `string` so that text being assembled can be measured without being copied into one first;
+  `s.bytes` is what a caller holding a `string` passes.
+
+**This is data rather than algorithm**, which is the whole reason it belongs to the library. The rule
+is two lines long; what makes it right is 499 ranges out of the Unicode Character Database, and no
+program should be carrying its own copy of those.
+
+**A format specifier cannot answer this and is not meant to.** `f"${s}%-10s"` counts *bytes*, exactly
+as C's `%-10s` does, so `café` padded to ten is short by one column and `naïveté` by two — and the
+error differs between two cells of the same column, which is the worst way to be wrong. The
+specifier keeps its equivalence with `snprintf`; layout asks here instead, by name. Only the caller
+knows where the next border falls, so what the library owes it is a *number*, not a padded field.
+
+**A `no alloc` module may use all of it.** The tables are static, the search allocates nothing, and a
+program that calls neither function links neither table.
 
 ## Reaching the module
 
