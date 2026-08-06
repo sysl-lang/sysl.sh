@@ -106,17 +106,20 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # The deploy action polls the Pages service and gives up at its default ten minutes, which is
-      # not enough headroom. A healthy deployment of this site takes about five, so a service having
-      # a slow morning lands on the wrong side of the default -- and the failure is not a clean one:
-      # the action *cancels* the in-flight deployment on the way out, which appears to leave the
-      # pipeline jammed for the next attempt. Cut 0.0.15 twice into exactly that on 2026-08-06,
-      # with the build green and a 1.9 MB artifact uploaded both times.
+      # **Ten minutes is this action's hard maximum and cannot be raised.** Asking for more is not an
+      # error and not a failure -- it is silently clamped, and the only trace is a line in the log:
       #
-      # Thirty minutes rather than ten. The cost of waiting is a runner sitting idle; the cost of
-      # timing out is a red build, a cancelled deployment, and a site left on the previous release.
+      #     Warning: timeout value is greater than the allowed maximum -
+      #     timeout set to the maximum of 600000 milliseconds.
+      #
+      # So the obvious repair for a slow Pages service is not available, and writing `timeout:` here
+      # buys nothing but a comment that lies. Tried on 2026-08-06 cutting 0.0.15, when four
+      # deployments in a row sat in the Pages service past ten minutes and were cancelled by this
+      # action on its way out -- build green every time, correct 1.9 MB `github-pages` artifact
+      # selected every time, and the previous release's deployment had taken five minutes.
+      #
+      # What is left when Pages is slow is to wait for it and re-run. Nothing in this repository
+      # fixes it.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
-        with:
-          timeout: 1800000

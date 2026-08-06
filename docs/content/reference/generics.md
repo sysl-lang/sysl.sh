@@ -755,6 +755,37 @@ parameter — and the written-out one is more specific, so it is found first. A 
 wins over a block for `[N]T` on arrays of two, which is the same "written-out beats a parameter"
 ordering `override` uses.
 
+### A member declares its own
+
+A method's parameter list is its own, exactly as a function's is — so it may take a value parameter
+that the *type's* parameters know nothing about. The type's are fixed by the receiver; the member's
+are solved at the call:
+
+```sysl
+struct Sum
+    seen: usize
+
+    take[const N: usize](*self, xs: [N]int) -> usize
+        self.seen = self.seen + N
+        N
+end Sum
+
+var s = Sum(0usize)
+
+print(s.take([1, 2, 3]))
+print(s.take([4, 5]))
+print(s.seen)
+```
+
+```output
+3
+2
+5
+```
+
+Both calls reach one written method and neither passes a length, because `N` is read off the argument
+the same way it is for a free function.
+
 ## A parameter may stand for a list of types
 
 A type parameter stands for one type and a `const` parameter for one value. A parameter written `..`
@@ -782,7 +813,8 @@ print(joined((1, "two", true, 4.5)))
 
 Three things are new there and each does one job.
 
-**`..A` declares the pack**, and `(..A)` is the tuple of it — the only place a pack may be written.
+**`..A` declares the pack**, and `(..A)` is the tuple of it — the only *spelling* a pack has, wherever
+it is declared.
 It matches a tuple of any arity, and the arity is inferred from the argument exactly as an array's
 length is: a `(int, string, bool)` matched against `(..A)` binds `A` to those three.
 
@@ -873,6 +905,48 @@ That is the same "written-out beats a parameter" ordering an array's two shapes 
 longer — and the `override` is the separate rule it has always been. Coherence says where a block
 may be written; `override` says which of two blocks that both have a home answers. A block for a
 tuple **written out in full** is the specific one, so it is the one that says so.
+
+### A member declares one too, unless a trait requires it
+
+A pack stands in a method's own parameter list on the same terms a value parameter does, and for the
+same reason — the list belongs to the member:
+
+```sysl
+struct Row
+    n: usize
+
+    take[..A: Display](*self, t: (..A))
+        for const i in 0..<A.len
+            self.n = self.n + str(t.i).len
+end Row
+
+var r = Row(0usize)
+
+r.take((1, "abc", true))
+print(r.n)
+```
+
+```output
+8
+```
+
+A **trait's** member is refused, and not for a reason about packs. No member a trait requires may
+declare parameters of its own of any kind: a table slot cannot hold a function that does not exist
+until a call names its types. A pack is one more way of writing that list, so it meets the rule
+already there.
+
+```sysl
+trait Take
+    take[..A: Display](self, t: (..A)) -> usize
+```
+
+```error
+declares type parameters of its own, which a trait's member may not
+```
+
+A `struct`, an `enum` and a `trait` are refused a pack for a different reason — their parameters
+**are** their shape, and there is nothing to spread a list over. A member has no shape of its own, so
+that reason never reached one.
 
 ### This is not variadic functions
 
