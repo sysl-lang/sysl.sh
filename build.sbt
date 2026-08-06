@@ -70,8 +70,15 @@ lazy val root = project
 
     // GitHub Packages authenticates every request, a public package included, so a build here needs
     // a token with `read:packages`. Two places to find one, because the two machines that run this
-    // keep it differently: a workstation has a file, and **CI has `GITHUB_TOKEN` and cannot have a
-    // file**.
+    // keep it differently: a workstation has a file, and **CI is given `GITHUB_TOKEN` and cannot
+    // have a file**.
+    //
+    // **"CI has `GITHUB_TOKEN`" is true of the workflow and false of the step**, which is the whole
+    // of why this did not work for the first three releases it existed for. Actions does not put the
+    // token in a step's environment the way it does `GITHUB_ACTOR`; the workflow has to pass it, and
+    // `.github/workflows/test.yml` now does, along with the `packages: read` permission that lets it
+    // be used. Found on 2026-08-06 releasing 0.0.9 — the first release whose push landed inside the
+    // propagation window, and so the first time anything reached this resolver at all.
     //
     // CI is the case this exists for. The resolver above is only reached in the window where Central
     // has not propagated a new release yet — which is precisely when someone has bumped

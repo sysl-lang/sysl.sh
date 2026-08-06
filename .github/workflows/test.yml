@@ -19,8 +19,12 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
+# `packages: read` is what lets the GitHub Packages resolver in `build.sbt` be reached at all. It is
+# only needed in the window where Central has not propagated a new release yet — but that window is
+# exactly when somebody has bumped `syslVersion`, so it is the one occasion the fallback exists for.
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: "test-${{ github.ref }}"
@@ -112,5 +116,16 @@ jobs:
           mv sysl-src/lib lib
           test -d lib/sysl
 
+      # **`GITHUB_TOKEN` has to be passed in explicitly.** Actions does not put it in a step's
+      # environment the way it does `GITHUB_ACTOR` and the rest — it exists only as
+      # `secrets.GITHUB_TOKEN` until a step asks for it. `build.sbt`'s fallback reads `sys.env`, so
+      # without this it finds nothing, sends no credentials, and GitHub Packages answers 401.
+      #
+      # That is not hypothetical: it is what happened on 2026-08-06 releasing 0.0.9, the first time
+      # anything actually reached the resolver. The fallback had been written against the belief that
+      # "CI has GITHUB_TOKEN", which is true of the workflow and false of the step, so it had never
+      # once worked.
       - name: Test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: sbt test
