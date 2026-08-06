@@ -859,7 +859,7 @@ impl[..A: Display] Tag for (..A)
 impl[A: Display, B: Display] Tag for (A, B)
     tag(self) -> string = "pair"
 
-impl Tag for (int, int)
+override impl Tag for (int, int)
     tag(self) -> string = "two ints"
 
 print((1, 2).tag(), (1, "x").tag(), (1, 2, 3).tag())
@@ -870,7 +870,9 @@ two ints pair any
 ```
 
 That is the same "written-out beats a parameter" ordering an array's two shapes have, one rung
-longer.
+longer — and the `override` is the separate rule it has always been. Coherence says where a block
+may be written; `override` says which of two blocks that both have a home answers. A block for a
+tuple **written out in full** is the specific one, so it is the one that says so.
 
 ### This is not variadic functions
 
