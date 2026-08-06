@@ -617,8 +617,7 @@ impl Display for Span
 The two refusals arrive by different routes, which the messages say. `Add` is a membership the
 **compiler** provides, so a member of that name would hide something with no block behind it.
 `Display` is an ordinary `impl` the **library** writes — one blanket block covering every integer —
-and a derivation has its base's memberships, so the block covers `Span` too. Either way a derivation
-may not replace what it inherited.
+and a derivation has its base's memberships, so the block covers `Span` too.
 
 Both halves are deliberate. **Inheriting is right** because a derivation does not change what the
 values *are*: a `Slot` is some of the `u8`s, not a different set of things that happens to be stored
@@ -630,14 +629,42 @@ blocks, and nobody would use it.
 guarantees would hold only until somebody looked. A derivation is a *narrowing*, and a narrowing that
 alters behaviour is not a narrowing.
 
-So the answer to "I want my own `+`" is that you do not want a derivation, you want a **struct**:
+So the answer to "I want my own `+`" is that you do not want a derivation, you want a **struct**.
+
+### Except rendering, which a derivation may take back
+
+The second refusal above is the *unmarked* one, and that is the whole of what it refuses. Say
+[`override`](/reference/traits/#override--when-the-overlap-is-deliberate) and the block is yours:
+
+```sysl
+type Stamp = new int
+
+override impl Display for Stamp
+    display(self, out: *Writer, fmt: FormatSpec) = display_str("#" + str(int(self)), out, fmt)
+
+var s: Stamp = Stamp(7)
+
+print(s)
+print(7)
+```
+
+```output
+#7
+7
+```
+
+**The line is what the base guarantees about its values.** Ordering is such a guarantee — that is the
+`<` argument above, and it still stands. How a value *renders* is not: a `Stamp` printing as `#7` is
+the same `i64` it always was, and nothing downstream reasons about it differently. So rendering is
+the one row a derivation may replace, and the operators are not.
 
 | | a `new` derivation | a one-field struct |
 |---|---|---|
 | distinct type | yes | yes |
-| the base's catalogue | free, and unchangeable | nothing, write it all |
+| the base's catalogue | free; only `Display` is replaceable | nothing, write it all |
 | an operation the base does not have | impossible | ordinary |
 | an operation the base has that is now nonsense | present anyway | absent |
+| rendering as something other than the base | `override impl Display` | ordinary |
 
 **Use a derivation for an identity** — a slot number, a handle, a unit-tagged measurement, anything
 whose operations are its representation's operations. **Use a struct for a quantity with an algebra

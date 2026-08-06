@@ -93,21 +93,28 @@ checking.
 ### A derivation inherits its base's behaviour and may replace none of it
 
 A `new` type over a scalar arrives with everything the scalar could do — `==`, `<`, `+`, `str` and the
-rest — working at itself and producing itself. And no `impl` may replace or extend any of it.
+rest — working at itself and producing itself. And almost no `impl` may replace or extend any of it.
 
 Inheriting is right because a derivation does not change what the values *are*: a `Slot` is some of
 the `u8`s, not a different set of things stored in a byte. Refusing to replace is the harder call. If
 `Stamp` could redefine `<`, then `Stamp` would be a set of `i64`s that do not order the way `i64`s
 order, and every fact the base guarantees would hold only until somebody looked.
 
+**Rendering is the exception, and the reason says where the line is.** How a value prints is not a
+fact the base guarantees about the value — a `Stamp` printing as `#7` is the same `i64` it was — so a
+derivation may take that one row back with an
+[`override impl Display`](/reference/errors/#except-rendering-which-a-derivation-may-take-back).
+Ordering and arithmetic it may not.
+
 So the answer to "I want my own `+`" is that you do not want a derivation, you want a **struct**:
 
 | | a `new` derivation | a one-field struct |
 |---|---|---|
 | distinct type | yes | yes |
-| the base's catalogue | free, and unchangeable | nothing, write it all |
+| the base's catalogue | free; only `Display` is replaceable | nothing, write it all |
 | an operation the base does not have | impossible | ordinary |
 | an operation the base has that is now nonsense | present anyway | absent |
+| rendering as something other than the base | `override impl Display` | ordinary |
 
 Use a derivation for an **identity** — a slot number, a handle, a unit-tagged measurement. Use a
 struct for a **quantity with an algebra of its own**: an instant plus a duration is an instant, an

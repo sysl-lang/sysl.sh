@@ -66,7 +66,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
-    "docs/content/reference/errors.md"                 -> (19, 27, 1),
+    "docs/content/reference/errors.md"                 -> (20, 27, 1),
     "docs/content/reference/ffi.md"                    -> (12, 17, 3),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     "docs/content/reference/attributes.md"             -> (4, 12, 2),
