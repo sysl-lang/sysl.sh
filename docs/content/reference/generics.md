@@ -695,6 +695,28 @@ print(buf.data.len, on.v)
 
 `Buf[2]` and `Buf[4]` are two types with two layouts, and neither stands where the other is wanted.
 
+A **member** reads the parameter as an ordinary value of its declared type, and the two lengths are
+two bodies rather than one compiled at whichever came first:
+
+```sysl
+struct Buf[const N: usize]
+    used: usize
+
+    room(self) -> usize = N - self.used
+end Buf
+
+var a: Buf[8] = Buf(3usize)
+var b: Buf[2] = Buf(1usize)
+
+print(a.room())
+print(b.room())
+```
+
+```output
+5
+1
+```
+
 Floats are excluded: `NaN != NaN` under the ordinary comparison, which would make a type unequal to
 itself. Strings are excluded until two spellings of one text are one value.
 
