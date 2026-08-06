@@ -52,7 +52,7 @@ starts, so each one is written on top of what the last one settled.
 | [ring](/guides/ring/) | the constrained-subtype surface — ranges, `::` attributes, contracts, invariants |
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |
 | [lisp](/guides/lisp/) | the reference cycle — the shape a count cannot reclaim, and `weak T` as the instrument that measures it |
-| [table](/guides/table/) | text measured for **display** — a column is as wide as its widest cell on screen, and both a byte count and a character count are the wrong unit |
+| [table](/guides/table/) | text measured for **display** — a column is as wide on screen as its widest cell, and both a byte count and a character count are the wrong unit |
 
 **Two pairs are written to be compared**, and the comparison is the measurement:
 [scheduler](/guides/scheduler/) against [kernel](/guides/kernel/) is what reference counting was
