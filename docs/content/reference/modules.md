@@ -647,11 +647,31 @@ The two spellings never compete, because the modifier is needed precisely where 
 asking about. Reading them side by side: `static var` in the file the program starts in, `var`
 anywhere else, one kind of module storage.
 
+Visibility is the part of that worth writing out, because a module with state usually wants it — the
+functions that maintain the storage are public and the storage itself is nobody's business:
+
+```sysl
+module counter
+
+private var count: int = 0
+
+bump() = count += 1
+peek() -> int = count
+```
+
+Both spellings take one, so `private static var` says the same thing in the file the program starts
+in.
+
 **A `var` does not decide which file the program starts in.** That is settled by what a file *runs*,
 and declaring storage runs nothing — a file holding a counter is no more the program's beginning than
 one holding a table. Where a file carries a statement that is not a binding, it is the entry file and
-every other file's top-level `var`s are their module's. Where nothing runs anywhere, a single file of
-bindings is still a body, so a one-file `var n = 1` means what it always did.
+every other file's top-level `var`s are their module's. Where nothing runs anywhere, a single
+**headerless** file of bindings is still a body, so a one-file `var n = 1` means what it always did.
+
+That word is load-bearing: **a file naming a module is never the program's beginning**, and it is the
+sentence at the top of this section seen from the other side — a header means everything the file
+declares is the module's already, so there is no body for a binding to belong to instead. A library is
+the shape that tests it, being files and no beginning anywhere.
 
 ## `const` — a value
 
