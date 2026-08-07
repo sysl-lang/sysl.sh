@@ -134,8 +134,10 @@ import sysl.term.tty.color
 
 main()
     val paint = color()
+    val on    = if paint then red else ""
+    val off   = if paint then reset else ""
 
-    print(f"${if paint then red else ""}error${if paint then reset else ""}: not found")
+    print(f"${on}error${off}: not found")
 ```
 
 ```output
