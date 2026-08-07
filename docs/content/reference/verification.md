@@ -1,6 +1,6 @@
 ---
 title: Verification
-summary: Quantifiers, loop invariants, termination measures, `@pure`, `@ghost`, and `sysl prove` — the clauses that say what a program means, and the prover that reads them.
+summary: Quantifiers, loop invariants, termination measures, `@pure`, `@reads`/`@writes`, `@ghost`, and `sysl prove` — the clauses that say what a program means, and the prover that reads them.
 weight: 135
 ---
 
@@ -322,6 +322,90 @@ which is not marked '@pure'
 edit to a leaf break a caller three levels up with no annotation anywhere naming the promise. Nothing
 in the standard library is annotated yet, so a pure function today reaches the language and other
 pure functions the program wrote.
+
+## `@reads` and `@writes` — what a call may touch
+
+`@pure` says a call touches no module storage at all. Most functions worth reasoning about are not
+that, and the looser form says *which* storage they touch:
+
+```sysl
+static var count: int = 0
+static var limit: int = 100
+
+@reads(limit)
+@writes(count)
+bump()
+    if count < limit then count += 1
+
+bump()
+bump()
+print(count)
+```
+
+```output
+2
+```
+
+A frame names module storage, so these are `static var` — the entry file's spelling for it. A `var`
+in a module of its own is the same storage and is named the same way.
+
+**A frame is what makes a call something other than an eraser.** Given `f()` with nothing written
+down, everything a prover knew about module state after the call is `true` — any variable might have
+changed. The annotation is the only thing that stops that, which is why it matters more than the
+convenience of writing it down suggests.
+
+The compiler holds an annotated function to three rules. **In the body**, a read of a variable needs
+it in `@reads` or `@writes`, and a write needs it in `@writes`. **At a call**, the callee's frame
+must fit inside the caller's. And an annotated function may call only annotated or `@pure` functions —
+not through a value, not through a trait object, and with no `asm` block — because each of those is a
+call site with no declaration to consult.
+
+**`@writes` permits reading.** `count += 1` is a read and a write of one variable, and a form that
+common should not have to be declared twice:
+
+```sysl
+static var count: int = 0
+
+@writes(count)
+bump()
+    count += 1
+
+bump()
+bump()
+bump()
+print(count)
+```
+
+```output
+3
+```
+
+**Writing any part of a variable is writing the variable.** After `buf[i] = b` the storage holds
+something different, which is the only question a prover is asking — so an array reached by index
+belongs under `@writes`, not `@reads`:
+
+```sysl
+static var buf: [4]u8
+static var pos: usize = 0
+
+@reads(buf)
+@writes(pos)
+put(b: u8)
+    buf[pos] = b
+    pos += 1
+
+put(65u8)
+```
+```error
+a function with a frame writes 'buf', which its '@writes' does not name
+```
+
+**Writing no frame is not the same as writing an empty one.** A function with no annotation has
+effects nobody has written down and may call and be called by anything, exactly as before frames
+existed; `@reads()` `@writes()` is the positive claim that it touches nothing. That difference is
+what lets the discipline start at the leaves and climb at whatever pace its author sets, rather than
+arriving as a flag day. `@pure` is `@reads()` `@writes()` plus the further bans above, so writing a
+frame beside it is refused as saying one thing twice.
 
 ## `@ghost` — what costs nothing to say
 

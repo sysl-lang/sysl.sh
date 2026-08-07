@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the four annotations a declaration takes, the four a file's header takes, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the six annotations a declaration takes, the four a file's header takes, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost` | an **annotation** — a fact about the declaration under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
 
@@ -27,9 +27,9 @@ with. That is a rule about directives, not the thing that distinguishes them.
 
 Annotations come in two groups, by what they attach to.
 
-**On a function** there are four, each written on its own line above the declaration. More than one
-may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`
-and `@ghost` belong to the specification vocabulary and are on the
+**On a function** there are six, each written on its own line above the declaration. More than one
+may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
+`@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page.
 
 **On the file** there are four, in its header directly below `module` and before everything else:

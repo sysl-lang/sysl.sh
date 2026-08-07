@@ -310,3 +310,51 @@ print(apply(n -> n * 3, 7))
 A named function used where a callable is expected is the capture-free case of the same thing — there
 is no separate "function pointer" concept to learn. A raw C function pointer, for a foreign boundary,
 is spelled `*extern(A) -> R` and is covered under the [foreign interface](/reference/ffi/).
+
+### A parameter passed by name
+
+A parameter written with the arrow and **nothing on its left** takes an expression the call does not
+evaluate, and the body evaluates at each use:
+
+```sysl
+static var built: int = 0
+
+message() -> int
+    built += 1
+    42
+
+log(on: bool, m: -> int)
+    if on then print(m)
+
+log(false, message())
+log(true, message())
+print(built)
+```
+
+```output
+42
+1
+```
+
+`message()` ran once, not twice: the first call never evaluated its argument. That is the form's
+whole purpose — an argument a callee may not want should cost nothing to offer.
+
+**Each use is an evaluation**, because each use is a call — so a body that names the parameter twice
+runs the argument twice. A body wanting one evaluation binds it to a `val` first.
+
+It costs nothing at runtime. `x: -> T` has the type `Fn() -> T`, so it lowers to a bounded type
+parameter exactly as the ordinary bare arrow does — one specialized copy per call site, called
+directly, with no allocation.
+
+**`x: () -> T` is the neighbouring form and keeps its meaning.** Same type, different call site:
+there the caller constructs the callable and the body calls it.
+
+```sysl
+twice(f: () -> int) -> int = f() + f()
+
+print(twice(() -> 21))
+```
+
+```output
+42
+```
