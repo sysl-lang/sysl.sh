@@ -37,14 +37,20 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.thread`](/library/thread/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `threads`, `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
+| [`sysl.term.tty`](/library/term/#whether-to-write-escapes-at-all--sysltermtty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 
 **The split is by capability, not by taste.** `sysl.fs` is `requires os`, because a filesystem is
 something the environment either has or does not; `sysl.thread` is `requires threads` and `posix`,
-because pthreads is what it is built on. Those two are the whole of the column, and a module a target
-cannot support is therefore not one that fails to link — it is one a
-[capability clause](/reference/modules/) will not let that program import in the first place.
+because pthreads is what it is built on; `sysl.term.tty` is `requires posix`, because `isatty` is.
+Those three are the whole of the column, and a module a target cannot support is therefore not one
+that fails to link — it is one a [capability clause](/reference/modules/) will not let that program
+import in the first place.
+
+It is also why `sysl.term.tty` is a module of its own rather than a function in `sysl.term`. A
+requirement is module-wide, so one function asking for `posix` beside the escape sequences would have
+taken all forty constants away from the allocator-free programs that most want to colour a line.
 
 That is why the atomics live apart from the threads: `sysl.sync` requires **nothing**, so a kernel
 can have a spinlock without acquiring a scheduler along with it.

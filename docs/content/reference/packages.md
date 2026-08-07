@@ -31,6 +31,30 @@ dependencies {
 }
 ```
 
+## What a project is called
+
+**`package.name` is what a directory project's executable is called.** A directory is a project
+because it holds `.sysl` files, not because anybody said so, so a project has no identity of its own
+unless this block gives it one. Without a name the output takes the directory's:
+
+```
+myproj/main.sysl        ->  myproj/myproj
+myproj/package.hocon    ->  myproj/tool
+  package { name = "tool" }
+```
+
+Requiring the file was the other way to answer this, and it is deliberately not what happens: it
+would give every project an identity and charge every project the ceremony, when a scratch directory
+holding one `.sysl` file is the cheapest thing in the toolchain and worth keeping cheap.
+
+A **file** project is outside this. `sysl build foo.sysl` writes `foo` beside the caller, whatever a
+`package.hocon` sitting in the same directory says — the name came from the path you typed, and a
+config quietly moving the executable would be a worse surprise than anything it fixed.
+
+The name reaches the filesystem, so it has to be a single path segment. `.`, `..`, anything holding a
+separator, and the empty string are refused when the file is read, rather than being sanitized into
+something that would build a differently-named executable without saying so.
+
 ## Dependencies
 
 A dependency is **a git repository and a version**. There is no registry, no account to create, and

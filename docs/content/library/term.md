@@ -109,19 +109,52 @@ afterwards.
 
 `clear_screen` is nearly always written with `home` after it, since clearing does not move anything.
 
-## What is deliberately not here
+## Whether to write escapes at all — `sysl.term.tty`
 
-**Anything that asks whether the terminal is a terminal.** Whether escapes should be emitted at all —
-output redirected to a file, `NO_COLOR` set, a terminal that cannot do any of this — is a question
-about the process and its environment, and answering it needs `os`. Putting the answer in this module
-would take the module away from every program that only wanted to name a colour. So the decision
-stays the caller's: ask once, keep the answer, and write the escape or the empty string.
+Naming a colour and deciding to use one are different questions, and they live in different modules.
+Everything above asks for no capability at all, so an allocator-free, OS-free program can reach it.
+Asking whether output is a terminal needs `isatty`, which needs `posix` — and a capability
+requirement is **module-wide**, so one function here would have taken all forty constants away from
+the programs this module is arranged for. The answer sits one directory down instead, and the split
+shows up in the import, which is honest about what the second one costs.
+
+| name | answers |
+|---|---|
+| `is_tty(fd)` | is this descriptor a terminal? |
+| `color_wanted()` | does the environment want colour — `NO_COLOR` unset or empty, `TERM` not `dumb`? |
+| `color_on(fd)` | both, for one descriptor |
+| `color()` / `color_err()` | both, for standard output and standard error |
+
+**Ask once and keep the answer.** Each of these is a system call or an environment scan, and nothing
+a running program does changes what they say.
 
 ```sysl
-import sysl.term.*
+import sysl.term.{red, reset}
+import sysl.term.tty.color
 
-paint(colour: bool, escape: string) -> string = if colour then escape else ""
+main()
+    val paint = color()
+
+    print(f"${if paint then red else ""}error${if paint then reset else ""}: not found")
 ```
+
+```output
+error: not found
+```
+
+That output is the point rather than an accident: this page's programs run with their output
+captured, so `color()` answers false and the escapes are never written — which is exactly what the
+same program does in a pipeline or redirected to a file.
+
+`is_tty` is worth having alone: a progress bar, a spinner and a prompt are all worth suppressing when
+output is a pipe, and none of them is about colour. So is `color_wanted` — a `--color=always` flag
+overrides the descriptor without overriding the user's `NO_COLOR`, and that is exactly this function.
+
+**`NO_COLOR` is about the variable being there rather than about its value.** Present and non-empty
+turns colour off whatever it contains, so `NO_COLOR=0` means no colour, while set-and-empty does not.
+A program reading it as a boolean and looking for `"1"` has misread the convention.
+
+## What is deliberately not here
 
 **Anything that takes a number.** Moving the cursor to a row and column means building
 `ESC [ row ; col H`, and building a string is an allocation — the one thing the module is arranged to
