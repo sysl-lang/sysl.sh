@@ -457,7 +457,7 @@ separate constructor declaration to write or to keep in step.
 
 **A field declares no default.** What an unwritten field gets is decided by the constructor that
 builds the value, not by the field — and the compiler says so rather than leaving a `= v` after a
-field to fail as "newline expected".
+field to fail as whatever the grammar happened to want there.
 
 **A property is a method with the parameter list left off** — `perimeter -> int`, called as
 `r.perimeter` with no parentheses. It takes the same body forms a method does.
