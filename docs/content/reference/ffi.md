@@ -369,12 +369,52 @@ print(installed == null, &compare == null)
 true false
 ```
 
+### A generic function's address — the instantiation is read off the type
+
+A generic function is a body per set of type arguments, so an address needs them settled. **The
+expected type settles them**, by the same unification a call site uses on its arguments:
+
+```sysl
+extern qsort(base: *u8, n: usize, size: usize, cmp: *extern(*u8, *u8) -> i32)
+
+ascending[T](a: *T, b: *T) -> i32
+    var pa: *i32 = ptr_cast(a)
+    var pb: *i32 = ptr_cast(b)
+    *pa - *pb
+
+var xs = [30i32, 10i32, 20i32]
+
+qsort(ptr_cast(&xs[0]), 3usize, 4usize, &ascending)
+print(xs[0], xs[1], xs[2])
+```
+
+```output
+10 20 30
+```
+
+A comparison written once over `*T` is now usable at every element type, where before a program
+needed a concrete copy of it per type.
+
+**It does not reach the `void *userdata` pattern**, which is the case worth naming because it is the
+one a reader will assume is covered. A C interface that calls back pairs the pointer with an untyped
+`void *`, so a trampoline for one has the signature C fixed — `(*u8, Event) -> bool`. The state type
+appears nowhere in it, so there is nothing for the expected type to solve, and such a trampoline is
+refused by the rule below about a parameter the signature never mentions. Recovering the state means
+a `ptr_cast` from `*u8`, which is a promise rather than a deduction, and that pattern still takes a
+concrete trampoline per state type.
+
+There is no written form `&f[T]`, and that is a grammar fact rather than a preference: `&f[T]` and
+`&xs[i]` are the same shape, and only knowing whether the name is a generic function separates them.
+The expected type carries the same information unambiguously, and is information the caller has
+anyway — a `*extern` is handed to something whose signature is already fixed.
+
 ### What has no address, and why
 
 Each of these is refused because the address would not be an address of what its type says, and
 nothing downstream could notice.
 
-**A generic function** — it is a body per set of type arguments, so there is no one body to name:
+**A generic function with nothing to say which copy** — the arguments have to come from somewhere,
+and a bare `var` says nothing:
 
 ```sysl
 id[T](x: T) -> T = x
@@ -385,7 +425,22 @@ print(1)
 ```
 
 ```error
-'id' is generic, so it is not one function but a copy per set of type arguments, and an address names one body — a wrapper that calls it at the arguments wanted is what has an address
+nothing here says what they are
+```
+
+**A type parameter the signature never mentions** — nothing in the expected type can settle it, which
+is the honest limit of reading an instantiation off a type:
+
+```sysl
+tagged[T](n: i32) -> i32 = n
+
+val f: *extern(i32) -> i32 = &tagged
+
+print(1)
+```
+
+```error
+does not say what 'T' should be
 ```
 
 **A variadic function** — C reads a tail relative to the last named argument, and a `*extern` states

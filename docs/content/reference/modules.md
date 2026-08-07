@@ -849,8 +849,8 @@ print(table.len)
 an array length must be a constant — a literal, or a 'const' naming one
 ```
 
-Naming one in a pattern is an error rather than a quiet binding, for the same reason — there is no
-value at compile time for a pattern to compare against, and the diagnostic names what to write
+Naming one in a pattern with a **bare** name is an error rather than a quiet binding, for the same
+reason — a bare name there would bind rather than match, and the diagnostic names what to write
 instead:
 
 ```sysl
@@ -865,7 +865,25 @@ print(check(4usize))
 ```
 
 ```error
-'limit' is a 'val', which is read while the program runs, so a pattern cannot match against it — compare it in a guard, or bind a different name
+a bare name here would bind rather than match
+```
+
+What to write is the [backticked form](/reference/patterns/#a-backticked-name-references-rather-than-binds),
+which says the test was meant and compares against whatever the `val` holds when the match runs:
+
+```sysl
+static val limit: usize = 4
+
+check(n: usize) -> string
+    n match
+        `limit` -> "at the limit"
+        else     "other"
+
+print(check(4usize), check(9usize))
+```
+
+```output
+at the limit other
 ```
 
 The rest of what a module-level `val` may hold — read-only at every depth, nothing that owes a

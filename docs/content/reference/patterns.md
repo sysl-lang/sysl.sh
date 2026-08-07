@@ -141,6 +141,51 @@ does — the scrutinee's type already settled which enum is meant. What a qualif
 *binding*: no program declares a name with a dot in it, so one that resolves to neither a variant nor
 a constant is a diagnostic rather than a new local.
 
+### A backticked name references rather than binds
+
+The rule above resolves a bare name against a narrow set — the scrutinee's nullary variants, then the
+constants — and binds otherwise. Everything outside that set is therefore unreachable by a bare name:
+a `val`, a local, a parameter. Each is storage read while the program runs, so there is no value for
+a compile-time pattern to compare against.
+
+**A [backtick-quoted name](/reference/lexical/#quoted-identifiers) says the test was meant**, and the arm
+becomes an ordinary equality against whatever the name holds when the match runs:
+
+```sysl
+describe(n: int, limit: int) -> string
+    n match
+        `limit` -> "at the limit"
+        else "elsewhere"
+
+print(describe(10, 10), describe(3, 10))
+```
+
+```output
+at the limit elsewhere
+```
+
+Written bare, `limit` would bind — matching everything, and leaving the second arm unreachable. The
+two spellings are the whole of the difference, and that is the point: a reader does not have to know
+what is in scope to know which was meant.
+
+Three things follow. A quoted name that resolves to nothing is a diagnostic, not a new local. A
+`const` still folds to its literal, so quoting one changes nothing but the reader's certainty. And a
+runtime equality tells exhaustiveness nothing, so an arm written this way never discharges a case and
+a catch-all stays required.
+
+It cannot stand at a binding, where there is no other arm to take when the value differs:
+
+```sysl
+val limit: int = 10
+val (`limit`, b) = (3, 4)
+
+print(b)
+```
+
+```error
+a binding cannot test a value
+```
+
 ### Alternatives may not bind
 
 `1 | 2 | 3` is one arm matching any of three literals. An arm whose alternatives **bind** is

@@ -5,6 +5,7 @@
   "fileTypes": ["sysl"],
   "patterns": [
     { "include": "#comment" },
+    { "include": "#quotedIdent" },
     { "include": "#string" },
     { "include": "#char" },
     { "include": "#number" },
@@ -22,6 +23,16 @@
         {
           "name": "comment.line.double-slash.sysl",
           "match": "//.*$"
+        }
+      ]
+    },
+
+    "quotedIdent": {
+      "patterns": [
+        {
+          "comment": "A backtick-quoted identifier is a NAME, so it is scoped as a variable rather than as a string — a reader should see `match` as the name it is and not as text. It sits above every other rule because what is inside it is a name whatever it looks like: a reserved word, an operator, a quote.",
+          "name": "variable.other.quoted.sysl",
+          "match": "`[^`\\n]+`"
         }
       ]
     },

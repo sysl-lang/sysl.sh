@@ -46,6 +46,35 @@ and this documentation follow is `PascalCase` for types and traits, `snake_case`
 and the syntax highlighting treats a capitalized name as a type, so following it makes code read
 correctly on a page.
 
+### Quoted identifiers
+
+**A name written between backticks may be anything the rule above refuses** — a reserved word, or a
+name carrying spaces and punctuation:
+
+```sysl
+var `item count` = 3
+val `match`: int = 5
+
+struct `Grid Cell`
+    `row index`: int
+end `Grid Cell`
+```
+
+It is a name and nothing more: `` `match` `` *is* the identifier `match`. A contextual word written
+this way is an ordinary name rather than the word — `` `end` `` names something, and does not close a
+block.
+
+Two characters may not appear inside, and a newline ends the search rather than the name, so an
+unclosed backtick is reported on the line that opened it. A **backtick** cannot appear at all, since
+there are no escapes inside. A **`.`** cannot either: a qualified name is carried as a dotted string,
+so a dot inside one part could not be told from the separator between two.
+
+A **module path** is written with plain names only, for the same reason — `module my.mod`, never
+``module `my mod` ``. A module names a directory, and its parts are what the file system holds.
+
+The form does a second job in a `match` arm, where a backticked name **references** a variable
+already declared rather than binding a new one.
+
 ## Reserved words
 
 Thirty-nine words are reserved and may not be used as identifiers:

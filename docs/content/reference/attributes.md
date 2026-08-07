@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the six annotations a declaration takes, the four a file's header takes, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the six annotations a declaration takes, the four a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -12,6 +12,7 @@ has a name and a spelling of its own:
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
+| `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
 
 **The last two are told apart by the sigil, and that is the whole rule.** An annotation is `@` and
@@ -25,7 +26,7 @@ A directive is still written at column 1, and for its own reason: it is gone bef
 column, so an indented one would look like it takes part in a block structure it has nothing to do
 with. That is a rule about directives, not the thing that distinguishes them.
 
-Annotations come in two groups, by what they attach to.
+Annotations come in three groups, by what they attach to.
 
 **On a function** there are six, each written on its own line above the declaration. More than one
 may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
@@ -39,6 +40,10 @@ for the module's tests. All four attach to the file rather than to any declarati
 writing one further down is refused with a message saying where it belongs. The first three are
 covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where what they *mean* is;
 `@tests` is below.
+
+**On nothing at all** there is one: `@assert`, which stands where a declaration stands and describes
+only itself. It attaches to nothing, declares no name, and nothing can refer to one — two saying the
+same thing are two checks rather than a duplicate. It is below.
 
 **An annotation's name is an ordinary identifier**, which is the point of writing these as
 annotations at all: nothing here is reserved, so a program may still call something `test`, `link`,
@@ -381,6 +386,92 @@ rather than through the trap instruction, because **a check a program makes is o
 cannot see, and the message is the whole point of it.** The message is required rather than
 defaulted, because the condition's source is not available to print and a failure saying only
 "assertion failed" sends its reader looking for which one.
+
+## `@assert` — a condition settled while compiling
+
+```sysl
+const capacity: usize = 512
+
+@assert(capacity == 512, "the protocol fixes this")
+
+print(capacity)
+```
+
+```output
+512
+```
+
+The condition is a [constant expression](/reference/modules/), folded by the machinery
+a `const` initializer already goes through — so it may name constants, `sizeof`, `alignof`, and the
+arithmetic and comparisons over them, including a constant declared *below* it. A true one emits
+nothing at all. A false one stops the compilation, quoting the message:
+
+```sysl
+@assert(1 == 2, "arithmetic broke")
+
+print(1)
+```
+
+```error
+assertion failed: arithmetic broke
+```
+
+The message is optional and is the reader's own, because they know what the number *means* — that a
+struct matches its C counterpart, that a table is the size a protocol fixes — where the expression
+alone says only that two numbers differ.
+
+**It is not `require`.** A `require` is a runtime precondition: it is compiled, it branches, and it
+traps when the program reaches it. This is settled while compiling and reaches the binary as nothing.
+A condition it cannot settle is refused rather than deferred — and a call is the line, since a call
+in a constant expression would be a request for compile-time evaluation of arbitrary code:
+
+```sysl
+f() -> int = 3
+
+@assert(f() == 3)
+
+print(1)
+```
+
+```error
+has to be a constant expression
+```
+
+### Checking a C struct's layout
+
+This is what it was built for. sysl lays a struct out in declaration order and is C-compatible by
+construction, but from inside sysl that claim cannot be checked: `sizeof` reports what *sysl* laid
+out, not what the header says, so comparing the two is a tautology.
+
+It stops being one when both sides name the same number. The C half goes in a `.c` beside the sysl,
+which [is compiled with it](/reference/ffi/) and for the same target, so it reads the headers of the
+machine being built for:
+
+```c
+#include <stddef.h>
+_Static_assert(sizeof(struct pair) == 8, "struct pair size moved");
+_Static_assert(offsetof(struct pair, b) == 4, "struct pair.b moved");
+```
+
+and the sysl half pins what sysl laid out:
+
+```sysl
+struct Pair
+    a: i32
+    b: i32
+end Pair
+
+@assert(sizeof(Pair) == 8, "Pair must match struct pair")
+
+print(sizeof(Pair))
+```
+
+```output
+8
+```
+
+Neither half finds the other's mistake, which is why both are written: the `.c` catches a header that
+moved, and the `@assert` catches a struct that was transcribed wrong.
 
 ## `@tailrec` — an assertion that the frame is reused
 
