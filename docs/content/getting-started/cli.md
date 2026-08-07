@@ -17,7 +17,7 @@ the path is standing on.
 | `sysl run <path>` | compile and execute |
 | `sysl build <path> -o <exe>` | compile to a native executable |
 | `sysl build-lib <path> -o <artifact>` | compile a library to a linkable artifact |
-| `sysl test <path>` | run the `#test` functions |
+| `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
 | `sysl targets` | list the machines sysl can build for |
 
@@ -91,11 +91,18 @@ one will not do.
 sysl test <path>
 sysl test <path> --filter <text>
 sysl test <path> --fail-fast
+sysl test <path> --std
 ```
 
 The tree is compiled once, into a binary that runs one named test per process, and the runner starts
-it once per test. [Attributes](/reference/attributes/) has `#test` itself — what a test may be, what
+it once per test. [Attributes](/reference/attributes/) has `@test` itself — what a test may be, what
 every other build does with one, and why the process per test is the mechanism rather than a cost.
+
+`--std` says the tree **is** the standard module, which is how sysl's own library is tested. The
+compiler supplies `sysl` to every compilation, so without it the library arrives twice — once as the
+tree being compiled and once as the copy handed over — and every declaration is already declared.
+Nothing infers it: a program with a `sysl` directory of its own is nearly always a mistake, and a
+build that guessed would turn that refusal into a collision at the link.
 
 The report groups by the file each test was written in, keeps source order inside a file, and shows
 a test's output **only** where it failed:
@@ -118,7 +125,7 @@ clamp.sysl
 A failure's own line is one of three sentences and never more: **`did not return — exit status n`**,
 which is what a failed `assert` looks like since `assert` prints and exits; **`returned, and was
 expected to trap`**; and **`trapped, but printed nothing holding "…"`**, for a
-`#test(should_trap: "…")` whose run trapped without saying it. Everything the run printed follows
+`@test(should_trap: "…")` whose run trapped without saying it. Everything the run printed follows
 underneath, prefixed `>`.
 
 `--filter` keeps the tests whose name **or module** holds the text, and the header says how many of

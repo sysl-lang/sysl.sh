@@ -259,15 +259,26 @@ adds_two()
 
 ### What is dropped, and when
 
-`sysl run`, `sysl build`, `sysl emit-llvm` and `sysl build-lib` all drop the tests — and drop them
-**after** analysis. So a `@test` that does not compile is an error in a build that would never have
-run it, and a module's capability clause reaches its tests like any other member.
+`sysl run`, `sysl build` and `sysl emit-llvm` drop the tests — and drop them **after** analysis. So a
+`@test` that does not compile is an error in a build that would never have run it, and a module's
+capability clause reaches its tests like any other member.
 
-That ordering is what lets a test sit beside what it tests: a library's tests do not travel in the
-library, a program's do not run when it runs, and neither stops being checked.
+That ordering is what lets a test sit beside what it tests: a program's tests do not run when it
+runs, and they do not stop being checked.
 
 A helper only a test calls leaves with it, because it becomes unreachable and pruning notices; a
 helper the program also calls stays, because the program still calls it.
+
+**`sysl build-lib` is the exception, and drops them *before* analysis.** An artifact is the one
+output that outlives the compilation that made it, and analysis is not a passive reading: a test
+naming `Buf[int]` **creates** the whole of `Buf` at `int`, and that instantiation is an ordinary
+library function afterwards, with nothing in it recording which declaration asked for it. Dropping
+the test from the analyzed program would therefore drop the test and keep everything it caused —
+shipping instantiations no caller of the library ever asked for, and making the artifact's contents
+a fact about its tests.
+
+So a library test that does not compile is not reported by `build-lib`. It is reported by
+[`sysl test --std`](/getting-started/cli/), which is where a library's tests are run.
 
 ### `@tests` — a file of scaffolding
 
