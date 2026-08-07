@@ -30,22 +30,12 @@ An operator trait carries its result as `Out` now, as well as its operand as `Rh
 [matrix](/guides/matrix/) was written for. A vector space needs `Vector * Vector -> real` and a
 timeline needs `Instant - Instant -> Duration`; they are one feature asked for by two problems.
 `sysl.time` writes both rows of `Sub` on `Instant`, told apart by the type of the right operand and
-nothing else:
+nothing else — [the library page runs both](/library/time/). `since` stays as the named spelling,
+because `later - earlier` is right and `earlier - later` is just as easy to write.
 
-```sysl
-import sysl.time.*
-
-var t = Instant(1000000i64)
-var later = t + hours(3i64)
-
-print(whole_hours(later - t))
-print(whole_hours(since(later, t)))
-```
-
-`since` stays as the named spelling, because `later - earlier` is right and `earlier - later` is just
-as easy to write. The finding moved into the library with the types and was answered there, which is
-the part worth keeping: a gap that becomes a shipped module's gap is fixed once for everybody instead
-of worked around once per program that wants a date.
+The finding moved into the library with the types and was answered there, which is the part worth
+keeping: a gap that becomes a shipped module's gap is fixed once for everybody instead of worked
+around once per program that wants a date.
 
 **A derived scalar and a one-field struct are exactly complementary, and neither is what a quantity
 wants.** `type Instant = new i64` inherits its base's whole catalogue for free — `==`, `<`, `+`, `str`
