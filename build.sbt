@@ -58,8 +58,9 @@ lazy val root = project
     ),
 
     // A second place to find the compiler, because Central can take hours to propagate and these
-    // pages cannot be written until one resolves. `~/dev/sysl` publishes the same artifacts to
-    // GitHub Packages as well (`SYSL_PUBLISH_GITHUB=1 sbt publish`), which answers in minutes.
+    // pages cannot be written until one resolves. `~/dev/sysl-lang/sysl` publishes the same
+    // artifacts to GitHub Packages as well (`SYSL_PUBLISH_GITHUB=1 sbt publish`), which answers in
+    // minutes.
     //
     // **Listed after Central deliberately.** Once Central has the version it is what resolves, so
     // this is a head start and not a fork in the road — the ordinary state of this build is that

@@ -67,8 +67,8 @@ yet, so it runs from its own checkout pointed at this directory:
 
 ```sh
 cd ~/dev/juicer
-sbt 'juicerJVM/run serve -s ~/dev/sysl.sh/docs -L'      # live preview
-sbt 'juicerJVM/run build -s ~/dev/sysl.sh/docs -d ~/dev/sysl.sh/_site'
+sbt 'juicerJVM/run serve -s ~/dev/sysl-lang/sysl.sh/docs -L'      # live preview
+sbt 'juicerJVM/run build -s ~/dev/sysl-lang/sysl.sh/docs -d ~/dev/sysl-lang/sysl.sh/_site'
 ```
 
 `sass` and `esbuild` must be on PATH or the asset pipeline degrades to the committed `static/`
