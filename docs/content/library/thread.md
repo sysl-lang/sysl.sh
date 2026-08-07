@@ -105,7 +105,7 @@ print(c.is_some())
 ```
 
 ```error
-'body' of 'sysl.thread.spawn' is *extern(*sysl.sync.Atomic[int]) -> unit, but .closure0 was given
+'body' of 'sysl.thread.spawn' is *extern(*sysl.sync.Atomic[int]) -> unit, but .closure4 was given
 ```
 
 Two reasons, and neither is a limitation waiting to be lifted. A closure would have to be **boxed**

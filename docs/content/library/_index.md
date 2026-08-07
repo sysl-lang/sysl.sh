@@ -38,19 +38,27 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.thread`](/library/thread/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `threads`, `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
 | [`sysl.term.tty`](/library/term/#whether-to-write-escapes-at-all--sysltermtty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` | `posix` |
+| [`sysl.slices`](/library/slices/) | what a program does *to* a `[]T` — searching, comparing, `reverse`, two sorts that neither allocate, `binary_search`, and `as_ptr` for a C binding | — |
+| [`sysl.encoding`](/library/encoding/) | hexadecimal and base64 both ways, fixed-width integers to and from bytes at either byte order, and `DecodeError` | — |
+| [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
+| [`sysl.rand.sys`](/library/rand/#taking-a-seed-from-the-host--syslrandsys) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 
 **The split is by capability, not by taste.** `sysl.fs` is `requires os`, because a filesystem is
 something the environment either has or does not; `sysl.thread` is `requires threads` and `posix`,
-because pthreads is what it is built on; `sysl.term.tty` is `requires posix`, because `isatty` is.
-Those three are the whole of the column, and a module a target cannot support is therefore not one
-that fails to link — it is one a [capability clause](/reference/modules/) will not let that program
-import in the first place.
+because pthreads is what it is built on; `sysl.term.tty` is `requires posix`, because `isatty` is; and
+`sysl.rand.sys` is `requires posix`, because entropy comes from the kernel. Those four are the whole
+of the column, and a module a target cannot support is therefore not one that fails to link — it is
+one a [capability clause](/reference/modules/) will not let that program import in the first place.
 
-It is also why `sysl.term.tty` is a module of its own rather than a function in `sysl.term`. A
-requirement is module-wide, so one function asking for `posix` beside the escape sequences would have
-taken all forty constants away from the allocator-free programs that most want to colour a line.
+It is also why `sysl.term.tty` and `sysl.rand.sys` are modules of their own rather than functions in
+`sysl.term` and `sysl.rand`. **A requirement is module-wide**, so one function asking for `posix`
+beside the escape sequences would have taken all forty constants away from the allocator-free programs
+that most want to colour a line — and one asking for it beside the generator would have taken PCG32
+away from every target that has no operating system to seed it from. Two instances of one shape, and
+the shape is worth naming: where a module is portable except for how it gets started, the *getting
+started* goes in a submodule.
 
 That is why the atomics live apart from the threads: `sysl.sync` requires **nothing**, so a kernel
 can have a spinlock without acquiring a scheduler along with it.
