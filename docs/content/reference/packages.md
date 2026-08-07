@@ -100,8 +100,9 @@ The cost is the honest one: you do not automatically get the newest patch releas
 
 ## What a dependency's modules are called
 
-A package is a tree of modules, and **its top-level directories come in under their own names**. A
-package holding `sqlite/` is reached exactly as its own documentation shows it:
+A package is a tree of modules, and **its modules come in under their own names**. A module is a
+directory of source files, so a package holding `sqlite/` is reached exactly as its own documentation
+shows it:
 
 ```text
 sqlite.open("db.sqlite")
@@ -110,9 +111,28 @@ sqlite.open("db.sqlite")
 The name is the *module's*, not the package's — sqlite3's package is called `sqlite3` and its module
 is `sqlite`, and reaching the second does not mean saying the first.
 
+**A name is a module path, not a first segment.** Every package published under `sysl-lang` puts its
+source under a reverse-DNS prefix, so what it offers is a dotted path:
+
+```text
+sh/sysl/table/table.sysl       →  sh.sysl.table
+```
+
+`sh/` and `sh/sysl/` hold no source, so neither is a module and neither is a name that package
+offers. Two packages laid out this way therefore do not collide, which is the point of the
+convention: a project may depend on `sqlite3`, `linenoise` and `table` at once and import all three
+under the names their own documentation shows.
+
+A binding covers the module it names and everything below it, so `sh.sysl.table.Style` reaches the
+same package and keeps its tail.
+
 **Two packages cannot quietly share a name.** If two dependencies both offer a `json`, or one offers
-a `json` and your own project has a `json/` directory, the build stops and says so rather than
-picking one. Write a `mount` to say what one of them is called here:
+a `json` and your own project has a `json/` directory of source, the build stops and says so rather
+than picking one. So does one offering a path *inside* another's — a package offering `sh.sysl` and
+one offering `sh.sysl.table` share no name, but an import of `sh.sysl.table` could be read as either,
+and resolving it to the longer would be a rule nobody wrote down.
+
+Write a `mount` to say what one of them is called here:
 
 ```hocon
 dependencies {
