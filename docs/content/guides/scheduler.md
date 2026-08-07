@@ -32,16 +32,28 @@ That is a property worth having anyway, and here it was standing in for a guaran
 should have been making. [`weak T` has since shipped](/reference/memory/), and a program of this
 shape can now say which edge of a cycle does not own.
 
-**A `Buf` grows and shrinks at its end and nowhere else.** Taking a waiter out of the middle of a
-list is compact-then-pop, because there is no `remove` and no `truncate` to say it in one step. Every
-list a scheduler keeps is one that things leave the middle of.
+**A `Buf` grew and shrank at its end and nowhere else — answered.** Every list a scheduler keeps is
+one that things leave the *middle* of, and taking a waiter out was compact-then-pop, because there
+was no `remove` and no `truncate` to say it in one step. `Buf` has both now, so the program's helper
+is a search and one call.
 
-**A task is fifteen fields with no names at the call site and no defaults.** A helper exists only to
-spell the five zeroes, the three `None`s and the empty list every new task starts life holding, and a
-reader of the constructor call cannot see which argument is which. A task control block is exactly
-the shape that pays for this — mostly state that starts empty and is written later by somebody else.
-[Named and default arguments](/reference/declarations/) are the answer, and this is the program that
-made the case.
+What that exposed is worth more than the lines it saved: the hand-written version removed **every**
+copy of the value, because compacting keeps whatever does not match, while the name said one and the
+callers all meant one. A scheduler never has a task in a list twice, so nothing was wrong — and
+nothing was checked either. Reaching for the library function is reaching for a decision somebody
+has already made carefully.
+
+**A task is fifteen fields with no names at the call site and no defaults — half answered.** A task
+control block is exactly the shape that pays for this: mostly state that starts empty and is written
+later by somebody else.
+
+The names arrived. A constructor's fields are [named parameters like any
+other](/reference/declarations/), so the program writes all fifteen by name — which is worth most for
+the four that are the same bare `0` and would swap without anything noticing. The defaults did not,
+and that half is a decision rather than an absence: a field declares no default, on the grounds that
+what an unwritten field gets is the constructor's business and not the field's. So the helper stays
+to spell the zeroes, and is now a body that says what it is doing rather than a row of fifteen
+positional arguments.
 
 **A nullary generic cannot be told what it is making.** `buf[&Mutex]()` is not the syntax:
 call-site type arguments are deliberately absent, since a type-argument list and an index are the

@@ -91,33 +91,36 @@ print(since(a + b, a))
 That diagnostic is exact about what went wrong: `Instant` *does* implement `Add`, at `Duration`, and
 this call asked for it at `Instant`.
 
-### The difference of two instants is a named function, and it should not be
+### The difference of two instants is the operator
 
 ```sysl
 import sysl.time.*
 
 var a = Instant(0i64)
-var b = Instant(1i64)
+var b = a + hours(3i64)
 
-print(whole_seconds(b - a))
+print(whole_hours(b - a))
+print(whole_hours(a - b))
 ```
 
-```error
-'-' between sysl.time.Instant and sysl.time.Instant needs 'sysl.Sub' — it implements 'sysl.Sub[sysl.time.Duration]'
+```output
+3
+-3
 ```
 
-`since(later, earlier)` is what that operation is called here, and **it is a named function because
-the operator cannot express it.** `Sub`'s method is `sub(self, rhs: Rhs) -> Self`: the result type is
-fixed to the type on the left, so an `impl Sub[Instant] for Instant` may only produce another
-`Instant` — which is the one thing the difference of two points on a timeline is not. The operator is
-available and the meaning is not.
+**Two rows of `Sub` sit on `Instant`, and the type of the right operand is the whole of what selects
+between them.** Subtracting a `Duration` lands further along the timeline and answers an `Instant`;
+subtracting an `Instant` measures across it and answers a `Duration`. An operator trait carries its
+result as `Out` as well as its operand as `Rhs`, which is what lets one type do both — the same
+mechanism [`Mul` uses](/reference/expressions/) to give a vector space four products.
 
-This is the module's report against the language, and it is worth stating plainly: the most
-frequently written operation in any date-time library cannot be spelled with its own operator, and
-what would fix it is an `Out` parameter on `Sub` of the kind [`Mul` already
-carries](/reference/expressions/). Until then the argument order is the one that reads as a
-subtraction — `since(later, earlier)`, not `since(earlier, later)` — and it answers a negative
-duration when it is given the pair the other way round, as the second line above shows.
+This section used to be this module's report against the language: the most frequently written
+operation in any date-time library could not be spelled with its own operator, because `Sub`'s result
+was fixed to the type on the left. That is what `Out` answered, and the gap it describes is closed.
+
+`since(later, earlier)` is still here and is the same subtraction under a name that says which end is
+which — `later - earlier` is right and `earlier - later` is just as easy to write, as the second line
+above shows.
 
 ### Reading a duration back
 

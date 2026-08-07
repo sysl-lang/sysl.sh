@@ -19,17 +19,33 @@ confusion this program is about is not a hypothetical one.
 
 ## What it found
 
-**The difference of two moments cannot be spelled `-`.** Every operator row is
-`op(self, rhs: Rhs) -> Self`, so an implementation says what it *takes* and never what it *produces*.
-`Instant + Duration`, `Instant - Duration` and `Duration ± Duration` all write themselves;
-`Instant - Instant -> Duration` is refused, because `Sub`'s result is fixed to the type on the left.
+**The difference of two moments could not be spelled `-` — answered.** Every operator row was
+`op(self, rhs: Rhs) -> Self`, so an implementation said what it *took* and never what it *produced*.
+`Instant + Duration`, `Instant - Duration` and `Duration ± Duration` all wrote themselves;
+`Instant - Instant -> Duration` was refused, because `Sub`'s result was fixed to the type on the
+left. Three quarters of an algebra was spellable, and the quarter that was not was the operation the
+library exists to provide.
 
-Three quarters of an algebra is spellable and the quarter that is not is the operation the library
-exists to provide, so it is a named function. Dispatching on the pair does not rescue it: the two
-implementations would differ in what they *produce*, which no row can say. Compare
-[matrix](/guides/matrix/), where the result type varies with the right operand and the trait handles
-it — the difference is that there the result is named by the row, and here it would have to be named
-by the row's absence.
+An operator trait carries its result as `Out` now, as well as its operand as `Rhs` — the same change
+[matrix](/guides/matrix/) was written for. A vector space needs `Vector * Vector -> real` and a
+timeline needs `Instant - Instant -> Duration`; they are one feature asked for by two problems.
+`sysl.time` writes both rows of `Sub` on `Instant`, told apart by the type of the right operand and
+nothing else:
+
+```sysl
+import sysl.time.*
+
+var t = Instant(1000000i64)
+var later = t + hours(3i64)
+
+print(whole_hours(later - t))
+print(whole_hours(since(later, t)))
+```
+
+`since` stays as the named spelling, because `later - earlier` is right and `earlier - later` is just
+as easy to write. The finding moved into the library with the types and was answered there, which is
+the part worth keeping: a gap that becomes a shipped module's gap is fixed once for everybody instead
+of worked around once per program that wants a date.
 
 **A derived scalar and a one-field struct are exactly complementary, and neither is what a quantity
 wants.** `type Instant = new i64` inherits its base's whole catalogue for free — `==`, `<`, `+`, `str`
@@ -45,9 +61,20 @@ enum and [coverage checking](/reference/patterns/) is what makes a caller handle
 the problem was chosen for turns out to be covered by machinery that was already there — which is the
 useful thing to know before designing a library around it.
 
-**An enum still cannot render its own variant names**, third program to report it. Three enums here
-each carry a hand-written map from variant to word, and the two that are simple enums at least convert
-to their numbers and back, which is what let the weekday arithmetic drop fourteen lines of if-chain.
+**An enum cannot render its own variant names — and the three tables here turn out to be three
+different asks.** A simple enum's name answers `T::Image(v)` with the word the variant is spelled
+with, so the name-only case never needed a table: the library's `weekday_name` is that case, and is
+one attribute read.
+
+Neither of this program's own two is that case, and saying why is worth more than the original
+complaint. The zone enum maps `NewYork` to `"America/New_York"` — a tz identifier, which is a fact
+about the database and not about the declaration, so nothing but a table can hold it. The resolution
+type is a **data** enum, where `Image` is refused in as many words, because a value there is a
+variant plus a payload and a name answers for half of it — and its renderer builds a sentence out of
+that payload anyway.
+
+What is left of the finding is the narrow thing: `str` on an enum is still refused, so a value that
+is nothing but its name is printed by asking for the name rather than by rendering the value.
 
 **A `val` could not be sliced**, third program to report that, and the report was acted on: a view of
 read-only storage is a [`[]const T`](/reference/arrays/), which carries the property rather than losing
