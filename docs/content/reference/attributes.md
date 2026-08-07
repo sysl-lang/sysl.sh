@@ -277,7 +277,11 @@ the test from the analyzed program would therefore drop the test and keep everyt
 shipping instantiations no caller of the library ever asked for, and making the artifact's contents
 a fact about its tests.
 
-So a library test that does not compile is not reported by `build-lib`. It is reported by
+**The line falls between parsing and analysis.** Every source is parsed before the drop, so a
+**syntax** error in a `@tests` file still stops a `build-lib`. What such a file no longer gets is
+everything after the parse — name resolution, types, visibility, capabilities, the `@test`
+well-formedness rules above, generic instantiation. So a library test that is well-formed text and
+wrong in every other way builds clean, and its real errors are reported by
 [`sysl test --std`](/getting-started/cli/), which is where a library's tests are run.
 
 ### `@tests` — a file of scaffolding
