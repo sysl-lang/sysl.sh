@@ -388,6 +388,28 @@ both functions test equality before subtracting — `inf - inf` is a NaN, and th
 would call a value unequal to itself. And **a NaN is close to nothing, including another NaN**,
 whatever the tolerance, which falls out of the comparisons and agrees with `==`.
 
+Each has an assertion beside it, which stops the program and names both values and the tolerance
+rather than answering `bool`:
+
+```sysl
+import sysl.math.assert_approx_eq
+
+assert_approx_eq(0.1 + 0.2, 0.3, 1e-12)
+assert_approx_eq(0.1 + 0.2, 0.3, 1e-12, "the sum")
+print("both held")
+```
+
+```output
+both held
+```
+
+`assert_approx_eq_rel` is the same against the relative test. **They live here rather than beside
+[`assert_eq`](/library/core/) in the core**, and that is forced rather than chosen: `Float` is
+declared in this module and reaches `Eq`, `Ord` and the arithmetic traits in the core, so `sysl.math`
+depends on `sysl` — and a float assertion written in the core would point an edge back the other way,
+which [the module graph](/reference/modules/) refuses. Anyone writing float assertions imports this
+module already, since it is where the float functions are.
+
 Mixing types is refused, as everywhere else in the language:
 
 ```sysl

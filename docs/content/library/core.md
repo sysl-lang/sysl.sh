@@ -95,6 +95,64 @@ print(divide(84, 2))
 42
 ```
 
+## `assert_eq` — the assertion that says what the values were
+
+`assert(a == b)` names the line, so you know *which* check broke. You then run the program again to
+find out what the two values actually were — and running it again is exactly what the report could
+have saved you.
+
+```sysl
+assert_eq[T: Eq + Display](got: T, want: T, msg: string = "", …)
+assert_slice_eq[T: Eq + Display](got: []const T, want: []const T, msg: string = "", …)
+```
+
+```sysl
+sum(xs: []const int) -> int
+    var total = 0
+
+    for x in xs
+        total = total + x
+
+    total
+
+assert_eq(sum([1, 2, 3]), 6)
+assert_eq(sum([1, 2, 3]), 6, "the running total")
+print("both held")
+```
+
+```output
+both held
+```
+
+A failure prints the pair, in the order it is read in — what happened, then what was meant to:
+
+```
+panic: got 5, want 6 (main.sysl:9)
+panic: the running total: got 5, want 6 (main.sysl:10)
+```
+
+**Why this is a function and not advice to write the message yourself.** The hand-written form is
+`assert(a == b, s"got $a, want $b")`, and it has two costs: it evaluates each side twice, and it
+builds a string. Building one makes heap storage, which puts it out of reach of a module that
+declared [`@no_alloc`](/reference/attributes/) — the module that wants an assertion most. Rendering
+through [`Display`](/library/core/) into the output costs neither.
+
+**One function rather than one per type.** `Eq` says the comparison means something and `Display`
+says the value can be shown, which together are the whole of what a report needs.
+
+`assert_slice_eq` earns a name of its own because a report saying two slices differ sends you to
+find out *where*. It checks the lengths first — a length mismatch explains every index after the
+shorter one — and otherwise names the first index the two disagree at, with both elements at it:
+
+```
+panic: got 2 elements, want 3 (main.sysl:4)
+panic: got 2, want 5 at index 1 (main.sysl:9)
+```
+
+**Floats use a different pair, in [`sysl.math`](/library/math/).** `==` is the wrong question to ask
+about a float, so `assert_approx_eq` and `assert_approx_eq_rel` take a tolerance and are built on
+`approx_eq` / `approx_eq_rel`, which is where the right question already lives.
+
 **These are the *runtime* half of the language's checking, and they are not the same half as
 [contracts](/reference/errors/).** A `require` clause is a promise about a **call**, checked where
 the call arrives. `assert` is a promise about a **moment**, checked where the moment is. A function

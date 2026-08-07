@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the four annotations a declaration takes, the three a file's header takes, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the four annotations a declaration takes, the four a file's header takes, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -11,7 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost` | an **annotation** — a fact about the declaration under it | the grammar |
-| `@no_alloc`, `@requires`, `@link` | an **annotation** — a fact about the whole file, in its header | the grammar |
+| `@no_alloc`, `@requires`, `@link`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
 
 **The last two are told apart by the sigil, and that is the whole rule.** An annotation is `@` and
@@ -32,11 +32,13 @@ may be stacked, and writing the same one twice is refused. `@test` and `@tailrec
 and `@ghost` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page.
 
-**On the file** there are three, in its header directly below `module` and before everything else:
-`@no_alloc` and its siblings, `@requires(...)`, and `@link("...")`. These say what the whole module
-may do and what its `extern`s need, so they attach to the file rather than to any declaration in it —
-and writing one further down is refused with a message saying where it belongs. They are covered
-under [modules](/reference/modules/) and [FFI](/reference/ffi/), where what they *mean* is.
+**On the file** there are four, in its header directly below `module` and before everything else:
+`@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, and `@tests`. The first three say
+what the whole module may do and what its `extern`s need; the fourth says the file is scaffolding
+for the module's tests. All four attach to the file rather than to any declaration in it — and
+writing one further down is refused with a message saying where it belongs. The first three are
+covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where what they *mean* is;
+`@tests` is below.
 
 **An annotation's name is an ordinary identifier**, which is the point of writing these as
 annotations at all: nothing here is reserved, so a program may still call something `test`, `link`,
@@ -266,6 +268,61 @@ library, a program's do not run when it runs, and neither stops being checked.
 
 A helper only a test calls leaves with it, because it becomes unreachable and pruning notices; a
 helper the program also calls stays, because the program still calls it.
+
+### `@tests` — a file of scaffolding
+
+Pruning answers for a **program**. It does not answer for a **library**, which has no `main` to lower
+outwards from, so every public declaration is a potential entry and all of them are emitted. A helper
+only a test called would ride into the artifact and be advertised out of it, nameable by everything
+that links the library. Nothing about the declaration says it is scaffolding, and nothing could — it
+is an ordinary function, which is the point of it.
+
+So the **file** says it, in its header, beside the capability clauses:
+
+```sysl
+@tests
+
+fixture() -> int = 6 * 7
+
+@test("the fixture is the answer")
+the_fixture_holds() =
+    assert_eq(fixture(), 42)
+```
+
+It is `@tests` and not `@test` because the two say different things: `@test` names something the
+runner calls, and this names something no build but the runner's keeps. One word for both would read
+as though the file were itself a test.
+
+**Two rules, and either alone would be unsound.** Every build but `sysl test` drops everything such a
+file declares — and nothing outside a test may name any of it. Without the second, a program that
+called a helper would compile here and fail at the *link*, with a message about a missing symbol
+rather than about the line that named it.
+
+The restriction is stated over the **referring declaration**, not over the file it sits in. So a
+`@test` function may name scaffolding wherever it was written — which is what keeps a test able to
+sit beside what it tests — and another `@tests` file may, and nothing else may:
+
+```sysl
+@tests
+
+fixture() -> int = 6 * 7
+
+print(fixture())
+```
+
+```error
+error: 'fixture' is declared in a file that said '@tests', so it is there for the module's tests and no build but 'sysl test' keeps it — only another such file, or a '@test' function, may name it
+```
+
+**An `impl` block may not sit in one.** It declares no name; it fills a slot in a method table, which
+the rest of the program reads without naming anything. Kept in a test build and dropped everywhere
+else, it would mean a trait answering one way while the tests ran and another way in the program that
+ships. The impl belongs beside the type.
+
+**It stops at the package boundary.** A package is compiled from source and a library arrives as an
+artifact whose test files were never encoded, so a rule that let the reference cross would compile
+against one and fail against the other. A test-support library *meant* to be imported is therefore
+ordinary code that ships, and is a different thing from a file of scaffolding inside a package.
 
 ### The runner
 
@@ -549,7 +606,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure` and `@ghost` on a declaration, `@no_<capability>`, `@requires` and `@link` on a file. What would make it general — a `packed` struct layout, an alignment annotation — is not designed |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure` and `@ghost` on a declaration, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. What would make it general — a `packed` struct layout, an alignment annotation — is not designed |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
 | a test framework in the library | a test asserts in the language it is testing, and passes by returning |
