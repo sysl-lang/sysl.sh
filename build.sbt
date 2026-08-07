@@ -35,7 +35,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // standard-module artifact and the program each defined `sysl$stdout` and GNU `ld` refuses that
 // where `ld64` quietly takes the first. Nothing about it was macOS-specific except the consequence,
 // which is why a suite that had only ever run on the author's machine was green throughout.
-val syslVersion = "0.0.21"
+val syslVersion = "0.0.22"
 
 lazy val root = project
   .in(file("."))
