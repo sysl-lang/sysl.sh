@@ -235,6 +235,167 @@ something else is a function the *processor* enters rather than a caller, and th
 a definition rather than of a foreign declaration — see `interrupt`
 below.
 
+## `@export` — a definition C can call
+
+`@export` is `extern` read the other way. An `extern` names a symbol the linker has and states the
+signature the other side published; an `@export` publishes a symbol and states the signature C may
+call it at. They are spelled alike because they are one mechanism pointing in two directions:
+
+```sysl
+extern exit(code: int) -> never
+
+@export
+add(a: i32, b: i32) -> i32 = a + b
+```
+
+A sysl definition ordinarily carries its module path into its symbol, so two modules may each declare
+an `init` without colliding. `@export` is the one thing that suppresses that: the definition is
+emitted under a bare, unmangled name a C declaration can spell and a C linker can resolve.
+
+### Naming the symbol
+
+`@export("mylib_add")` publishes it under that name instead, which is the same rename `extern` offers
+on the importing side:
+
+```sysl
+module mylib
+
+@export("mylib_add")
+add(a: i32, b: i32) -> i32 = a + b
+```
+
+**This is the form a real C API wants rather than a convenience.** A C library's symbols share a
+prefix so that linking two of them is not a coin toss, and the sysl side has a module path doing that
+job already. `add` is the name to write inside sysl and `mylib_add` is the name to publish; requiring
+the function to be *called* `mylib_add` everywhere inside would be spelling the module path twice.
+**A sysl caller is unaffected** — it goes on naming `mylib.add` and simply arrives at a different
+label.
+
+`@export` implies C's convention and says nothing about any other, which is `extern`'s rule read the
+other way.
+
+### What an exported function may be
+
+The boundary is a **facade**: one file whose job is the export surface, where the signatures are
+written to be C-shaped on purpose. That is what makes the list below cost so little — every refusal
+fires inside a file somebody wrote for this, where the restriction is the point rather than a
+surprise.
+
+| refused | because |
+|---|---|
+| a **generic** | an exported symbol is one function at one signature, so there is no way to say which instantiation the linker holds |
+| a **member** | C has no receiver to hand it. The grammar refuses this before any rule does: an annotation is read above a top-level declaration only, so `@test` and `@pure` are as unavailable on a method |
+| a **`private`** definition | `private` gives the symbol internal linkage, which promises every caller is inside the module; an export promises the opposite |
+| a **`@ghost`** | it is erased before there is a symbol at all |
+| a **`@test`** | only `sysl test` builds one, and an export has to be in the artifact a C project links |
+| a **variadic** | what a C caller promotes into the tail is decided by the prototype it compiled against, not by this declaration. Take a `va_list` parameter, which says the same thing and is what C's own `v` variants do |
+| a symbol that is not a **C identifier** | there would be nothing a C declaration could spell |
+
+**The types are the interesting rule, and it is the section above stated as a restriction.** A
+scalar, a `*T` and a function pointer cross as themselves. Everything else does not: an aggregate by
+value is handed over in whichever registers the machine's convention names, which is not what a
+sysl-to-sysl call does — so passing one would be a **corrupt call rather than a link error**, and it
+is refused instead of lowered hopefully.
+
+```sysl
+module mylib
+
+@export
+sum(xs: []i32) -> i32 = 0
+```
+
+```error
+'xs' of the exported 'mylib.sum' is []i32, which C has no way to spell — an exported function takes an integer, a float, a 'bool', a 'char', a pointer or a function pointer. A slice is an address and a length, so C takes them as two parameters — a pointer and a 'usize' — which is the shape its own string and buffer functions already have
+```
+
+Every refusal names the shape to write instead, because there always is one — a slice becomes the
+pointer and length C's own buffer functions already take, an aggregate becomes a pointer to itself.
+That is what makes the boundary writable rather than merely restricted.
+
+### Module storage a C caller cannot fill
+
+Module storage is filled before a program's own statements run, and **a C project supplies its own
+`main`** — so nothing sysl emitted runs before the C side calls in. An exported function that reached
+storage a computed initializer would have written would read whatever the loader left, so it is
+refused, and the walk is transitive:
+
+```sysl
+module mylib
+
+counter() -> i32 = 7
+
+val start: i32 = counter()
+
+@export
+begin() -> i32 = start
+```
+
+```error
+'mylib.begin' is exported and reaches 'mylib.start', which is module storage an initializer fills before the program's own statements run. A C project linking this supplies its own 'main', so nothing fills it and the function would read whatever the loader left. A module 'val' whose initializer is constant data is laid straight into the object file and is fine here — it is a computed one that has nowhere to be computed
+```
+
+**A `val` whose initializer is constant data is fine**, because nothing runs to fill it — the
+constant is written straight into the object file. That is the rule C already has for a
+static-storage initializer, which is why this bites so rarely:
+
+```sysl
+module mylib
+
+val start: i32 = 7
+
+@export
+begin() -> i32 = start
+```
+
+A `const` has no storage at all and never arises.
+
+### What the compiler hands the C project
+
+`sysl build-c` writes a **static archive** and a **C header** beside it:
+
+```text
+$ sysl build-c mylib -o libmylib.a
+wrote libmylib.a
+wrote libmylib.a.h
+```
+
+The header is a translation of the exported signatures and holds no decisions of its own:
+
+```c
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int32_t mylib_add(int32_t a, int32_t b);
+
+#ifdef __cplusplus
+}
+#endif
+```
+
+It uses `<stdint.h>`'s fixed-width names because sysl's integers say what they *are* where C's say
+what they are *at least*: an `i32` is `int32_t`, and writing it `int` would be right on every machine
+anyone is likely to use and wrong as a claim. A `char` is a Unicode scalar value and becomes
+`uint32_t`, never C's `char`, which would be wrong by a factor of four.
+
+From there it is an ordinary C build:
+
+```text
+$ clang main.c libmylib.a -o app
+```
+
+**What the archive does not hold is what the sysl side's own libraries supply**, and `build-c` says
+which those are rather than leaving them to be found at that link, where an unresolved sysl symbol
+reads as a missing definition rather than as a missing archive. `--no-std-lib` folds the library's
+source into the object and the archive then stands alone.
+
+`sysl emit-header` prints the same declarations without building anything, for a project that
+generates its headers as a build step.
+
 ## `@link` — which library resolves the externs
 
 `@link("z")` in a file's header names a library the linker must be given, and it sits beside the
@@ -1002,13 +1163,13 @@ Three build rules:
 |---|---|
 | an `fn(int) -> int` type for sysl's own callables | the `Fn` trait; `*extern` exists only where the representation is somebody else's to choose |
 | a header parser or a binding generator | an `extern` per declaration, and a `.c` shim for what a header hides |
-| a way to export a sysl function to C | open — the annotation half is built, and the mangling question is not settled |
+| a calling convention on an export | open — `@export` implies C's, and `interrupt` already built the shape a second one would take |
 | a capability gate on an extern | open — an extern reaching libc plausibly needs `os`, and does not yet say so |
 | an alias for a pointer signature | open — what is missing is a type alias that is not a constrained subtype |
 
-The export direction is the one worth watching. A C codebase is replaced incrementally, so calling
-*into* sysl matters as much as calling out of it — and `interrupt` already built the half that
-decides how a definition states the convention it is entered under.
+Both directions now exist. `extern` calls out of sysl and `@export` calls into it, which is what an
+incremental replacement of a C codebase needs: the sysl side can sit underneath an existing C
+program as readily as on top of an existing C library.
 
 ---
 

@@ -268,6 +268,49 @@ accepted where a `[]const T` is wanted — the direction that takes a permission
 that grants it. Each of those adds an owner or removes a licence. None of them changes a value's
 width, which is the implicit conversion C actually has and the one this page is about.
 
+## You do not have to start over
+
+A language is adopted a file at a time or not at all, and both directions across the boundary are
+open.
+
+**sysl on top, your C underneath.** An `extern` declares a symbol the linker already has, and
+`@link("z")` names the library that resolves it. Nothing is generated and no header is parsed — you
+write the declarations you use and no more, and one nothing calls costs the output nothing. A `.c`
+file dropped anywhere in the tree is compiled with it, which is how the parts a header hides — a
+macro, a `sizeof` only the header knows, an untagged union — get reached at all.
+
+**Your C on top, sysl underneath.** `@export` publishes a definition under a plain, unmangled symbol,
+and `sysl build-c` writes a static archive and a C header for your existing build to consume:
+
+```sysl
+module mylib
+
+@export("mylib_add")
+add(a: i32, b: i32) -> i32 = a + b
+```
+
+```text
+$ sysl build-c mylib -o libmylib.a
+wrote libmylib.a
+wrote libmylib.a.h
+```
+
+```c
+#include "libmylib.a.h"
+
+int main(void) { return mylib_add(2, 3); }
+```
+
+```text
+$ clang main.c libmylib.a -o app
+```
+
+The exported signatures are the C-shaped ones — scalars, pointers, function pointers — because that
+is what a C prototype can say. What you write is a **boundary file**: one module whose job is the
+surface, holding the handful of functions the C side calls, with everything behind it written in
+whatever shapes sysl prefers. That is the same facade a C++ or Rust library grows for the same
+reason, and [the FFI reference](/reference/ffi/) has the whole of what may cross.
+
 ---
 
 Next: the [tour](/tour/), which starts from the beginning and does not assume you read this.

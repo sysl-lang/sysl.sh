@@ -35,7 +35,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/getting-started/installation.md"    -> (0, 0, 0),
     "docs/content/getting-started/first-program.md"   -> (1, 0, 1),
     "docs/content/getting-started/cli.md"             -> (0, 0, 0),
-    "docs/content/getting-started/from-c.md"          -> (6, 3, 0),
+    "docs/content/getting-started/from-c.md"          -> (6, 3, 1),
     "docs/content/tour/_index.md"                     -> (0, 0, 0),
     "docs/content/tour/values.md"                     -> (7, 1, 0),
     "docs/content/tour/control-flow.md"               -> (10, 0, 0),
@@ -67,7 +67,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     "docs/content/reference/errors.md"                 -> (20, 27, 1),
-    "docs/content/reference/ffi.md"                    -> (13, 18, 3),
+    "docs/content/reference/ffi.md"                    -> (13, 20, 6),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     "docs/content/reference/attributes.md"             -> (15, 18, 3),
     "docs/content/reference/verification.md"           -> (15, 5, 1),

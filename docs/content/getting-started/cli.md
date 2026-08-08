@@ -17,8 +17,10 @@ the path is standing on.
 | `sysl run <path>` | compile and execute |
 | `sysl build <path> -o <exe>` | compile to a native executable |
 | `sysl build-lib <path> -o <artifact>` | compile a library to a linkable artifact |
+| `sysl build-c <path> -o <archive>` | compile to a static archive and a C header, for a C project |
 | `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
+| `sysl emit-header <path>` | print the C header for what a module exports |
 | `sysl targets` | list the machines sysl can build for |
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -84,6 +86,38 @@ trees rather than as object code.
 Building one needs an `llvm-ar` as well as a `clang`, because a `.syslib` **is** an `ar` archive —
 [installation](/getting-started/installation/) has the note about which `ar` and why the platform
 one will not do.
+
+### `build-c`
+
+```bash
+sysl build-c mylib -o libmylib.a
+sysl build-c mylib -o libmylib.a --header include/mylib.h
+```
+
+`build-lib`'s shape with a different destination: a **static archive** an existing C project links,
+and a **C header** declaring whatever the module marked `@export`. The compilation is the ordinary
+one rather than a library build — what is wanted is a module lowered for this target with its calls
+resolved — and what differs from `build` is that no entry point is emitted, since the C side supplies
+its own `main`.
+
+The header goes beside the archive with `.h` appended unless `--header` names somewhere else. Both
+paths are announced on stderr, along with the archives the C project's own link line will still need
+— an unresolved sysl symbol over there reads as a missing definition rather than as a missing
+archive, so it is worth being told before you meet it. `--no-std-lib` folds the standard library into
+the object and the archive then stands alone.
+
+Like `build-lib`, this needs an `llvm-ar` as well as a `clang`. [FFI](/reference/ffi/) has `@export`
+itself — what may be exported, what a symbol is named, and why a computed module `val` cannot be
+reached from one.
+
+### `emit-header`
+
+```bash
+sysl emit-header mylib
+```
+
+The same header `build-c` writes, on stdout and with nothing built, for a project that generates its
+headers as a build step.
 
 ### `test`
 

@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the six annotations a declaration takes, the four a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the seven annotations a declaration takes, the four a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
@@ -28,10 +28,11 @@ with. That is a rule about directives, not the thing that distinguishes them.
 
 Annotations come in three groups, by what they attach to.
 
-**On a function** there are six, each written on its own line above the declaration. More than one
+**On a function** there are seven, each written on its own line above the declaration. More than one
 may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
 `@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
-[verification](/reference/verification/) page.
+[verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
+the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of.
 
 **On the file** there are four, in its header directly below `module` and before everything else:
 `@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, and `@tests`. The first three say
@@ -948,7 +949,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure` and `@ghost` on a declaration, `@packed` and `@align(n)` on a struct, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost` and `@export` on a declaration, `@packed` and `@align(n)` on a struct, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | a sub-byte field | `@packed` removes the padding *between* fields and not the width *of* one, so an `iN` field occupies its allocated width wherever it sits and a five-bit hardware register is still shifts and masks. That is the bitfield question, and it is open on its own |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
