@@ -62,7 +62,7 @@ A type's name is a type and not a value, so nothing is *read* from it. What it a
 `Color::First` cannot be confused with a variant, an associated function, or a member an `impl`
 added, and no `impl` can shadow one by declaring a member of that name.
 
-Two kinds of type answer them, and each set is **fixed and closed**.
+Three kinds of type answer them, and each set is **fixed and closed**.
 
 ### A simple enum
 
@@ -115,6 +115,81 @@ The two sets are spelled the same way for the same reason and overlap where the 
 but they are not one set: an enum has `Pos`, `Val`, `Image` and `Value` because its values are named
 and unevenly spaced, and a subtype has `Valid` and `Range` because its values are a contiguous run of
 integers.
+
+### An integer type
+
+The third set is two attributes wide — `Min` and `Max`, the extremes the type can hold. They belong
+to every member of the `iN`/`uN` family, and to the named types that are members of it.
+
+```sysl
+print(u8::Min, u8::Max)
+print(i8::Min, i8::Max)
+print(int::Min, int::Max)
+print(byte::Min, byte::Max)
+```
+
+```output
+0 255
+-128 127
+-2147483648 2147483647
+0 255
+```
+
+**The open family is why these exist rather than being written out.** A program can spell `4294967295`
+for a `u32` and lose nothing; the largest `u10000` is 3,011 digits and cannot practically be written
+at all, so for a wide member the attribute is the only way to name a value the type obviously has.
+It is also why they cannot be a library table the way C's `UINT8_MAX` is — there is no finite set of
+integer types to tabulate.
+
+```sysl
+print(u3::Min, u3::Max)
+print(i5::Min, i5::Max)
+print(u64::Max)
+```
+
+```output
+0 7
+-16 15
+18446744073709551615
+```
+
+**They are constants taking no argument, so they fold.** That is what puts them where no call is
+admitted — a `const` initializer, an `@assert` condition, an array bound:
+
+```sysl
+const LIMIT: u16 = u16::Max
+const HALF: u32 = u32::Max / 2
+
+print(LIMIT, HALF)
+```
+
+```output
+65535 2147483647
+```
+
+**`usize` answers only a floor across targets.** Its width is the pointer's, so `usize::Min` is 0
+everywhere and `usize::Max` is whatever the target makes it — a program that prints the latter is
+reading a fact about the machine rather than about the language.
+
+**`Min`/`Max` are not `First`/`Last` renamed**, and asking for the wrong pair is answered by name
+rather than by a general refusal:
+
+```sysl
+print(u8::First)
+```
+
+```error
+'u8' is an integer, not a declared sequence — its extremes are 'u8::Min' and 'u8::Max'. 'First' and 'Last' name the ends of an enum's variants or of a 'within' range, which is a different question
+```
+
+`First` and `Last` name the ends of a *declared sequence* — an enum's variants, a written range —
+and an enum's discriminants may be explicit and non-contiguous, so its first-declared variant need
+not carry the smallest value. The two questions coincide on an integer and only there. **A
+`within`-ranged subtype answers both**, since there they genuinely agree, and a reader who learned
+`Min` on `u32` should not find it renamed on a subtype of `u32`.
+
+Only integers have them: `f64::Max` and `bool::Max` are refused, the float because its extremes are
+`sysl.math`'s business and the boolean because it is not that kind of type.
 
 ### What has no attributes
 
@@ -443,6 +518,10 @@ This is what it was built for. sysl lays a struct out in declaration order and i
 construction, but from inside sysl that claim cannot be checked: `sizeof` reports what *sysl* laid
 out, not what the header says, so comparing the two is a tautology.
 
+Where the C side is `__attribute__((packed))` or was declared at a boundary, `@packed` and
+`@align(n)` further down this page are how the sysl side says the same thing — and the check below is
+what proves the two agree rather than merely look similar.
+
 It stops being one when both sides name the same number. The C half goes in a `.c` beside the sysl,
 which [is compiled with it](/reference/ffi/) and for the same target, so it reads the headers of the
 machine being built for:
@@ -512,6 +591,163 @@ calls itself nowhere the jump can replace
 
 It changes nothing about what is emitted. Write it where losing the jump silently would be a bug,
 and leave it off everywhere else.
+
+## `@packed` and `@align(n)` — where a struct's fields sit
+
+By default a struct pads: each field begins on its own alignment, and the aggregate takes the widest
+of them. That is the layout a program wants unless something outside the program has an opinion.
+
+```sysl
+struct Head
+    tag: u8
+    len: u32
+
+print(sizeof(Head), alignof(Head))
+```
+
+```output
+8 4
+```
+
+Three bytes of that eight are a gap in front of `len`. **Two attributes move a struct off the
+default, and they are separate axes** — one removes the padding *between* fields, the other raises
+where the aggregate *begins*.
+
+### `@packed` — no interior padding
+
+```sysl
+@packed
+struct Head
+    tag: u8
+    len: u32
+
+print(sizeof(Head), alignof(Head), sizeof([4]Head))
+```
+
+```output
+5 1 20
+```
+
+The fields are laid end to end, the aggregate needs no alignment of its own, and an array of them has
+no gap between elements either. A register block, and a C struct that has to match one, are what it
+is for.
+
+The fields still read and write their own values — packing changes where they sit, not what they are:
+
+```sysl
+@packed
+struct Head
+    tag: u8
+    len: u32
+
+var h = Head(7, 1000)
+
+h.len += 1
+
+print(h.tag, h.len)
+```
+
+```output
+7 1001
+```
+
+**A packed field has no address.** `&s.f` is refused, and so is any `*T` into one:
+
+```sysl
+@packed
+struct Head
+    tag: u8
+    len: u32
+
+var h = Head(1, 2)
+val p = &h.len
+
+print(1)
+```
+
+```error
+'&' here makes a '*uint' into Head, which is '@packed' — its fields sit at their declared offsets, so this one need not be on a 'uint' boundary, and every use of a '*uint' is entitled to assume that it is. Read or write the field through the struct, which is where the offset is known, or take the address of the Head itself
+```
+
+The field sits at its declared offset, which is very often *not* a multiple of its own alignment —
+that is the point of the attribute — while a `*u32` is a `*u32` wherever it came from, and every use
+of one is entitled to assume the address is aligned. Only the escaped address loses that, and it
+would lose it arbitrarily far from the `&` that made it. **The struct's own address is untouched**,
+being an ordinary pointer to an ordinary aggregate.
+
+### `@align(n)` — where the aggregate begins
+
+```sysl
+@align(64)
+struct Head
+    tag: u8
+    len: u32
+
+print(sizeof(Head), alignof(Head))
+```
+
+```output
+64 64
+```
+
+The size rounds up as well as the start, so an array keeps every element on the boundary. **It may
+only raise**: asking for less than the fields already need changes nothing, since lowering is what
+`@packed` is for and a type that under-promised would be unsound to pass around.
+
+**The bound is folded rather than lexed**, so a program writes the name it already has for the number,
+and arithmetic over one works:
+
+```sysl
+const CACHE_LINE: int = 64
+
+@align(CACHE_LINE)
+struct Head
+    tag: u8
+    len: u32
+
+print(alignof(Head))
+```
+
+```output
+64
+```
+
+It must be a power of two — an address is aligned by having low bits clear, so a boundary of six is
+unsatisfiable rather than merely weak:
+
+```sysl
+@align(6)
+struct S
+    a: int
+```
+
+```error
+'@align(6)' on 'S' is not an alignment — a boundary is a power of two, since an address is aligned by having low bits clear
+```
+
+### They compose
+
+The gaps *between* fields and the boundary the whole thing *starts* on are different questions, so a
+wire header that has to live in a DMA-capable buffer is both at once. The order they are written in
+does not matter.
+
+```sysl
+@packed
+@align(16)
+struct Head
+    tag: u8
+    len: u32
+
+print(sizeof(Head), alignof(Head))
+```
+
+```output
+16 16
+```
+
+**Sub-byte fields are not part of this.** An `iN` field occupies its allocated width wherever it sits,
+packed or not, so a hardware register's five-bit field is still shifts and masks. That is the bitfield
+question and it is open on its own.
 
 ## `#if` — gating lines before the lexer
 
@@ -712,7 +948,8 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure` and `@ghost` on a declaration, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. What would make it general — a `packed` struct layout, an alignment annotation — is not designed |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure` and `@ghost` on a declaration, `@packed` and `@align(n)` on a struct, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a sub-byte field | `@packed` removes the padding *between* fields and not the width *of* one, so an `iN` field occupies its allocated width wherever it sits and a five-bit hardware register is still shifts and masks. That is the bitfield question, and it is open on its own |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
 | a test framework in the library | a test asserts in the language it is testing, and passes by returning |

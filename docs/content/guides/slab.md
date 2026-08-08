@@ -35,15 +35,19 @@ end next_free
 
 ## What it found
 
-**The language cannot demand that storage be aligned.** A `[N]u8` is aligned to one, because that is
-what its element needs, and there is no `alignas`. So a region declared the obvious way is not aligned
-for anything carved out of it, and every load through the resulting pointer is unaligned — which x86
-tolerates and which faults on some of the targets this language is for.
+**A region declared the obvious way is not aligned for what gets carved out of it.** A `[N]u8` is
+aligned to one, because that is what a byte needs, so every load through the resulting pointer is
+unaligned — which x86 tolerates and which faults on some of the targets this language is for.
 
 The allocator therefore rounds its own base up, exactly as a real one does, paying up to
-`alignof(T) - 1` bytes of the region. **That is the right behaviour for an allocator and the wrong
-reason to have written it**: an allocator rounds up because its caller's region is wherever it is, not
-because the language could not say what it wanted.
+`alignof(T) - 1` bytes of the region.
+
+**When this guide was written that was the only thing a program could do, and it is not any more.**
+`@align(n)` on a struct declaration asks for a boundary and gets it — see
+[attributes](/reference/attributes/). What has not changed is that it is the right behaviour *here*:
+a slab is handed a slice it did not declare, so it cannot know what its caller's region is aligned
+to and rounding up is exactly what the rounding is for. **The finding was that the allocator had no
+choice; the answer is that its caller now does.**
 
 **`sizeof` is what makes a container generic, and `alignof` is what makes it correct.** With only the
 first, a slab over any `T` still lays its blocks at whatever offset the region began at. The two

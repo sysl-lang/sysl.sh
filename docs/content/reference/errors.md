@@ -837,6 +837,16 @@ The set is small and closed, and every member of it is a question about **intege
 | `T::Succ(x)` | the next value | a `T` from a `T`; traps at `T::Last` |
 | `T::Pred(x)` | the previous value | a `T` from a `T`; traps at `T::First` |
 | `T::Range` | the range itself | only as a `for` loop's iterable, `First..Last` inclusive, the variable a `T` |
+| `T::Min` / `T::Max` | the same two numbers | the *magnitude* question, which agrees with the ordinal one here — see below |
+
+**`Min`/`Max` are not aliases of `First`/`Last`, and the reason matters where the two come apart.**
+`First` and `Last` name the ends of a *declared sequence*; `Min` and `Max` the extremes a type can
+hold. A `within` range is written in order, so both questions have the same answer here and both are
+offered — refusing `Min` on the one kind of type whose whole purpose is bounds would be the odd
+outcome, and a reader who met `Min` on `u32` should not find it renamed on a subtype of `u32`. A
+**simple enum answers only `First`/`Last`**, because that is where they diverge: discriminants may be
+explicit and non-contiguous, so the first-declared variant need not carry the smallest one. An
+**integer type answers only `Min`/`Max`**, on the [attributes](/reference/attributes/) page.
 
 ```sysl
 type Slot = new u8 within 0..<8
