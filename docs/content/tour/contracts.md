@@ -162,7 +162,7 @@ one:
 ```sysl
 type Slot = new u8 within 0..<8
 
-print(u8(Slot::First), u8(Slot::Last), Slot::Valid(3u8), Slot::Valid(200u8))
+print(u8(Slot::First), u8(Slot::Last), Slot::Valid(3), Slot::Valid(200))
 
 var total = 0
 

@@ -62,13 +62,13 @@ The program checks the property that actually matters, which a byte count would 
 
 ```sysl
 even(text: []const u8) -> bool
-    val want = columns(line(text, 0usize))
-    var i = 1usize
+    val want = columns(line(text, 0))
+    var i = 1
 
     while i < usize(lines(text))
         if columns(line(text, i)) != want then return false
 
-        i += 1usize
+        i += 1
 
     true
 end even

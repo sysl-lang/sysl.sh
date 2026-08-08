@@ -41,7 +41,7 @@ words_in(s: string) -> int
     var inside = false
 
     for b in s.bytes
-        if b == 32u8 then inside = false
+        if b == 32 then inside = false
         elif !inside
             n += 1
             inside = true
@@ -67,7 +67,7 @@ var sample = """
     the lazy dog
     """
 
-var r = SliceReader(sample.bytes, 0usize)
+var r = SliceReader(sample.bytes, 0)
 var st = tally(&r)
 
 print("lines:", st.lines, "words:", st.words, "bytes:", st.bytes)

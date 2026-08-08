@@ -252,7 +252,7 @@ print(size_of(path).unwrap())
 var f = open(path).unwrap()
 var window: [4]u8
 
-f.seek(6i64).unwrap()
+f.seek(6).unwrap()
 
 var got = f.read(window[..])
 
@@ -292,7 +292,7 @@ f.close().unwrap()
 
 print(f.closed(), f.at_end())
 print(f.close().is_ok())
-print(f.seek(0i64).unwrap_err(), f.seek(0i64).unwrap_err().code())
+print(f.seek(0).unwrap_err(), f.seek(0).unwrap_err().code())
 
 var window: [4]u8
 var got = f.read(window[..])

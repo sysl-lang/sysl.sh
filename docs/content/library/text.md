@@ -217,9 +217,9 @@ second byte by the same test, before any code point is assembled.
 ```sysl
 import sysl.text.from_utf8
 
-var good = [104u8, 195u8, 169u8]
-var cut = [104u8, 195u8]
-var surr = [237u8, 160u8, 128u8]
+var good: [3]u8 = [104, 195, 169]
+var cut: [2]u8 = [104, 195]
+var surr: [3]u8 = [237, 160, 128]
 
 from_utf8(good[..]) match
     Ok(t) -> print("ok", t)
@@ -397,8 +397,8 @@ whether it is UTF-8.
 ```sysl
 import sysl.text.Search
 
-var raw = [104u8, 105u8, 33u8]
-var needle = [105u8, 33u8]
+var raw: [3]u8 = [104, 105, 33]
+var needle: [2]u8 = [105, 33]
 
 print(raw[..].contains(needle[..]), raw[..].index_of(needle[..]).unwrap())
 print(raw[..].starts_with([104u8][..]), raw[..].is_empty())
@@ -727,7 +727,7 @@ import sysl.text.{split, parse_int, ParseError, Search}
 
 read_port(line: string) -> Result[int, ParseError]
     var parts = split(line, "=")
-    var n = parse_int(parts[parts.len - 1usize].trim())?
+    var n = parse_int(parts[parts.len - 1].trim())?
 
     Ok(n)
 end read_port

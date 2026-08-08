@@ -256,7 +256,7 @@ end Gpio
 var block = Gpio(0b1010u32, 0u32, 0u32)
 var regs: *Gpio = &block
 
-regs.output = 0b0110u32
+regs.output = 0b0110
 regs.shadow = regs.output
 
 print(regs.input, regs.output, regs.shadow)
@@ -279,7 +279,7 @@ touch of a cached flag an unoptimizable access.
 It also qualifies **storage**, never a value — which is the rule the spelling follows from:
 
 ```sysl
-var x: volatile u32 = 0u32
+var x: volatile u32 = 0
 
 print(x)
 ```
@@ -311,7 +311,7 @@ end Bank
 
 var b = Bank([1, 2, 3])
 
-b.set(1usize)
+b.set(1)
 
 print(b.slot[0], b.slot[1], b.slot[2])
 ```
@@ -465,7 +465,7 @@ end Kernel
 
 var k = Kernel([Task(0, 7); 4])
 
-k.advance(2usize)
+k.advance(2)
 
 print(k.tasks[2].state, k.tasks[2].prio, k.tasks[0].prio)
 ```

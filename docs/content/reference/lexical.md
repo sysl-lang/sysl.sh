@@ -183,7 +183,7 @@ var dec = 1_000_000
 var hex = 0xFF
 var bin = 0b1010_1010
 var oct = 0o755
-var suffixed = 42u8
+var suffixed = 42
 
 print(dec, hex, bin, oct, suffixed)
 ```

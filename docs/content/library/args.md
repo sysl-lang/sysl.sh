@@ -429,7 +429,7 @@ var a = cstring("prog")
 var b = cstring("--verbose")
 var c = cstring("file.txt")
 var vec = [a.ptr, b.ptr, c.ptr]
-var made = args_of(3i32, &vec[0])
+var made = args_of(3, &vec[0])
 
 print(made.len)
 print(made[0], made[1], made[2])
@@ -464,9 +464,9 @@ owner is the process image, which is a thing no sysl type describes.
 ```sysl
 import sysl.args.args_of
 
-var bad: []u8 = [255u8, 0u8]
+var bad: []u8 = [255, 0]
 var vec = [&bad[0]]
-var made = args_of(1i32, &vec[0])
+var made = args_of(1, &vec[0])
 
 print(made.len)
 ```

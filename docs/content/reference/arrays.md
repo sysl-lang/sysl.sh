@@ -75,7 +75,7 @@ const n: usize = 6
 var counters: [4]int
 var ones = [1; 5]
 var grid = [[0; 3]; 3]
-var window = [0u8; n]
+var window = [0; n]
 
 grid[1][2] = 5
 
@@ -240,13 +240,13 @@ A length that is not in the type is precisely what a `[]T` is, so nothing here n
 
 ```sysl
 decode(header: []const u8) -> []u8
-    var out: []u8 = [0u8; usize(header[0])]
+    var out: []u8 = [0; usize(header[0])]
 
     for i in 0..<out.len do out[i] = header[1] + u8(i)
 
     out
 
-var frame = [3u8, 10u8]
+var frame: [2]u8 = [3, 10]
 var body = decode(frame[..])
 
 print(body.len, body[0], body[2])

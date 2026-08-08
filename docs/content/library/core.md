@@ -199,7 +199,7 @@ calls with a space between and a newline at the end.
 | anything else | its `Display` | via `str`, which renders into a buffer |
 
 ```sysl
-print(42, 3.5, true, 'é', "text", 7u64)
+print(42, 3.5, true, 'é', "text", 7)
 print(1.0 / 3.0)
 ```
 
@@ -223,7 +223,7 @@ printb(false)
 prints("|")
 printc('é')
 prints("|")
-printu(9u64)
+printu(9)
 putbytes("|end\n".bytes)
 ```
 
@@ -247,10 +247,10 @@ call per byte, and the loop is what a target with a real `write` replaces anyway
 
 ```sysl
 putbytes(b: []const u8)
-    var i = 0usize
+    var i = 0
     while i < b.len
         sysl_putchar(int(b[i]))
-        i += 1usize
+        i += 1
 end putbytes
 ```
 
@@ -444,7 +444,7 @@ display_bool(true, out, FormatSpec(8, -1, true))
 out.write("|".bytes)
 display_char('é', out, FormatSpec(4, -1, false))
 out.write("|".bytes)
-display_uint(7u64, out, FormatSpec(0, 3, false))
+display_uint(7, out, FormatSpec(0, 3, false))
 
 putbytes(sink.text())
 prints("\n")
@@ -645,7 +645,7 @@ struct Key
     n: int
 
 impl Hash for Key
-    hash(self) -> u64 = hash_u64(hash_str(self.name) * 0x100000001b3u64 ^ hash_u64(u64(self.n)))
+    hash(self) -> u64 = hash_u64(hash_str(self.name) * 0x100000001b3 ^ hash_u64(u64(self.n)))
 
 print(Key("a", 1).hash() != Key("a", 2).hash())
 ```
@@ -664,7 +664,7 @@ holds function pointers, and an `impl` is what supplies one:
 ```sysl
 val xs: [3]&Hash = [7, "abc", true]
 
-for h in xs do print(h.hash() != 0u64)
+for h in xs do print(h.hash() != 0)
 ```
 
 ```output
@@ -673,7 +673,7 @@ true
 true
 ```
 
-The widening is the law rather than an implementation detail: `1u8` and `1i64` are the same number,
+The widening is the law rather than an implementation detail: `1` and `1` are the same number,
 they compare equal across widths, and so they hash equal — each becomes the same `u64` before it
 reaches the mixer.
 

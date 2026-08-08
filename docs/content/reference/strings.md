@@ -50,8 +50,8 @@ is no repair path, because there is nothing to repair.
 ```sysl
 import sysl.text.from_utf8
 
-var good: [2]u8 = [0xC3u8, 0xA9u8]
-var bad: [2]u8 = [0xC3u8, 0x28u8]
+var good: [2]u8 = [0xC3, 0xA9]
+var bad: [2]u8 = [0xC3, 0x28]
 
 from_utf8(good[..]) match
     Ok(t) -> print("ok", t.len, t)
@@ -91,7 +91,7 @@ and the validator on top of it is ordinary sysl in [`sysl.text`](/library/text/)
 could do is that last line, because every safe route to a `string` already carries the guarantee.
 
 ```sysl
-var bytes: [3]u8 = [104u8, 105u8, 33u8]
+var bytes: [3]u8 = [104, 105, 33]
 
 print(from_utf8_unchecked(bytes[..]))
 ```
@@ -165,7 +165,7 @@ enough. That gap between the two counts is the whole of what this section is abo
 ```sysl
 var s = "hello"
 
-s[0] = 65u8
+s[0] = 65
 ```
 
 ```error
@@ -177,7 +177,7 @@ a string is immutable, so its bytes have no address to write through
 ```sysl
 var s = "hello"
 
-s.bytes[0] = 65u8
+s.bytes[0] = 65
 ```
 
 ```error

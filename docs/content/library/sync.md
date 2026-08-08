@@ -14,11 +14,11 @@ its allocator and its operating system can still reach every name in it:
 
 import sysl.sync.*
 
-var hits = Atomic(0i32)
-var guard = SpinLock(0i32)
+var hits = Atomic(0)
+var guard = SpinLock(0)
 
 guard.lock()
-hits.add(1i32)
+hits.add(1)
 guard.unlock()
 
 print(hits.load(), guard.held)
@@ -117,7 +117,7 @@ held in a variable is well-typed sysl that cannot be lowered:
 ```sysl
 import sysl.sync.*
 
-var q = Atomic(0i32)
+var q = Atomic(0)
 var ord = Acquire
 
 print(atomic_load(&q.v, ord))
@@ -146,7 +146,7 @@ its own. Importing the type is not importing the names:
 ```sysl
 import sysl.sync.Atomic
 
-var a = Atomic(0i32)
+var a = Atomic(0)
 
 print(a.load(Relaxed))
 ```
@@ -192,11 +192,11 @@ where they cannot.
 
 import sysl.sync.*
 
-var a = Atomic(0i32)
+var a = Atomic(0)
 
-a.store(7i32)
+a.store(7)
 
-var was = a.swap(9i32)
+var was = a.swap(9)
 
 print(was, a.load())
 ```
@@ -221,10 +221,10 @@ gets a different number and none of them is skipped.
 
 import sysl.sync.*
 
-var next = Atomic(0i32)
-var t1 = next.add(1i32)
-var t2 = next.add(1i32)
-var t3 = next.add(1i32)
+var next = Atomic(0)
+var t1 = next.add(1)
+var t2 = next.add(1)
+var t3 = next.add(1)
 
 print(t1, t2, t3, next.load())
 ```
@@ -242,10 +242,10 @@ setting their own flags in, and the answer tells the caller whether it was the o
 
 import sysl.sync.*
 
-var flags = Atomic(0b1100u8)
-var o = flags.or(0b0011u8)
-var n = flags.and(0b0110u8)
-var x = flags.xor(0b1111u8)
+var flags = Atomic(0b1100)
+var o = flags.or(0b0011)
+var n = flags.and(0b0110)
+var x = flags.xor(0b1111)
 
 print(o, n, x, flags.load())
 ```
@@ -266,10 +266,10 @@ is the value to retry against**, so the whole retry loop is one line:
 
 import sysl.sync.*
 
-var slot = Atomic(1i32)
+var slot = Atomic(1)
 var seen = slot.load()
 
-while slot.cas(seen, seen * 10i32) != seen
+while slot.cas(seen, seen * 10) != seen
     seen = slot.load()
 
 print(seen, slot.load())
@@ -294,10 +294,10 @@ where the ordering is not written at the raw call — it is written at *this* ca
 
 import sysl.sync.*
 
-var stats = Atomic(0i32)
+var stats = Atomic(0)
 
 for i in 0..<5
-    stats.add(1i32, Relaxed)
+    stats.add(1, Relaxed)
 
 print(stats.load(Acquire))
 ```
@@ -337,7 +337,7 @@ struct Point
     y: i32
 end Point
 
-var here = Atomic(Point(1i32, 2i32))
+var here = Atomic(Point(1, 2))
 
 print(here.load().x)
 ```
@@ -394,7 +394,7 @@ that arrived in a variable — which is precisely what a method taking an `Order
 ```sysl
 import sysl.sync.*
 
-var a = Atomic(0i32)
+var a = Atomic(0)
 
 print(a.load(Release))
 ```
@@ -418,9 +418,9 @@ not what the author asked for, which is the more useful thing to find out.
 
 import sysl.sync.*
 
-var done = Atomic(0i32)
+var done = Atomic(0)
 
-done.store(1i32, Release)
+done.store(1, Release)
 
 print(done.v)
 ```
@@ -446,7 +446,7 @@ queue, and an interrupt handler are all code that has to take a lock before any 
 
 import sysl.sync.*
 
-var lk = SpinLock(0i32)
+var lk = SpinLock(0)
 var first = lk.try_lock()
 var second = lk.try_lock()
 
@@ -506,10 +506,10 @@ The implementation is worth reading for one detail, which is that `lock` **does 
 exchange**:
 
 ```sysl
-while atomic_swap(&self.held, 1i32, Acquire) != 0i32
+while atomic_swap(&self.held, 1, Acquire) != 0
     var busy = atomic_load(&self.held, Relaxed)
 
-    while busy != 0i32
+    while busy != 0
         busy = atomic_load(&self.held, Relaxed)
 ```
 

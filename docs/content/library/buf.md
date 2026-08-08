@@ -120,7 +120,7 @@ print(b.pop().unwrap())
 print(b.remove(0))
 print(b.view()[0], b.len())
 
-b.truncate(0usize)
+b.truncate(0)
 
 print(b.len(), b.cap(), b.is_empty())
 
@@ -289,7 +289,7 @@ they wanted.
 ```sysl
 import sysl.buf.{Buf, buf_with_capacity}
 
-var w: Buf[int] = buf_with_capacity(100usize, 0)
+var w: Buf[int] = buf_with_capacity(100, 0)
 
 print(w.len(), w.cap())
 
@@ -316,7 +316,7 @@ ordinary arity error:
 ```sysl
 import sysl.buf.{Buf, buf_with_capacity}
 
-var c: Buf[int] = buf_with_capacity(8usize)
+var c: Buf[int] = buf_with_capacity(8)
 ```
 
 ```error

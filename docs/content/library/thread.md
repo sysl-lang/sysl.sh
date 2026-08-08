@@ -14,7 +14,7 @@ because creating a thread needs a scheduler underneath it.
 import sysl.sync.*
 import sysl.thread.spawn
 
-var a = Atomic(0i32)
+var a = Atomic(0)
 
 print(a.load())
 ```
@@ -61,7 +61,7 @@ end Job
 square(j: *Job)
     j.output = j.input * j.input
 
-var job = Job(12i32, 0i32)
+var job = Job(12, 0)
 var t = spawn(&square, &job).unwrap()
 
 t.join()
@@ -82,8 +82,8 @@ infer its parameter type from, because `T` is what is being inferred:
 import sysl.sync.*
 import sysl.thread.*
 
-var counter = Atomic(0i32)
-var c = spawn(a -> a.add(1i32), &counter)
+var counter = Atomic(0)
+var c = spawn(a -> a.add(1), &counter)
 
 print(c.is_some())
 ```
@@ -98,8 +98,8 @@ Write the type in and the real mismatch surfaces:
 import sysl.sync.*
 import sysl.thread.*
 
-var counter = Atomic(0i32)
-var c = spawn((a: *Atomic[i32]) -> a.add(1i32), &counter)
+var counter = Atomic(0)
+var c = spawn((a: *Atomic[i32]) -> a.add(1), &counter)
 
 print(c.is_some())
 ```
@@ -124,7 +124,7 @@ import sysl.sync.*
 import sysl.thread.*
 
 bump(a: *Atomic[i32])
-    a.add(1i32)
+    a.add(1)
 
 var t = spawn(&bump, null)
 
@@ -164,9 +164,9 @@ import sysl.thread.*
 
 bump(a: *Atomic[i32])
     for i in 0..<10000
-        a.add(1i32)
+        a.add(1)
 
-var counter = Atomic(0i32)
+var counter = Atomic(0)
 var t1 = spawn(&bump, &counter).unwrap()
 var t2 = spawn(&bump, &counter).unwrap()
 var j1 = t1.join()
@@ -200,7 +200,7 @@ add_up(s: *Shared)
         s.total = s.total + 1
         s.guard.unlock()
 
-var sh = Shared(SpinLock(0i32), 0i32)
+var sh = Shared(SpinLock(0), 0)
 var s1 = spawn(&add_up, &sh).unwrap()
 var s2 = spawn(&add_up, &sh).unwrap()
 
@@ -223,7 +223,7 @@ racy(p: *i32)
     for i in 0..<100000
         *p = *p + 1
 
-var n = 0i32
+var n = 0
 var r1 = spawn(&racy, &n).unwrap()
 var r2 = spawn(&racy, &n).unwrap()
 
@@ -249,7 +249,7 @@ fields are private, so there is no way to reach the value that does not go throu
 ```sysl
 import sysl.thread.*
 
-var m = Mutex.new(7i32)
+var m = Mutex.new(7)
 
 print(m.value)
 ```
@@ -268,7 +268,7 @@ The private field does a second job: it puts the **positional constructor** out 
 ```sysl
 import sysl.thread.*
 
-var built = Mutex(0i32, 5i32)
+var built = Mutex(0, 5)
 var p = built.lock()
 
 print(*p)
@@ -294,7 +294,7 @@ inc(m: *Mutex[i32])
         defer m.unlock()
         *p = *p + 1
 
-var mx = Mutex.new(0i32)
+var mx = Mutex.new(0)
 var a1 = spawn(&inc, &mx).unwrap()
 var a2 = spawn(&inc, &mx).unwrap()
 
@@ -325,7 +325,7 @@ have worked":
 ```sysl
 import sysl.thread.*
 
-var q = Mutex.new(5i32)
+var q = Mutex.new(5)
 var g = q.try_lock()
 
 print(g.is_some(), *g.unwrap())

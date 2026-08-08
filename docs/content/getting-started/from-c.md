@@ -108,7 +108,7 @@ C's usual arithmetic conversions are absent. `byte` arithmetic is `byte` arithme
 ```sysl
 var small: byte = 200
 
-print(small + 100u8, int(small) + 100)
+print(small + 100, int(small) + 100)
 ```
 
 ```output

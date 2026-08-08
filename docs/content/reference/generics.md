@@ -116,7 +116,7 @@ where nothing else reached it:
 ```sysl
 pick[T: Add](a: T, b: T, c: T) -> T = a + b + c
 
-print(pick(1, 2, 250u8))
+print(pick(1, 2, 250))
 ```
 
 ```output
@@ -529,7 +529,7 @@ low[T](x: T) -> u8 = u8(x)
 
 make[T](b: u8) -> T = T(b)
 
-var n: int = make(7u8)
+var n: int = make(7)
 
 print(low(321), n)
 ```
@@ -555,7 +555,7 @@ end P
 
 make[T](b: u8) -> T = T(b)
 
-var p: P = make(7u8)
+var p: P = make(7)
 
 print(p.v)
 ```
@@ -683,7 +683,7 @@ struct Buf[const N: usize]
 struct Flag[const B: bool]
     v: int
 
-var buf: Buf[4] = Buf([1u8, 2u8, 3u8, 4u8])
+var buf: Buf[4] = Buf([1, 2, 3, 4])
 var on: Flag[true] = Flag(1)
 
 print(buf.data.len, on.v)
@@ -705,8 +705,8 @@ struct Buf[const N: usize]
     room(self) -> usize = N - self.used
 end Buf
 
-var a: Buf[8] = Buf(3usize)
-var b: Buf[2] = Buf(1usize)
+var a: Buf[8] = Buf(3)
+var b: Buf[2] = Buf(1)
 
 print(a.room())
 print(b.room())
@@ -792,7 +792,7 @@ struct Sum
         N
 end Sum
 
-var s = Sum(0usize)
+var s = Sum(0)
 
 print(s.take([1, 2, 3]))
 print(s.take([4, 5]))
@@ -818,7 +818,7 @@ joined[..A: Display](t: (..A)) -> string
     var s = ""
 
     for const i in 0..<A.len
-        if i > 0usize then s = s + "-"
+        if i > 0 then s = s + "-"
 
         s = s + str(t.i)
 
@@ -878,7 +878,7 @@ f(n: usize)
     for const i in 0..<n
         print(i)
 
-f(3usize)
+f(3)
 ```
 
 ```error
@@ -942,7 +942,7 @@ struct Row
             self.n = self.n + str(t.i).len
 end Row
 
-var r = Row(0usize)
+var r = Row(0)
 
 r.take((1, "abc", true))
 print(r.n)

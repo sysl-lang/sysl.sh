@@ -704,7 +704,7 @@ const window: int = 1 << 15
 
 type Slot = usize within 0..<capacity
 
-var table: [capacity]u8 = [0u8; capacity]
+var table: [capacity]u8 = [0; capacity]
 
 print(table.len, window, capacity)
 ```
@@ -811,16 +811,16 @@ follows the file it is written in: the module's everywhere except the entry file
 body, and where `static` asks for the member.
 
 ```sysl
-static val order: [8]usize = [3usize, 1usize, 4usize, 1usize, 5usize, 9usize, 2usize, 6usize]
+static val order: [8]usize = [3, 1, 4, 1, 5, 9, 2, 6]
 
 at(i: usize) -> usize = order[i]
 
-var i = 0usize
-var total = 0usize
+var i: usize = 0
+var total: usize = 0
 
 while i < order.len
     total += at(i)
-    i += 1usize
+    i += 1
 
 print(total, order[2])
 ```
@@ -840,7 +840,7 @@ stand in a pattern:
 ```sysl
 val limit: usize = 4
 
-var table: [limit]u8 = [0u8; 4]
+var table: [limit]u8 = [0; 4]
 
 print(table.len)
 ```
@@ -861,7 +861,7 @@ check(n: usize) -> string
         limit -> "at the limit"
         else     "other"
 
-print(check(4usize))
+print(check(4))
 ```
 
 ```error
@@ -879,7 +879,7 @@ check(n: usize) -> string
         `limit` -> "at the limit"
         else     "other"
 
-print(check(4usize), check(9usize))
+print(check(4), check(9))
 ```
 
 ```output

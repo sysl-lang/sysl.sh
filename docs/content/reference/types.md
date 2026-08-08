@@ -128,7 +128,7 @@ keep.
 var a: f32 = 1.5
 var b: real = 2.25
 
-print(a + 1.0f32, b / 2.0)
+print(a + 1.0, b / 2.0)
 ```
 
 ```output
@@ -150,7 +150,7 @@ A length, an index, and `sizeof` are all `usize`.
 var xs = [10, 20, 30]
 var n: usize = xs.len
 
-print(n, xs[1usize])
+print(n, xs[1])
 ```
 
 ```output

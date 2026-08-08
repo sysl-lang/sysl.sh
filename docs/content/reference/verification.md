@@ -394,7 +394,7 @@ put(b: u8)
     buf[pos] = b
     pos += 1
 
-put(65u8)
+put(65)
 ```
 ```error
 a function with a frame writes 'buf', which its '@writes' does not name

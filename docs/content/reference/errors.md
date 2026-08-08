@@ -841,7 +841,7 @@ The set is small and closed, and every member of it is a question about **intege
 ```sysl
 type Slot = new u8 within 0..<8
 
-print(u8(Slot::First), u8(Slot::Last), Slot::Valid(3u8), Slot::Valid(9u8))
+print(u8(Slot::First), u8(Slot::Last), Slot::Valid(3), Slot::Valid(9))
 print(u8(Slot::Succ(Slot(3))), u8(Slot::Pred(Slot(3))))
 
 var total = 0

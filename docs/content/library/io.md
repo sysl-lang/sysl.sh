@@ -51,7 +51,7 @@ struct Memory
 end Memory
 
 impl Reader for Memory
-    read(*self, into: []u8) -> []const u8 = into[0..<0usize]
+    read(*self, into: []u8) -> []const u8 = into[0..<0]
 end Memory
 ```
 
@@ -87,7 +87,7 @@ impl Reader for Memory
     end read
 end Memory
 
-var m = Memory("alpha\nbeta".bytes, 0usize)
+var m = Memory("alpha\nbeta".bytes, 0)
 var r: *Reader = &m
 var window: [4]u8
 
@@ -155,12 +155,12 @@ impl Reader for Flaky
     read(*self, into: []u8) -> []const u8
         if self.left <= 0
             self.bad = true
-            return into[0..<0usize]
+            return into[0..<0]
 
         self.left -= 1
         into[0] = u8('x')
-        into[1] = 10u8
-        into[0..<2usize]
+        into[1] = 10
+        into[0..<2]
     end read
 end Flaky
 
@@ -197,7 +197,7 @@ impl Reader for Memory
         var n = self.src.len - self.at
 
         if n > into.len then n = into.len
-        if n > 6usize then n = 6usize
+        if n > 6 then n = 6
 
         for i in 0..<n do into[i] = self.src[self.at + i]
 
@@ -207,7 +207,7 @@ impl Reader for Memory
 end Memory
 
 var text = "alpha\nbeta\r\ngamma"
-var m = Memory(text.bytes, 0usize)
+var m = Memory(text.bytes, 0)
 
 for line in lines(&m)
     prints("[")

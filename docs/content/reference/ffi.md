@@ -160,7 +160,7 @@ name, unmangled, so a program that defines `abs` collides with libc's whatever e
 extern "llvm.sqrt" root(x: f64) -> f64
 extern "llvm.sqrt" rootf(x: f32) -> f32
 
-print(root(9.0), rootf(4.0f32))
+print(root(9.0), rootf(4.0))
 ```
 
 ```output
@@ -314,9 +314,9 @@ compare(a: *u8, b: *u8) -> i32
 
     *pa - *pb
 
-var xs = [30i32, 10i32, 20i32]
+var xs = [30, 10, 20]
 
-qsort(ptr_cast(&xs[0]), 3usize, 4usize, &compare)
+qsort(ptr_cast(&xs[0]), 3, 4, &compare)
 
 print(xs[0], xs[1], xs[2])
 ```
@@ -382,9 +382,9 @@ ascending[T](a: *T, b: *T) -> i32
     var pb: *i32 = ptr_cast(b)
     *pa - *pb
 
-var xs = [30i32, 10i32, 20i32]
+var xs = [30, 10, 20]
 
-qsort(ptr_cast(&xs[0]), 3usize, 4usize, &ascending)
+qsort(ptr_cast(&xs[0]), 3, 4, &ascending)
 print(xs[0], xs[1], xs[2])
 ```
 
