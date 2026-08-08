@@ -867,7 +867,7 @@ print(say())
 ```
 
 ```error
-'darwin' is not something a target says about itself — sysl knows aarch64, freestanding, hosted, linux, macos, posix, riscv64, windows, x86, x86_64
+'darwin' is not something a target says about itself — sysl knows aarch64, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, windows, x86, x86_64
 ```
 
 The set is closed, so a name outside it is a mistake rather than a fact this build happens not to
