@@ -161,7 +161,9 @@ x86_64-windows        x86_64-pc-windows-msvc
 aarch64-freestanding  aarch64-none-elf
 x86_64-freestanding   x86_64-unknown-none-elf
 riscv64-freestanding  riscv64-unknown-elf
-x86-linux             i386-unknown-linux-gnu  (32-bit — not yet supported)
+thumb-freestanding    thumbv8m.main-none-eabihf
+riscv32-freestanding  riscv32-unknown-elf
+x86-linux             i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
 
 The line for the machine you are on is marked `(this machine)`, and a last line repeats what that
@@ -169,9 +171,27 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
+**The last two freestanding rows are 32-bit, and they are one board's two halves.** The RP2350 boots
+either a pair of Cortex-M33s or a pair of RV32IMAC cores, and both are here because a microcontroller
+is what *freestanding* is mostly for — the three 64-bit freestanding rows reach kernels and
+hypervisors, which is a different audience. `thumb` rather than `arm` names the Arm one because a
+Cortex-M executes Thumb only, so an arm written for A32 would assemble for a machine that cannot run
+it.
+
 `x86-linux` is listed *because* it cannot be built for. The limit is the compiler's rather than the
-machine's — the emitted code assumes a 64-bit address in places nothing has been asked to
-parameterize yet — and a reader who names it is better told that than told the name is unknown.
+machine's, and **it is no longer the width** — this page said so until the two rows above it arrived.
+What is missing is a C calling convention measured against clang, which is the only way a target's
+answers are allowed to be arrived at. A reader who names it is better told that than told the name is
+unknown.
+
+**Freestanding does not mean self-contained.** A program built for a bare board still names C symbols
+its runtime has to define — `putchar` wherever anything prints, `free` wherever a reference count can
+reach zero, `memcpy` and `memset` for a structure assignment you never wrote — and on a 32-bit
+machine it names a 64-bit division helper as well, because a `long` is sixty-four bits everywhere and
+neither RP2350 core has the instruction. None of that is a sysl dependency the compiler could warn
+about: it is what any C compiler emits for the same code, and a real project never meets it because
+its SDK has linked `libgcc` or compiler-rt already. Meeting it looks like `undefined symbol:
+__aeabi_ldivmod` at the link, which is the one place anybody will come looking for this paragraph.
 
 ## Flags every subcommand takes
 

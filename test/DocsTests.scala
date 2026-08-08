@@ -106,6 +106,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),
+    // The four runnable ones are real suites whose report is checked to the byte, which is possible
+    // only because the file a snippet compiles as is `<page>` and the line is the block's own: a
+    // harness report is a file, a line, a name and a verdict, and three of those are the page's.
+    "docs/content/library/harness.md"                     -> (4, 0, 2),
     "docs/content/library/sys.md"                          -> (4, 3, 1),
   )
 

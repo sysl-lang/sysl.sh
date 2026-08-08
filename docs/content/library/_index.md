@@ -43,6 +43,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
 | [`sysl.rand.sys`](/library/rand/#taking-a-seed-from-the-host--syslrandsys) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
+| [`sysl.harness`](/library/harness/) | a test framework that runs **on the target** — `run`, `check`, `check_eq`, `check_slice_eq`, `skip`, and a tally | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 
 **The split is by capability, not by taste.** `sysl.fs` is `requires os`, because a filesystem is
