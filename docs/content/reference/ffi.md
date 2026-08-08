@@ -305,7 +305,7 @@ sum(xs: []i32) -> i32 = 0
 ```
 
 ```error
-'xs' of the exported 'mylib.sum' is []i32, which C has no way to spell — an exported function takes an integer, a float, a 'bool', a 'char', a pointer or a function pointer. A slice is an address and a length, so C takes them as two parameters — a pointer and a 'usize' — which is the shape its own string and buffer functions already have
+'xs' of the exported 'mylib.sum' is []int, which C has no way to spell — an exported function takes an integer, a float, a 'bool', a 'char', a pointer or a function pointer. A slice is an address and a length, so C takes them as two parameters — a pointer and a 'usize' — which is the shape its own string and buffer functions already have
 ```
 
 Every refusal names the shape to write instead, because there always is one — a slice becomes the
