@@ -256,8 +256,14 @@ the one every language they might arrive from has. The notable absence is **`\e`
 character, U+001B, which some shells and Perl accept — it is a GNU extension rather than standard C,
 and Rust and Go both refuse it. Terminal code writes `'\u{1b}'` and gives it a name.
 
-```error
+```sysl
 var esc = '\e'
+
+print(int(esc))
+```
+
+```error
+unknown escape sequence '\e'
 ```
 
 `\u{...}` is braced rather than a fixed four hex digits because a scalar value may need up to six —
