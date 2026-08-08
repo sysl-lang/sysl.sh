@@ -154,6 +154,29 @@ borrowing across them.
 through is 23 or 25 hours long, so a calendar day is not a fixed length of timeline at all. That
 question belongs to the civil types below, which is why `plus_days` is theirs and not a `Duration`'s.
 
+### Below the second
+
+`millis` and `micros` construct, `whole_millis` and `whole_micros` read back. The representation is
+microseconds, so those are the shortest lengths this module can name — and they are the two an
+embedded program reaches for, since a blink loop wants 120 milliseconds and `seconds(1)` is not it.
+
+```sysl
+import sysl.time.*
+
+var d = millis(120i64)
+
+print(whole_millis(d), whole_micros(d), whole_seconds(d))
+print(whole_micros(micros(7i64)))
+```
+
+```output
+120 120000 0
+7
+```
+
+All three numbers on that first row are true of one length: it is a hundred and twenty milliseconds,
+and it is no seconds at all.
+
 Scaling reads one way round only:
 
 ```sysl

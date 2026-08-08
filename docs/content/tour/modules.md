@@ -1,6 +1,6 @@
 ---
 title: Modules and the library
-summary: A module is a directory, an import only shortens a name you could always write in full, and the standard library is a prelude with ten submodules under it.
+summary: A module is a directory, an import only shortens a name you could always write in full, and the standard library is one auto-imported module with ten submodules under it.
 weight: 110
 ---
 
@@ -263,8 +263,11 @@ together has nothing for its other files to repeat.
 
 ## The standard library
 
-`sysl` itself is the prelude: auto-imported into every file, and the reason nothing so far has had to
-import anything to call `print`. Everything else is a submodule you ask for by name.
+**The library is a module, not a set of names threaded in beside your program.** `sysl` itself is
+auto-imported into every file, which is why nothing so far has had to import anything to call
+`print` — and what earns that is that it holds what the language desugars onto, which a program
+cannot avoid needing. Everything else is a submodule you ask for by name, because a submodule is an
+offer rather than part of the language.
 
 | module | what is in it |
 |---|---|

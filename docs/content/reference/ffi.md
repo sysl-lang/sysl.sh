@@ -380,7 +380,30 @@ int32_t mylib_add(int32_t a, int32_t b);
 It uses `<stdint.h>`'s fixed-width names because sysl's integers say what they *are* where C's say
 what they are *at least*: an `i32` is `int32_t`, and writing it `int` would be right on every machine
 anyone is likely to use and wrong as a claim. A `char` is a Unicode scalar value and becomes
-`uint32_t`, never C's `char`, which would be wrong by a factor of four.
+`uint32_t`, never C's `char`, which would be wrong by a factor of four. The header assumes **C99, or
+any C++**, which is what those three includes already needed.
+
+The one fact a type name cannot carry across is divergence, since `never` and `unit` both spell as
+`void`. A function returning `never` is therefore annotated:
+
+```c
+#ifndef SYSL_NORETURN
+#if defined(__cplusplus) && __cplusplus >= 201103L
+#define SYSL_NORETURN [[noreturn]]
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define SYSL_NORETURN _Noreturn
+#else
+#define SYSL_NORETURN
+#endif
+#endif
+
+SYSL_NORETURN void mylib_spin(void);
+```
+
+A macro rather than the keyword, because the header serves both languages and `_Noreturn` is not
+valid C++; an older compiler gets the empty definition, which is a weaker declaration rather than one
+it refuses. The block appears only in a header that has something diverging in it. What it buys the
+caller is real: code after the call is dead, and a path ending in it needs no return value.
 
 From there it is an ordinary C build:
 
@@ -388,10 +411,16 @@ From there it is an ordinary C build:
 $ clang main.c libmylib.a -o app
 ```
 
-**What the archive does not hold is what the sysl side's own libraries supply**, and `build-c` says
-which those are rather than leaving them to be found at that link, where an unresolved sysl symbol
-reads as a missing definition rather than as a missing archive. `--no-std-lib` folds the library's
-source into the object and the archive then stands alone.
+**The archive is self-contained.** Whatever of the standard library the module reaches is compiled
+into it, because a `.syslib` is not something a C link line can be handed — an archive referring to
+one would fail at that link naming a `sysl$` symbol its author has no way to place. So `--std-lib` is
+refused here and `--no-std-lib` asks for what already happens. The cost, which is accepted: two
+`build-c` archives linked into one program each carry the part of the library they reach.
+
+**What the archive does not hold is what the sysl side's own libraries supply** — `libm`, and
+whatever `@link` named — and `build-c` says which those are rather than leaving them to be found at
+that link. Those are libraries the author chose and can hand to a linker, which is exactly the
+distinction the standard module fails.
 
 `sysl emit-header` prints the same declarations without building anything, for a project that
 generates its headers as a build step.

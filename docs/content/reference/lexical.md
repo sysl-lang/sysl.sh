@@ -222,19 +222,42 @@ and carries no `.0`. Hexadecimal, binary and octal have no floating-point form.
 
 ### Characters
 
-A `char` literal is one Unicode scalar value in single quotes. Escapes include `\n`, `\t`, `\\`,
-`\'`, `\"`, `\0`, and the braced `\u{...}` form.
+A `char` literal is one Unicode scalar value in single quotes. Nine escapes are named, and anything
+else is written with the braced `\u{...}` form.
+
+| escape | meaning |
+|---|---|
+| `\n` | line feed, U+000A |
+| `\t` | tab, U+0009 |
+| `\r` | carriage return, U+000D |
+| `\b` | backspace, U+0008 |
+| `\f` | form feed, U+000C |
+| `\0` | NUL, U+0000 |
+| `\\` | backslash |
+| `\'` | single quote |
+| `\"` | double quote |
+| `\u{H…}` | one to six hex digits, any Unicode scalar value |
 
 ```sysl
 var ch = 'A'
 var nl = '\n'
+var bs = '\b'
 var uni = '\u{1F600}'
 
-print(int(ch), int(nl), int(uni))
+print(int(ch), int(nl), int(bs), int(uni))
 ```
 
 ```output
-65 10 128512
+65 10 8 128512
+```
+
+The named set is C's, and is deliberately no larger: the escape a programmer reaches for should be
+the one every language they might arrive from has. The notable absence is **`\e`** for the escape
+character, U+001B, which some shells and Perl accept — it is a GNU extension rather than standard C,
+and Rust and Go both refuse it. Terminal code writes `'\u{1b}'` and gives it a name.
+
+```error
+var esc = '\e'
 ```
 
 `\u{...}` is braced rather than a fixed four hex digits because a scalar value may need up to six —

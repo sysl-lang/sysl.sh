@@ -40,8 +40,8 @@ count in one would be a count with nowhere to write the release. Numbers, charac
 string *literals*, and tables of any of them are what a module-level `val` is for; text a program
 builds or reads is a `var` at the top of the file, which is a local of the entry point.
 
-`print` takes any number of arguments, renders each one, and puts a space between them. It comes
-from the prelude, which is the part of the standard library a program gets without asking.
+`print` takes any number of arguments, renders each one, and puts a space between them. It comes from
+`sysl`, the standard module — the one module a file may name without importing it.
 
 ## The scalar types
 

@@ -31,7 +31,7 @@ print(maybe.unwrap_or(0), "— and not one import above this line")
 |---|---|---|
 | absence and failure | `Option`, `Result`, `Fallible` | [errors and contracts](/reference/errors/) |
 | stopping | `panic`, `assert`, `exit` | below, and [attributes](/reference/attributes/) for `@test` |
-| rendering to standard output | `print`-family: `prints`, `printi`, `printu`, `printr`, `printb`, `printc`, `putbytes`; the sink itself, `Stdout` and `stdout` | below |
+| rendering to standard output | `print`-family: `prints`, `printi`, `printu`, `printr`, `printb`, `printc`, `putbytes`, `encode_utf8`; the sink itself, `Stdout` and `stdout` | below |
 | rendering to standard error | `eprints`, `eputbytes`; the sink itself, `Stderr` and `stderr` | below |
 | rendering to a sink | `Display`, `FormatSpec`, `Writer`, the `display_*` family | below |
 | hashing | `Hash`, `hash_u64`, `hash_u128`, `hash_bool`, `hash_str` | below |
@@ -257,6 +257,42 @@ end putbytes
 **`putbytes` is one of exactly two functions a freestanding target has to replace.** Swap its body
 for a `write` syscall and [`FdReader.read`](/library/io/)'s for a `read` one, and the entire surface
 above both is unchanged — every renderer, every `Display`, every `f"…"` in the program.
+
+### `encode_utf8` — a character's bytes, without printing them
+
+```sysl
+encode_utf8(ch: char, into: []u8) -> usize
+```
+
+`printc` encodes rather than handing the character to `snprintf`, which has no conversion that takes
+a code point — and what it uses is this, which any program may call. It writes into storage the
+caller owns and answers how many bytes it wrote. No character needs more than four, so a `[4]u8` is
+always enough and always on the stack, which is what keeps it usable where there is no allocator.
+
+```sysl
+var b: [4]u8
+
+print(encode_utf8('A', b[0..<4]), encode_utf8('é', b[0..<4]), encode_utf8('☃', b[0..<4]))
+
+var n = encode_utf8('é', b[0..<4])
+
+print(b[0], b[1], n)
+```
+
+```output
+1 2 3
+195 169 2
+```
+
+**It is here in `sysl` rather than beside `from_utf8` in [`sysl.text`](/library/text/), and that
+placement is forced.** A submodule may name the standard module freely and the standard module may
+not name back, so an encoder over there would be one `printc` could not call — and the second encoder
+that would then be written for it is exactly the hand-rolled copy this function exists to prevent.
+The library carried four of them before it had this one.
+
+A slice shorter than four bytes is a mistake in the program rather than a truncation, and the bounds
+check says so: how many bytes are needed is not known until the character has been looked at, so
+there is no honest answer to "it did not fit" that is cheaper than having room.
 
 ### The other stream
 

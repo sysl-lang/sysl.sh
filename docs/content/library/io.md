@@ -22,9 +22,11 @@ stdin() -> FdReader
 
 find_byte(b: []const u8, c: u8) -> Option[usize]
 line_text(b: []const u8) -> string
+try_line_text(b: []const u8) -> Result[string, Utf8Error]
 
 struct Lines
     getline(*self) -> Option[string]
+    try_getline(*self) -> Option[Result[string, Utf8Error]]
 
 lines(r: *Reader) -> Lines
 ```
@@ -295,6 +297,52 @@ inspect than trap reads bytes through `Reader` and validates them itself with
 [`from_utf8`](/library/text/), which is what having two layers is for. `line_text` is exported for the
 same reason: a program doing its own framing can still get the `\r` handling and the validation
 without reimplementing either.
+
+### When stopping is the wrong severity
+
+Reading a file you expect to be text, stopping is right — there is nothing sensible to do with the
+rest, and carrying on puts the mistake a long way from its cause. Reading a serial port it is not,
+and on a freestanding target it is worse than not: `exit` there is a halt with no supervisor to
+notice it, so one mistyped byte hangs the board.
+
+`try_getline` is the same walk reporting instead, and `try_line_text` the same conversion. Two
+answers nest — the `Option` says whether there was a line at all, the `Result` says whether it was
+text:
+
+```sysl
+import sysl.io.{lines, stdin}
+
+var r = stdin()
+var c = lines(&r)
+
+loop
+    c.try_getline() match
+        None -> break
+        Some(line) ->
+            line match
+                Ok(s) -> print("[", s, "]")
+                Err(e) -> print("not text, at byte", e.offset)
+```
+
+`getline` is written in terms of it, so there is one place that decides where a line ends and one
+that decides what to do about bytes that are not text.
+
+### A terminal is not covered, and the failure is silent
+
+`lines()` splits on `\n`, which is right for a file and for a pipe. **A terminal sends a bare `\r`
+when Enter is pressed**, so a program reading lines from a serial console or a raw-mode terminal
+never sees a line at all: it waits forever, prints nothing, and looks hung. There is nothing to grep
+for, because nothing has gone wrong — the line has not ended.
+
+Two more things a console needs that a file does not, for the same reason. A terminal in raw mode has
+**no echo**, so nothing appears as it is typed; and with no echo there is no editing either. Neither
+is a line cursor's business, and both have to come from somewhere.
+
+So a program reading a console reads bytes through `Reader` and assembles lines itself, treating CR,
+LF and CRLF alike — with the CRLF case straddling two reads, since a bare-CR terminal never sends the
+LF and waiting for it inside a read hangs until the next keystroke.
+[`sh.sysl.pico2`](https://github.com/sysl-lang/pico2)'s `read_line` is a worked example of the whole
+of that, editing included.
 
 ## `FdReader` and `stdin`
 

@@ -71,6 +71,7 @@ struct Buf[T]
     extend(*self, xs: []const T)
     pop(*self) -> Option[T]
 
+    insert(*self, i: usize, v: T)
     remove(*self, i: usize) -> T
     truncate(*self, n: usize)
     clear(*self)
@@ -143,7 +144,33 @@ no element, so unlike an index there is nothing for it to read and nothing to st
 `clear()` is `truncate(0)`. `remove(i)` shifts the survivors down over element `i`, hands that element
 back, and ends at `truncate`; an `i` that names no element is `at`'s panic, for `at`'s reason.
 
-**What none of the three does is give storage back.** The `cap()` of `8` survives the `truncate`
+**`insert(i, v)` is `remove`'s other half**, putting an element at `i` and moving everything from
+there on up one. Inserting at `len` is a `push` and is allowed for that reason — a loop inserting at
+a cursor reaches the end on its last step, and refusing there would make every caller write the case
+this one already handles. Anything past `len` is a gap, which a sequence cannot represent, and panics
+the way any other index past the end does.
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+var b: Buf[int] = buf()
+
+b.extend([1, 3, 4])
+b.insert(1, 2)
+b.insert(4, 5)
+
+print(b.view()[1], b.len())
+```
+
+```output
+2 5
+```
+
+Hand-rolling it is a shift written *backwards* — a loop walking up overwrites the element it is about
+to read — and that is where the off-by-one lives.
+
+**What none of `truncate`, `clear` and `remove` does is give storage back.** The `cap()` of `8`
+survives the `truncate`
 above. The elements above the count are still values in a `[]T` that ARC owns — which is also why a
 **copy** of a `Buf` taken before a removal reads the shifted elements at the length it was copied at.
 

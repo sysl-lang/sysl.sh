@@ -42,7 +42,7 @@ The module is seven files, and the boundaries between them are arguments rather 
 
 | file | holds | why it is a file |
 |---|---|---|
-| `utf8.sysl` | `from_utf8`, `Utf8Error`, `char_from_u32`, `from_cstring`, `is_char_boundary`, `Chars`, `CharIndices` | the validity seam — what turns bytes into text |
+| `utf8.sysl` | `from_utf8`, `from_utf8_lossy`, `Utf8Error`, `char_from_u32`, `from_cstring`, `is_char_boundary`, `Chars`, `CharIndices` | the validity seam — what turns bytes into text |
 | `ascii.sysl` | trait `Ascii`, implemented for `u8` **and** `char` | classification, **named for the range it answers over** |
 | `find.sysl` | trait `Search`, implemented for `string` **and** `[]const u8` | everything that makes **no new bytes** |
 | `edit.sysl` | `split`, `fields`, `join`, `repeat`, `replace_all`, `to_upper`, `to_lower` | everything that **does** — so it needs an allocator |
@@ -193,6 +193,7 @@ and no copy.
 
 ```sysl
 from_utf8(b: []const u8) -> Result[string, Utf8Error]
+from_utf8_lossy(b: []const u8) -> string
 from_cstring(p: *u8) -> Result[string, Utf8Error]
 char_from_u32(u: u32) -> Option[char]
 
@@ -253,6 +254,39 @@ that had already been checked. Copying is what makes the validation mean anythin
 `char_from_u32` is the same shape one scalar down — the fallible half of `u32 -> char`, refusing a
 surrogate or anything past `10FFFF`, where the plain `char(u)` conversion traps instead. It is a free
 function because a scalar has no member namespace to hang a `char.try` on.
+
+### When a refusal is the wrong answer: `from_utf8_lossy`
+
+A `Result` is right when the bytes *ought* to be valid, and wrong when they carry whatever was sent.
+Text off a wire, out of a serial port, or in a file somebody else wrote is the second case, and a
+program reading it usually wants something it can show a person rather than a fault it can only
+report. `from_utf8_lossy` keeps what is well-formed and puts **U+FFFD** where the rest was.
+
+```sysl
+import sysl.text.from_utf8_lossy
+
+var cut: [3]u8 = [97, 226, 130]
+var stray: [3]u8 = [97, 255, 98]
+
+print(from_utf8_lossy("héllo".bytes))
+print(from_utf8_lossy(cut[..]))
+print(from_utf8_lossy(stray[..]))
+```
+
+```output
+héllo
+a�
+a�b
+```
+
+**One replacement per maximal ill-formed subsequence, not one per byte.** The second input is `a`
+followed by two thirds of a euro sign: those two bytes are one truncated character, so they become
+one U+FFFD and not two. That is what Unicode recommends, and it is the part a hand-rolled
+skip-a-byte-and-retry loop gets wrong.
+
+It walks the same table `from_utf8` does, so the two cannot come to disagree about which bytes are
+text — they differ only in what they do about the ones that are not. Valid input costs a single walk
+and no allocation at all.
 
 ## Classification: `Ascii`
 

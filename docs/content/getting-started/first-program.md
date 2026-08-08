@@ -43,9 +43,9 @@ main(args: []string)
     print(args.len - 1, "argument(s) given")
 ```
 
-`print` came from the prelude, which is the part of the standard library every program gets without
-asking. It takes any number of arguments, converts each one to text, and separates them with
-spaces.
+`print` came from `sysl`, the standard module — the one module a file may write the names of without
+importing it, because it holds what the language desugars onto. It takes any number of arguments,
+converts each one to text, and separates them with spaces.
 
 ## What the compiler did
 

@@ -14,7 +14,7 @@ owning them. Nothing else in the set asks for all three at once.
 
 ## What it found
 
-**There was no `Hash` in the core catalogue.** The prelude had `Eq` and `Ord` — enough to sort with,
+**There was no `Hash` in the core catalogue.** There were `Eq` and `Ord` — enough to sort with,
 not enough to key on — so the map declared its own, with an `impl` for every key type it wanted to
 support. That was never a style problem. [Coherence](/reference/traits/) lets an `impl` live only
 with its trait or with its type, so two libraries that each declare a `Hash` can **never** share a
