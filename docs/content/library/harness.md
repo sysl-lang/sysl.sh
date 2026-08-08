@@ -1,7 +1,7 @@
 ---
 title: The harness module
 summary: "`sysl.harness` — a test framework that runs on the target: named tests, a located failure with both values rendered, three verdicts and a tally, with no allocator, no operating system and no debug host underneath."
-weight: 58
+weight: 95
 ---
 
 `sysl.harness` is how a program checks itself **on the machine it was built for**. It is the same
@@ -44,8 +44,8 @@ finish()
 2 tests, 0 failed
 ```
 
-The file and the line are the ones the `run` was written on — `<page>` here because this example is
-a block on a web page, and your own file's name where you run it.
+The file is `<page>` because this example is a block on a web page; where you run it, it is your
+file's name.
 
 A test is an ordinary function of no arguments, and `run` names it and calls it. **The name is
 written twice on purpose** — once as the function and once as the string — because the string is what
@@ -57,9 +57,6 @@ word and one copy of `run` for the whole suite; a bare arrow would be a bound ov
 per test — thirty tests, thirty copies of the runner — and flash is what a target has least of. The
 cost is the `&`, and the restriction that a test body captures nothing, which is what a test body is
 anyway.
-
-`file` and `line` are defaults you never pass. A default is evaluated at the call, so
-`__FILE__`/`__LINE__` hold the line of the `run` that named the test.
 
 ## A failure says where, and what the values were
 
@@ -74,9 +71,18 @@ finish()
 ```
 
 ```output
-<page>:6:adds:FAIL: got 4, want 5
+<page>:4:adds:FAIL: got 4, want 5
 1 tests, 1 failed
 ```
+
+**A passing test reports the line of the `run` that named it and a failing one the line of the check
+that failed** — 6 and 4 here. Both fall out of the same rule and neither is a special case: `run`,
+`skip` and every check take `file` and `line` as defaulted parameters, and a default is evaluated at
+the call, so `__FILE__` and `__LINE__` written once in each declaration hold whatever line the reader
+wrote. You never pass either.
+
+The line is `file:line:test:verdict`, which is Unity's order, so the editors and CI filters that
+already read that format read this one.
 
 That is the whole difference between this and a program printing characters as it goes. A board that
 says `abcdyx4` has told you something went wrong and nothing about which check, on which line, with
@@ -118,7 +124,7 @@ finish()
 ```
 
 ```output
-<page>:6:bytes:FAIL: got 2, want 9 at index 1
+<page>:4:bytes:FAIL: got 2, want 9 at index 1
 1 tests, 1 failed
 ```
 
@@ -182,21 +188,38 @@ struct Uart
 val UART: usize = 0x10000000
 val regs: *Uart = ptr_cast(UART)
 
+putc(c: u8)
+    regs.data = c
+
 struct Console
+end Console
+
+impl Fallible for Console
 
 impl Writer for Console
-    failed(self) -> bool = false
+    write(*self, bytes: []const u8)
+        for b in bytes do putc(b)
+end Console
 
-    write(self, b: []const u8)
-        for c in b
-            regs.data = c
+val uart: *Console = ptr_cast(0usize)
 
-console() -> *Writer = Console()
+console() -> *Writer = uart
 ```
 
-**That has to be a module of its own and not the file your statements are in.** An `impl` member
-cannot see a root file's top-level bindings, so `write` could reach neither `regs` nor anything built
-on it. One directory down it is ordinary code.
+That is a real one — QEMU's `virt` puts a 16550 at `0x10000000`, and the compiler's own board tests
+use these lines.
+
+**`Writer` requires `Fallible`, so the empty `impl Fallible` is not a formality** — it takes the
+default `failed`, which answers false. A UART that cannot fail has nothing to add.
+
+**`Console` has no fields, so its receiver is a null pointer.** A trait object is two words, a method
+table and a datum, and `write` here never looks at the datum — everything it needs is the module's
+own `regs`. Given nothing to point at, `ptr_cast(0usize)` is the honest spelling; the alternative
+would be to take the address of a temporary, which is a dangling pointer with better manners.
+
+**And it has to be a module of its own rather than the file your statements are in.** An `impl`
+member cannot see a root file's top-level bindings, so `write` could reach neither `regs` nor `putc`.
+One directory down it is ordinary code.
 
 ## The verdict, and what to do with it
 

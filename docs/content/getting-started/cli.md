@@ -137,6 +137,13 @@ something that is not a verdict.
 filter that matched none of the tests there are, both exit 0 — neither is a failure, and each says
 which of the two happened rather than leaving one empty report to mean both.
 
+**None of that mechanism exists on a microcontroller.** A process per test, a name in `argv`, a
+verdict in an exit status: a board has none of the three, so `sysl test` cannot follow the code onto
+one. [`sysl.harness`](/library/harness/) is the other half — a framework linked *into* the image,
+which names its tests, locates a failure and prints a tally through a writer you hand it. Use this
+command for everything that runs on the machine you are typing on, and that for the checks that only
+exist on the target.
+
 ### `emit-llvm`
 
 ```bash
