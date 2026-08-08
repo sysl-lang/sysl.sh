@@ -842,7 +842,7 @@ disturbs nothing.
 | kind | symbols |
 |---|---|
 | operating system | `macos`, `linux`, `windows`, `freestanding` |
-| processor | `aarch64`, `x86_64`, `riscv64`, `x86` |
+| processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86` |
 | derived | `hosted` (not `freestanding`), `posix` (`macos` or `linux`) |
 
 That is the whole vocabulary. There is **no `#define`**, nothing a project can add, and no dependence
@@ -868,7 +868,7 @@ print(say())
 ```
 
 ```error
-'darwin' is not something a target says about itself — sysl knows aarch64, freestanding, hosted, linux, macos, posix, riscv64, windows, x86, x86_64
+'darwin' is not something a target says about itself — sysl knows aarch64, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, windows, x86, x86_64
 ```
 
 The set is closed, so a name outside it is a mistake rather than a fact this build happens not to

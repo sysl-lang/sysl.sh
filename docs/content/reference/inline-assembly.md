@@ -26,14 +26,21 @@ one naming the processor being compiled for — and the others contribute nothin
 ```sysl
 arch_cli()
     asm
-        [x86_64]  "cli"
-        [aarch64] "msr daifset, #2"
-        [riscv64] "csrci mstatus, 8"
+        [x86_64]           "cli"
+        [aarch64]          "msr daifset, #2"
+        [riscv64, riscv32] "csrci mstatus, 8"
+        [thumb]            "cpsid i"
 ```
 
 An arm names one processor or several, spelled as [`#if`](/reference/attributes/) spells them:
-`aarch64`, `x86_64`, `riscv64`, `x86`. A name outside that set is an error rather than a machine
-nobody has heard of.
+`aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`. A name outside that set is an error rather
+than a machine nobody has heard of.
+
+**`riscv32` and `thumb` are one board's two halves**, which is why they are usually written together
+in what follows. The RP2350 boots either a pair of Cortex-M33s or a pair of RV32IMAC cores, and a
+microcontroller is what inline assembly is mostly for. `thumb` rather than `arm` names the Arm one
+because a Cortex-M executes Thumb only — an arm written for A32 would assemble for a machine that
+cannot run it, and the name is what says so.
 
 Here is a whole program. `yield`, `pause` and `nop` are each their machine's hint that a spin loop is
 spinning, which is about as small as a real use of this construct gets:
@@ -41,9 +48,9 @@ spinning, which is about as small as a real use of this construct gets:
 ```sysl
 spin_hint()
     asm
-        [x86_64]  "pause"
-        [aarch64] "yield"
-        [riscv64] "nop"
+        [x86_64]           "pause"
+        [aarch64, thumb]   "yield"
+        [riscv64, riscv32] "nop"
 
 spin_hint()
 print("hinted")
@@ -72,7 +79,7 @@ halt()
 ```
 
 ```error
-this assembly has no arm for 'aarch64' or 'riscv64'
+this assembly has no arm for 'aarch64', 'riscv64', 'riscv32' or 'thumb'
 ```
 
 This is the rule `#if` follows one level up, where every condition is checked in the branches being
@@ -82,9 +89,9 @@ builds for the machine that was left out.
 
 ### When there is genuinely no answer
 
-Some assembly is unportable in principle rather than by omission. `outb` and `inb` are x86's;
-AArch64 and RISC-V reach devices through memory and have no equivalent at all. Such an architecture
-says so, and says why:
+Some assembly is unportable in principle rather than by omission. `outb` and `inb` are x86's; every
+other processor here reaches devices through memory and has no equivalent at all. Such an
+architecture says so, and says why:
 
 ```sysl
 port_out(port: u16, value: u8)
@@ -93,7 +100,7 @@ port_out(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only; devices are reached through memory"
 ```
 
 The x86-64 build compiles that. A build for a processor the arm covers is refused, and the reason
@@ -104,7 +111,7 @@ since leaving it out fails *every* build instead:
 port_out()
     asm
         [x86_64] "outb %al, %dx"
-        [aarch64, riscv64] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only; devices are reached through memory"
 
 port_out()
 ```
@@ -123,8 +130,9 @@ be false there — the operation is available, it simply costs nothing.
 barrier()
     asm
         [x86_64]
-        [aarch64] "dmb ish"
-        [riscv64] "fence rw, rw"
+        [aarch64]          "dmb ish"
+        [thumb]            "dmb sy"
+        [riscv64, riscv32] "fence rw, rw"
 ```
 
 An empty arm cannot be confused with a forgotten one, because a forgotten arm is not empty — it is
@@ -143,11 +151,11 @@ copy(n: int) -> int
             "movl {n}, {v}"
             in n : reg
             out v : reg
-        [aarch64]
+        [aarch64, thumb]
             "mov {v}, {n}"
             in n : reg
             out v : reg
-        [riscv64]
+        [riscv64, riscv32]
             "mv {v}, {n}"
             in n : reg
             out v : reg
@@ -171,7 +179,7 @@ out_byte(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64] unavailable "port I/O is x86-only"
+        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only"
 ```
 
 **A bare word is sysl's and a quoted word is the assembler's.** That rule decides every case in the
@@ -201,11 +209,7 @@ f()
             "addl {n}, {n}"
             in n : reg
             out n : reg
-        [aarch64]
-            "add {n}, {n}, {n}"
-            in n : reg
-            out n : reg
-        [riscv64]
+        [aarch64, thumb, riscv64, riscv32]
             "add {n}, {n}, {n}"
             in n : reg
             out n : reg
@@ -231,7 +235,7 @@ f()
         [x86_64]
             "nop"
             clobbers "rax", "rdx"
-        [aarch64, riscv64] unavailable "x86 only here"
+        [aarch64, riscv64, riscv32, thumb] unavailable "x86 only here"
 ```
 
 **Memory and the condition flags are assumed clobbered, always**, and cannot currently be given
@@ -307,7 +311,11 @@ arch_reset() -> never
             "msr daifset, #2"
             "1: wfi"
             "b 1b"
-        [riscv64]
+        [thumb]
+            "cpsid i"
+            "1: wfi"
+            "b 1b"
+        [riscv64, riscv32]
             "csrci mstatus, 8"
             "1: wfi"
             "j 1b"
