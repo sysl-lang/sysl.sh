@@ -50,6 +50,16 @@ so `args.len` is 3 — `args[0]` is the program, exactly as C's `argv[0]` is.
 **`run` exits with the status the program exited with.** It is running your program, so its status
 is your program's — a compilation that failed is what exits 1 on sysl's own behalf.
 
+**The program's input is sysl's input**, so a program that reads works under `run` exactly as the
+built binary does:
+
+```bash
+printf 'one\ntwo\n' | sysl run count.sysl
+```
+
+What the program writes comes out as it writes it rather than all at once when it finishes, which is
+what makes a program that prompts usable here at all.
+
 ### `build`
 
 ```bash

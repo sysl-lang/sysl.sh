@@ -750,6 +750,59 @@ print(sizeof(Head), alignof(Head))
 packed or not, so a hardware register's five-bit field is still shifts and masks. That is the bitfield
 question and it is open on its own.
 
+### `@align(n)` on a binding
+
+The boundary may also be written on the storage itself — a `var` or a `val`, at the top of a module
+or inside a function, and on the `static` spelling of either.
+
+```sysl
+@align(64)
+var region: [128]u8
+
+region[0] = 7u8
+print(region[0], region.len)
+```
+
+```output
+7 128
+```
+
+It says nothing the struct form could not. A boundary put on a type travels with every value of it,
+and a named aligned type is reusable where a repeated attribute is not — so reach for the type when
+more than one thing needs the boundary. What this spelling saves is at the *use* site: a buffer
+wrapped in a struct is read as `region.bytes[i]` rather than `region[i]`.
+
+**`@packed` has no meaning here**, and says so, because it describes the arrangement of fields inside
+an aggregate and a binding has none:
+
+```sysl
+@packed
+var n: int = 1
+
+print(n)
+```
+
+```error
+'@packed' describes how a struct's fields are laid out, so it can only mark a struct — a 'var' or a 'val' has no fields to pack, and '@align(n)' is the one of the two that may stand above one
+```
+
+A binding that names **several** things is refused for a related reason: there is no one object for a
+boundary to be about.
+
+```sysl
+@align(16)
+var a, b = 1, 2
+
+print(a, b)
+```
+
+```error
+'@align(n)' is the boundary one object's storage begins on, and a binding that names several has no one object for it to be about — declare them on lines of their own
+```
+
+The bound is held to the same rule a struct's is — a power of two, folded rather than lexed, so a
+`const` or arithmetic over one is what a program writes.
+
 ## `#if` — gating lines before the lexer
 
 Everything a target decides is a fact the *compiler* reads about the machine. `#if` is the one place

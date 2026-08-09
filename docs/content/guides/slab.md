@@ -43,7 +43,8 @@ The allocator therefore rounds its own base up, exactly as a real one does, payi
 `alignof(T) - 1` bytes of the region.
 
 **When this guide was written that was the only thing a program could do, and it is not any more.**
-`@align(n)` on a struct declaration asks for a boundary and gets it — see
+`@align(n)` asks for a boundary and gets it — on a struct declaration, or on the `var` that holds the
+region, which is the shorter way to say it for one region in particular. See
 [attributes](/reference/attributes/). What has not changed is that it is the right behaviour *here*:
 a slab is handed a slice it did not declare, so it cannot know what its caller's region is aligned
 to and rounding up is exactly what the rounding is for. **The finding was that the allocator had no
