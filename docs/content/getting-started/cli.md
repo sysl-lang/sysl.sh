@@ -203,6 +203,7 @@ aarch64-freestanding  aarch64-none-elf
 x86_64-freestanding   x86_64-unknown-none-elf
 riscv64-freestanding  riscv64-unknown-elf
 thumb-freestanding    thumbv8m.main-none-eabihf
+thumb-freestanding-softfp  thumbv8m.main-none-eabi
 riscv32-freestanding  riscv32-unknown-elf
 x86-linux             i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
@@ -212,12 +213,25 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
-**The last two freestanding rows are 32-bit, and they are one board's two halves.** The RP2350 boots
+**The last three freestanding rows are 32-bit, and they are one board's two halves.** The RP2350 boots
 either a pair of Cortex-M33s or a pair of RV32IMAC cores, and both are here because a microcontroller
 is what *freestanding* is mostly for — the three 64-bit freestanding rows reach kernels and
 hypervisors, which is a different audience. `thumb` rather than `arm` names the Arm one because a
 Cortex-M executes Thumb only, so an arm written for A32 would assemble for a machine that cannot run
 it.
+
+**The Cortex-M33 has two rows because the float ABI is the C project's to pick rather than sysl's.**
+`thumb-freestanding` passes floating-point arguments in VFP registers, which is what `eabihf` selects
+and what clang does with `thumbv8m.main` unasked; `thumb-freestanding-softfp` passes them in core
+registers, which is what `-mfloat-abi=softfp` means and what pico-sdk builds by default. The two
+cannot be mixed — GNU ld refuses the link outright, saying one object *"uses VFP register arguments"*
+and the other *"does not"* — so a sysl archive joining a C build has to agree with that build, and
+offering only the first row meant the C had to be rebuilt to follow sysl. Pick the one your project
+already uses; if you do not know, `softfp` is the pico-sdk default.
+
+`softfp` is not `soft`, and the difference is worth a sentence because both words are in circulation:
+`-mfloat-abi=soft` means no FPU instructions at all, while `softfp` uses the `fpv5-d16` this core has
+and changes only the calling convention.
 
 `x86-linux` is listed *because* it cannot be built for. The limit is the compiler's rather than the
 machine's, and **it is no longer the width** — this page said so until the two rows above it arrived.
@@ -243,12 +257,35 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `--std-lib <path>` | a prebuilt standard module |
 | `--no-std-lib` | compile the standard module from source rather than linking a prebuilt one |
 | `--ar <path>` | the `llvm-ar` to build a library with |
+| `--link-path <dir>` | where to look for a library a `link` directive named; may be given more than once |
+| `--include-path <dir>` | where to look for a header the C beside a module includes; may be given more than once |
+| `-D <name[=value]>` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
 | `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines |
 | `--explain-escapes` | report every local array promoted to the heap |
 
 The standard-module flags and `-O` are covered in
 [installation](/getting-started/installation/), including why the default is `-O1` and not off.
+
+### `--link-path`, `--include-path` and `-D` are three steps of one thing
+
+A module that binds a C library carries C of its own, and that C has to be found, compiled and
+linked. The three flags answer the three ways it fails, in the order it fails them:
+
+- **`--include-path`** — the shim `#include`s the library's header and cannot find it. This is the
+  first failure and the one that surprises, because it happens before anything reaches a linker.
+- **`-D`** — the header is found and refuses, because a C project of any size configures its own
+  headers with macros and has not been asked. pico-sdk's `pico/cyw43_arch.h` `#error`s rather than
+  guessing which architecture variant is meant, which is the shape to expect.
+- **`--link-path`** — everything compiled and the archive is not where the linker looks.
+
+Nothing is guessed at and nothing is defaulted. sysl does not add `/opt/homebrew/lib`, and it does
+not invent a macro: a compiler that ruled on where a platform keeps its libraries, or on how a
+project configures its headers, would be wrong on a machine nobody here has — and being wrong there
+costs a build that fails somewhere its author cannot reach. What a project defines is the project's.
+
+A build system that already knows these will have them: reading them out of CMake is a matter of
+asking the target for its `INCLUDE_DIRECTORIES` and `COMPILE_DEFINITIONS` and handing each along.
 
 ### `--lib` takes either a source tree or an artifact
 
@@ -274,7 +311,7 @@ sysl: error: 'run' executes what it builds, and 'x86_64-linux' is not this machi
 A name the registry does not have is answered with the names it does:
 
 ```
-sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, x86-linux
+sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, riscv32-freestanding, x86-linux
 ```
 
 ### `-v`, `--verbose`

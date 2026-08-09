@@ -24,11 +24,17 @@ find_byte(b: []const u8, c: u8) -> Option[usize]
 line_text(b: []const u8) -> string
 try_line_text(b: []const u8) -> Result[string, Utf8Error]
 
+enum LineEnding
+    Lf
+    CrOrLf
+
 struct Lines
     getline(*self) -> Option[string]
     try_getline(*self) -> Option[Result[string, Utf8Error]]
 
 lines(r: *Reader) -> Lines
+console_lines(r: *Reader) -> Lines
+lines_ending(r: *Reader, ending: LineEnding) -> Lines
 ```
 
 That is the whole module. Its shape is [`Writer`](/library/core/) turned around, deliberately: one
@@ -327,22 +333,63 @@ loop
 `getline` is written in terms of it, so there is one place that decides where a line ends and one
 that decides what to do about bytes that are not text.
 
-### A terminal is not covered, and the failure is silent
+### A terminal does not end a line the way a file does
 
 `lines()` splits on `\n`, which is right for a file and for a pipe. **A terminal sends a bare `\r`
-when Enter is pressed**, so a program reading lines from a serial console or a raw-mode terminal
-never sees a line at all: it waits forever, prints nothing, and looks hung. There is nothing to grep
-for, because nothing has gone wrong — the line has not ended.
+when Enter is pressed**, so a cursor splitting on LF never sees a line at all: it waits forever,
+prints nothing, and looks hung, with nothing to grep for, because nothing has gone wrong — the line
+has not ended.
 
-Two more things a console needs that a file does not, for the same reason. A terminal in raw mode has
-**no echo**, so nothing appears as it is typed; and with no echo there is no editing either. Neither
-is a line cursor's business, and both have to come from somewhere.
+**`console_lines` is the same cursor taking CR, LF and CRLF alike.** Which is right is a property of
+where the bytes came from, which the library cannot know: a `\r` in the middle of a pipe's line is a
+`\r`, and a `\r` from a console is a line. So the caller says, and `lines()` is unchanged.
 
-So a program reading a console reads bytes through `Reader` and assembles lines itself, treating CR,
-LF and CRLF alike — with the CRLF case straddling two reads, since a bare-CR terminal never sends the
-LF and waiting for it inside a read hangs until the next keystroke.
-[`sh.sysl.pico2`](https://github.com/sysl-lang/pico2)'s `read_line` is a worked example of the whole
-of that, editing included.
+```sysl
+import sysl.io.*
+
+struct Typed
+    src: []const u8
+    at: usize
+end Typed
+
+impl Fallible for Typed
+
+impl Reader for Typed
+    read(*self, into: []u8) -> []const u8
+        var n: usize = 0
+
+        while n < into.len && self.at < self.src.len
+            into[n] = self.src[self.at]
+            self.at += 1
+            n += 1
+
+        into[0..<n]
+
+var keys = Typed("one\rtwo\r\nthree\n".bytes, 0)
+
+for line in console_lines(&keys)
+    print("[", line, "]")
+```
+
+```output
+[ one ]
+[ two ]
+[ three ]
+```
+
+**A bare `\r` ends the line immediately rather than waiting to see whether an `\n` follows**, because
+on a bare-CR terminal it never does and waiting inside the read would hang until the next keystroke.
+What that costs is that the `\n` of a `\r\n` may arrive in a *later read* than its `\r`, so the cursor
+remembers it is owed one across the refill — which is the case a hand-rolled console reader gets
+wrong, producing a spurious empty line between every pair.
+
+`lines_ending(r, e)` is the two written out, for a caller holding the policy as a value.
+
+**Echo and editing are still not covered, and they are the rest of what a console needs.** A terminal
+in raw mode shows nothing as it is typed, and with no echo a mistake cannot be corrected. Neither is
+a line cursor's business — one is about the *terminal* and the other about the *line* — and both
+still have to come from somewhere.
+[`sh.sysl.pico2`](https://github.com/sysl-lang/pico2)'s `read_line` is a worked example.
 
 ## `FdReader` and `stdin`
 

@@ -184,6 +184,7 @@ import sysl.time.*
 
 var d = seconds(3i64)
 
+print(whole_seconds(d * 3))
 print(whole_seconds(2i64 * d))
 ```
 
@@ -191,9 +192,71 @@ print(whole_seconds(2i64 * d))
 '*' needs matching types, got long and sysl.time.Duration
 ```
 
-`d * 2i64` is what is written instead. An operator's implementation is written for the type on its
-**left**, and nothing may be written for `long` — so the commutativity a reader expects of
-multiplication is not something this module could have supplied.
+`d * 3` is what is written instead, and the count is an ordinary literal — a bare number beside a
+duration takes the `long` the one `impl Mul` names rather than the `int` a literal with nothing to
+take would fall back to. An operator's implementation is written for the type on its **left**, and
+nothing may be written for `long`, so the commutativity a reader expects of multiplication is not
+something this module could have supplied.
+
+### Writing a duration number-first
+
+Every unit is also a property on any integer, so a length can be written the way a datasheet writes
+one — the number, then the unit:
+
+| property | the constructor it mirrors |
+|---|---|
+| `5.us` | `micros(5)` |
+| `5.ms` | `millis(5)` |
+| `5.s` | `seconds(5)` |
+| `5.minutes` | `minutes(5)` |
+| `5.hours` | `hours(5)` |
+| `5.days` | `days(5)` |
+
+```sysl
+import sysl.time.*
+
+print(whole_millis(250.ms), whole_micros(250.ms))
+print(whole_hours(2.hours + 90.minutes), odd_minutes(2.hours + 90.minutes))
+print(whole_millis(250.ms * 4))
+```
+
+```output
+250 250000
+3 30
+1000
+```
+
+**The short units are symbols and the long ones are words**, which is a split about where each is
+used rather than a compromise. A timeout, a poll interval and a debounce are the sub-second end, they
+are written constantly, and `ms` is the spelling every datasheet already uses — `sleep(5.ms)` and
+`join(ssid, pw, auth, 20.s)` say at a glance what `millis(5)` and `seconds(20)` say a moment later.
+At the other end the number is small and the line is not dense, so `30.days` costs nothing and says
+more than `30.d` would.
+
+There is deliberately no `5.min`: it would sit beside `sysl.math`'s `min(a, b)` and the type-level
+`int::Min`, meaning something different in each position.
+
+**The constructors stay, and the two spellings are not a duplication.** A duration built from a
+*computed* value reads better as `millis(n)` than as `n.millis`, and the free functions are what most
+code that takes a length as an argument is written against.
+
+The properties are one blanket implementation over the whole integer family, so a receiver narrower
+than the representation widens on the way in rather than overflowing at its own width:
+
+```sysl
+import sysl.time.*
+
+val n: u8 = 200
+
+print(whole_micros(n.ms))
+```
+
+```output
+200000
+```
+
+There is no matching set for `Instant`. A point on the timeline has no natural `5.<unit>` — five of
+what, from when? — so naming one still means saying which epoch it is counted from.
 
 ## The calendar
 
