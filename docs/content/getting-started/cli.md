@@ -259,7 +259,7 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `--ar <path>` | the `llvm-ar` to build a library with |
 | `--link-path <dir>` | where to look for a library a `link` directive named; may be given more than once |
 | `--include-path <dir>` | where to look for a header the C beside a module includes; may be given more than once |
-| `-D <name[=value]>` | a macro the C beside a module is compiled with; may be given more than once |
+| `-D NAME` or `-D NAME=value` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
 | `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines |
 | `--explain-escapes` | report every local array promoted to the heap |

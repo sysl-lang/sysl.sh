@@ -26,3 +26,7 @@ lib/
 
 *~
 .directory
+
+# The rendered site. juicer writes it and the Docs workflow publishes it, so a
+# copy here is a stale one somebody will eventually read as the source.
+docs/public/

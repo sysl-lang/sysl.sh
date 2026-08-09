@@ -493,7 +493,7 @@ command line rather than three more directives:
 | | |
 |---|---|
 | `--include-path <dir>` | where to look for a header the C beside a module includes |
-| `-D <name[=value]>` | a macro that C is compiled with |
+| `-D NAME` or `-D NAME=value` | a macro that C is compiled with |
 | `--link-path <dir>` | where to look for the library `@link` named |
 
 They fail in that order, and the first two fail *before* anything reaches a linker. A binding to a
