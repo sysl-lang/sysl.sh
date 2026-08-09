@@ -1149,10 +1149,10 @@ struct Uart
     baud:   u32
 end Uart
 
-var block = Uart(1u32, 0u32, 115200u32)
+var block = Uart(1, 0, 115200)
 var regs: *Uart = &block
 
-regs.data = 65u32
+regs.data = 65
 
 print(regs.status, regs.data, regs.baud)
 ```

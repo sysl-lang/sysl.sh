@@ -623,6 +623,58 @@ as in the answer.
 `bool` and the pointer modes have `==` and no `<`. There is no four-way `PartialEq`/`Eq`/`PartialOrd`
 /`Ord` tower.
 
+### A simple enum is `Eq`, and nothing else
+
+An enum whose variants all carry nothing is a **simple** enum, and its value *is* its discriminant.
+There is exactly one thing equality on it could mean, so the compiler supplies it — the same rule
+that makes every width of integer `Eq` without a block being written per width:
+
+```sysl
+enum Colorspace
+    Srgb
+    Linear
+
+same[T: Eq](a: T, b: T) -> bool = a == b
+
+print(Srgb == Srgb, Srgb == Linear)
+print(same(Linear, Linear))
+```
+
+```output
+true false
+true
+```
+
+The membership satisfies an `Eq` **bound**, as the second line shows, and not merely the `==` token —
+so a simple enum goes into anything written over `[T: Eq]`.
+
+It is **not** `Ord`. Declaration order is an order and it is not a *meaning*: `Srgb < Linear` says
+nothing anybody wants a language to assert on their behalf, so an enum whose order means something
+writes the `impl` that says so. It is not `Hash` either, for the same reason — that is a promise
+about a distribution, and a program makes it deliberately.
+
+An enum that **carries data** is not a member. Comparing two of those means comparing their payloads,
+which needs every payload type to be `Eq` itself; that is an `impl` a program writes, and
+[the core module](/library/core/) shows the shape.
+
+Writing the block by hand for a simple one is refused rather than ignored, because the comparison is
+emitted whatever the block says:
+
+```sysl
+enum Colorspace
+    Srgb
+    Linear
+
+impl Eq for Colorspace
+    eq(self, rhs: Colorspace) -> bool = int(self) == int(rhs)
+
+print(Srgb == Srgb)
+```
+
+```error
+'Colorspace' already implements 'sysl.Eq' — no variant of it carries anything, so its value is its discriminant and '==' is that comparison. Delete the block; a variant that needs an equality of its own has to carry something for it to be about
+```
+
 The scalars do not go through those derivations — the compiler-provided impls supply all six
 comparisons directly at IEEE semantics, which is what keeps `NaN <= 1.0` and `NaN >= 1.0` both false
 where negating `lt` would have made one true.

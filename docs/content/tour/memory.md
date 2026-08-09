@@ -253,7 +253,7 @@ struct Gpio
     shadow: u32
 end Gpio
 
-var block = Gpio(0b1010u32, 0u32, 0u32)
+var block = Gpio(0b1010, 0, 0)
 var regs: *Gpio = &block
 
 regs.output = 0b0110
