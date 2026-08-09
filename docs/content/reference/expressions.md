@@ -623,6 +623,10 @@ as in the answer.
 `bool` and the pointer modes have `==` and no `<`. There is no four-way `PartialEq`/`Eq`/`PartialOrd`
 /`Ord` tower.
 
+The scalars do not go through those derivations — the compiler-provided impls supply all six
+comparisons directly at IEEE semantics, which is what keeps `NaN <= 1.0` and `NaN >= 1.0` both false
+where negating `lt` would have made one true.
+
 ### A simple enum is `Eq`, and nothing else
 
 An enum whose variants all carry nothing is a **simple** enum, and its value *is* its discriminant.
@@ -674,10 +678,6 @@ print(Srgb == Srgb)
 ```error
 'Colorspace' already implements 'sysl.Eq' — no variant of it carries anything, so its value is its discriminant and '==' is that comparison. Delete the block; a variant that needs an equality of its own has to carry something for it to be about
 ```
-
-The scalars do not go through those derivations — the compiler-provided impls supply all six
-comparisons directly at IEEE semantics, which is what keeps `NaN <= 1.0` and `NaN >= 1.0` both false
-where negating `lt` would have made one true.
 
 ### Why the token set is closed
 
