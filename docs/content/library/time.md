@@ -255,6 +255,16 @@ print(whole_micros(n.ms))
 200000
 ```
 
+**A selective import has to name the trait**, which is the one place `DurationUnits` is written down
+by anybody using it — a member is reached through the trait that declares it, so importing `millis`
+does not bring `ms` along with it:
+
+```sysl
+import sysl.time.{Duration, DurationUnits, whole_micros}
+```
+
+`import sysl.time.*` needs nothing said.
+
 There is no matching set for `Instant`. A point on the timeline has no natural `5.<unit>` — five of
 what, from when? — so naming one still means saying which epoch it is counted from.
 

@@ -98,7 +98,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/complex.md"                   -> (6, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead.
-    "docs/content/library/time.md"                       -> (15, 3, 3),
+    "docs/content/library/time.md"                       -> (15, 3, 4),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     "docs/content/library/thread.md"                     -> (6, 6, 2),
     "docs/content/library/term.md"                        -> (2, 0, 2),
