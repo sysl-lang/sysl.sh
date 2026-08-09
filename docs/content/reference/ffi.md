@@ -484,6 +484,30 @@ Four more rules:
   header carries: an annotation's name is read as an identifier, which is what keeps `alloc`, `no`,
   `requires` and `link` out of the reserved list. See [attributes](/reference/attributes/).
 
+### Where the library is, where its headers are, and what they are configured with
+
+`@link` says *which* library. Where it lives on a particular machine is not the module's to know, and
+neither is what the surrounding project builds its headers with, so those are three flags on the
+command line rather than three more directives:
+
+| | |
+|---|---|
+| `--include-path <dir>` | where to look for a header the C beside a module includes |
+| `-D <name[=value]>` | a macro that C is compiled with |
+| `--link-path <dir>` | where to look for the library `@link` named |
+
+They fail in that order, and the first two fail *before* anything reaches a linker. A binding to a
+library a package manager put outside the toolchain's prefix needs the paths; a module joining an
+existing C project — an SDK, a firmware build — needs the macros as well, because a header found is
+not a header that compiles. pico-sdk's `pico/cyw43_arch.h` `#error`s on a build that has not said
+which architecture variant it means, which is the shape to expect rather than a curiosity.
+
+**Nothing is guessed at.** sysl does not add `/opt/homebrew/lib` and does not invent a macro: a
+compiler ruling on where a platform keeps its libraries, or on how a project configures its headers,
+would be wrong on a machine its author cannot reach, and the cost of being wrong is a build that
+fails somewhere else. A build system that already knows these has them — from CMake, the target's
+`INCLUDE_DIRECTORIES` and `COMPILE_DEFINITIONS`.
+
 ## A function's address — `*extern(A, B) -> R`
 
 [`Fn`](/reference/expressions/) is sysl's answer to "what is the type of a callable", and it is the
