@@ -283,6 +283,69 @@ print(int(Green), area(Circle(1.0)), area(Rect(2.0, 3.0)))
 `Option[T]` and `Result[T, E]` are ordinary data enums declared in the standard library, with no
 compiler privileges — which is why you can write your own and have it work identically.
 
+### A variant belongs to its enum
+
+Two enums in one module may each name a variant `Failed`, and neither has to be renamed. **What a
+bare name means is settled where it is used, by the type expected there** — an argument, an annotated
+binding, a `return` and a field all supply one, so the short form is what you normally write:
+
+```sysl
+enum Shape
+    Circle(r: int)
+    Square(side: int)
+
+enum Hole
+    Circle(r: int)
+    Slot(len: int)
+
+area(s: Shape) -> int = s match
+    Circle(r)    -> 3 * r * r
+    Square(side) -> side * side
+
+depth(h: Hole) -> int = h match
+    Circle(r) -> r
+    Slot(len) -> len
+
+val s: Shape = Circle(2)
+
+print(area(s), depth(Circle(5)))
+```
+
+```output
+12 5
+```
+
+Where two enums answer and nothing says which, that is a diagnostic rather than a quiet choice — a
+construction that picked the first-declared enum would be a line whose meaning changed when somebody
+added an unrelated enum above it:
+
+```sysl
+enum Shape
+    Circle(r: int)
+    Square(side: int)
+
+enum Hole
+    Circle(r: int)
+    Slot(len: int)
+
+var s = Circle(1)
+
+print(1)
+```
+
+```error
+'Circle' is a variant of 'Shape' and 'Hole', and nothing here says which — qualify it, as 'Shape.Circle'
+```
+
+`Shape.Circle(1)` is what that line wants. The qualified form works at a construction exactly as it
+[works in a pattern](/reference/patterns/#the-bare-name-rule).
+
+This is Rust's arrangement — a variant is namespaced under its enum — without Rust's use site, where
+`Link::Failed` is required everywhere unless a scope opts into `use Link::*`. A variant still may not
+share a name with a constant, a `val`, a module `var` or an `extern` variable: two variants of a name
+are told apart by the enum they belong to, and a variant and a constant have nothing to be told apart
+*by*.
+
 ## Type aliases
 
 `type Name = Existing` introduces a second spelling for a type, interchangeable with the first. It
