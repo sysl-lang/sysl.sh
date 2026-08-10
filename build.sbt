@@ -8,10 +8,10 @@
 // **JVM only.** The compiler cross-publishes for JS and Native, but nothing here wants either: the
 // suites compile sysl programs and run them through clang, which is one machine's toolchain.
 //
-// **The pages are tested against the compiler that is PUBLISHED, not against its dev branch**, and
-// that is the semantics rather than a limitation — a website documents the released language, so a
-// page demonstrating unreleased behaviour would be wrong for a reader. Keeping the two in step is a
-// release step: cut the release, raise `syslVersion` below, run these tests, fix what moved.
+// **The pages are tested against the compiler `syslVersion` names, and which compiler that is depends
+// on the branch.** On `stable` it is a release, because a website documents the released language and
+// that branch is what deploys. On `dev` it is an **interim** built from sysl's own dev, so a page can
+// be written and verified as a feature lands rather than held until a release. See `syslVersion`.
 
 ThisBuild / scalaVersion := "3.8.4"
 ThisBuild / organization := "io.github.edadma"
@@ -58,7 +58,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 //
 // A release bumps this to the real version on `dev`, then merges dev into `stable` in both
 // repositories. That is the one moment the two branches say the same thing.
-val syslVersion = "0.0.38-fcdf5015"
+val syslVersion = "0.0.38"
 
 lazy val root = project
   .in(file("."))
