@@ -35,7 +35,25 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // standard-module artifact and the program each defined `sysl$stdout` and GNU `ld` refuses that
 // where `ld64` quietly takes the first. Nothing about it was macOS-specific except the consequence,
 // which is why a suite that had only ever run on the author's machine was green throughout.
-val syslVersion = "0.0.37"
+// **On `dev` this is an INTERIM compiler; on `stable` it is a release.** That split arrived
+// 2026-08-09 and is the whole of why the two branches exist.
+//
+// The site documents the released language, so for a long time it could only ever be one branch —
+// and a page for a feature still on sysl's dev could not be written at all, because `DocsTests`
+// compiles every fenced block with whatever this names and no released compiler had the feature.
+// Pages were drafted blind, ungated, and held until the release, which is a rule that cost real time
+// and lost real work.
+//
+// Now sysl publishes an interim to GitHub Packages from its own dev, this names it here, and a page
+// is written and *verified* the moment the feature exists. `stable` is what deploys.
+//
+// **An interim is stamped and never reused.** GitHub Packages refuses to republish a version that
+// exists — a plain `0.0.38-SNAPSHOT` gets `409 Conflict` the second time, verified 2026-08-09 — so
+// each publish carries its own name and the bump rides along with the docs commit that needs it.
+//
+// A release bumps this to the real version on `dev`, then merges dev into `stable` in both
+// repositories. That is the one moment the two branches say the same thing.
+val syslVersion = "0.0.38-SNAPSHOT"
 
 lazy val root = project
   .in(file("."))

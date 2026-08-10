@@ -10,11 +10,14 @@
 
 name: Test
 
+# Both branches, and for different reasons: `dev` is checked against the **interim** compiler so that
+# a page for an unreleased feature is verified rather than drafted blind, and `stable` against the
+# **released** one so that what the world reads is known to compile with the compiler people have.
 on:
   push:
-    branches: ["dev"]
+    branches: ["dev", "stable"]
   pull_request:
-    branches: ["dev"]
+    branches: ["dev", "stable"]
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:

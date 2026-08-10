@@ -14,11 +14,14 @@
 
 name: Docs
 
+# **Both branches build; only `stable` deploys.** `dev` documents the language as it is on sysl's dev
+# and is checked here so a page is never written blind; `stable` documents the released language and is
+# what the world reads. See the `deploy` job for why they came apart.
 on:
   push:
-    branches: ["dev"]
+    branches: ["dev", "stable"]
   pull_request:
-    branches: ["dev"]
+    branches: ["dev", "stable"]
   workflow_dispatch:
 
 permissions:
@@ -95,8 +98,19 @@ jobs:
         with:
           path: _site
 
+  # **`stable`, not `dev`** — the site the world reads documents the *released* language, and dev no
+  # longer tracks it.
+  #
+  # Until 2026-08-09 the two were one branch, which forced a rule that cost real time: a page for a
+  # feature still on sysl's dev could not be written here at all, because `DocsTests` compiles every
+  # fenced block with the pinned compiler and no released compiler had the feature. Pages were drafted
+  # blind on a branch, ungated, and held until the release.
+  #
+  # Now `dev` pins an **interim** compiler published from sysl's dev, so a page is written and
+  # *verified* the moment the feature exists. A release merges dev into stable in both repositories,
+  # which is the one moment the two say the same thing.
   deploy:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/stable'
     needs: build
     runs-on: ubuntu-latest
     permissions:
