@@ -47,13 +47,18 @@ ThisBuild / evictionErrorLevel := Level.Warn
 // Now sysl publishes an interim to GitHub Packages from its own dev, this names it here, and a page
 // is written and *verified* the moment the feature exists. `stable` is what deploys.
 //
-// **An interim is stamped and never reused.** GitHub Packages refuses to republish a version that
-// exists — a plain `0.0.38-SNAPSHOT` gets `409 Conflict` the second time, verified 2026-08-09 — so
-// each publish carries its own name and the bump rides along with the docs commit that needs it.
+// **An interim is stamped with the commit it was built from**, and never reused. GitHub Packages
+// refuses to republish a version that exists — a plain `0.0.38-SNAPSHOT` gets `409 Conflict` the
+// second time, verified 2026-08-09 — so each publish carries its own name and the bump rides along
+// with the docs commit that needs it.
+//
+// **The stamp is what makes "the two dev branches correspond" checkable rather than hoped for.** This
+// names a sysl commit, so the question of whether the site documents the compiler is answered by
+// reading one line instead of by remembering when the last interim was cut.
 //
 // A release bumps this to the real version on `dev`, then merges dev into `stable` in both
 // repositories. That is the one moment the two branches say the same thing.
-val syslVersion = "0.0.38-SNAPSHOT"
+val syslVersion = "0.0.38-fcdf5015"
 
 lazy val root = project
   .in(file("."))

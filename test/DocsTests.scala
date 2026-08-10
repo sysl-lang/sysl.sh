@@ -92,7 +92,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/text.md"                      -> (17, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),
-    "docs/content/library/io.md"                        -> (5, 3, 3),
+    // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
+    // line editor and made anything taking a `*Reader` testable without a descriptor.
+    "docs/content/library/io.md"                        -> (6, 3, 3),
     "docs/content/library/fs.md"                        -> (6, 5, 3),
     "docs/content/library/math.md"                      -> (18, 9, 2),
     "docs/content/library/complex.md"                   -> (6, 1, 1),
@@ -101,7 +103,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/time.md"                       -> (15, 3, 4),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     "docs/content/library/thread.md"                     -> (6, 6, 2),
-    "docs/content/library/term.md"                        -> (2, 0, 2),
+    // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
+    // branch here, since these run with input closed) and the line editor over an in-memory pair.
+    "docs/content/library/term.md"                        -> (4, 0, 2),
     "docs/content/library/slices.md"                      -> (7, 0, 0),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),

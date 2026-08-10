@@ -385,11 +385,53 @@ wrong, producing a spurious empty line between every pair.
 
 `lines_ending(r, e)` is the two written out, for a caller holding the policy as a value.
 
-**Echo and editing are still not covered, and they are the rest of what a console needs.** A terminal
-in raw mode shows nothing as it is typed, and with no echo a mistake cannot be corrected. Neither is
-a line cursor's business — one is about the *terminal* and the other about the *line* — and both
-still have to come from somewhere.
-[`sh.sysl.pico2`](https://github.com/sysl-lang/pico2)'s `read_line` is a worked example.
+**Echo and editing are not a line cursor's business** — one is about the *terminal* and the other
+about the *line* — and they have to come from somewhere, because a terminal in raw mode shows nothing
+as it is typed and a mistake cannot be corrected without them.
+
+They come from [`sysl.term.edit`](/library/term/#reading-a-line-syslterm-edit), which is this trait's
+other consumer: it edits where nothing else will, and hands back whole lines through the same
+`Iterate[string]` a `Lines` does. **So the two are interchangeable at a call site**, and which one a
+program wants is decided by whether anything else is already doing the editing — the kernel, on a
+cooked terminal, and nothing at all over a serial cable.
+
+## Reading from memory, and writing to it — `bytes_reader` and `bytes_writer`
+
+Every `Reader` and every `Writer` above is a file descriptor, and for a long time that was all there
+was — which made a whole class of code awkward to reach: anything taking a `*Reader` could only be
+exercised by arranging for real input to arrive on a real descriptor.
+
+```sysl
+import sysl.io.{bytes_reader, bytes_writer, lines}
+import sysl.text.from_utf8
+
+main()
+    var src = bytes_reader("one\ntwo\n".bytes)
+    var out = bytes_writer()
+
+    for line in lines(&src)
+        out.write(line.bytes)
+        out.write("|".bytes)
+
+    print(from_utf8(out.view()).unwrap_or("?"))
+```
+
+```output
+one|two|
+```
+
+A `bytes_reader` **borrows** what it reads rather than copying it, so one over a large buffer costs
+three words; what that asks is that the bytes outlive the reader, which is the ordinary rule for a
+slice. A `bytes_writer` grows to fit, and `view()` hands back everything written so far — a caller
+wanting text calls `from_utf8` on that view and gets to decide what an ill-formed sequence means,
+which is right here, because whatever wrote those bytes is the thing under suspicion.
+
+**`bytes_reader_at_most(b, n)` hands back at most `n` bytes per read, however much room it was
+offered**, and it earns its place: anything reading a stream has cases that arise *only* when a unit
+of input straddles two reads — the two bytes of a `\r\n`, an escape sequence, the continuation bytes
+of one character. Those are exactly the cases a hand-rolled reader gets wrong, and a reader that
+always empties itself in one go can never produce them. It is also what a slow source honestly looks
+like: a serial port hands over what has arrived, not what was asked for.
 
 ## `FdReader` and `stdin`
 

@@ -29,7 +29,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.text`](/library/text/) | the whole text surface — validation, the character cursors, `Ascii` and `Search`, splitting and joining, `StrBuilder`, the parsers, `CString` | — |
 | [`sysl.regex`](/library/regex/) | POSIX Extended Regular Expressions — `regex`, `Regex`, `Match` | — |
 | [`sysl.buf`](/library/buf/) | `Buf[T]`, the growable sequence, and `ByteSink` | — |
-| [`sysl.io`](/library/io/) | `Reader`, `stdin()`, `lines()` and `console_lines()` | — |
+| [`sysl.io`](/library/io/) | `Reader`, `stdin()`, `lines()` and `console_lines()`, and the in-memory `bytes_reader()` / `bytes_writer()` | — |
 | [`sysl.fs`](/library/fs/) | files and paths — `read_text`, `write_bytes`, `exists`, `rename`, and `IoError` | `os` |
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
@@ -37,7 +37,8 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.thread`](/library/thread/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `threads`, `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
-| [`sysl.term.tty`](/library/term/#whether-to-write-escapes-at-all--sysltermtty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` | `posix` |
+| [`sysl.term.tty`](/library/term/#whether-to-write-escapes-at-all--sysltermtty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` — and taking the terminal over: `raw`, `cooked`, `flush`, `tty_writer` | `posix` |
+| [`sysl.term.edit`](/library/term/#reading-a-line--syslterm-edit) | a line editor for a terminal with no line discipline — echo, editing, history, over a `Reader` and a `Writer` | — |
 | [`sysl.slices`](/library/slices/) | what a program does *to* a `[]T` — searching, comparing, `reverse`, two sorts that neither allocate, `binary_search`, and `as_ptr` for a C binding | — |
 | [`sysl.encoding`](/library/encoding/) | hexadecimal and base64 both ways, fixed-width integers to and from bytes at either byte order, and `DecodeError` | — |
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |

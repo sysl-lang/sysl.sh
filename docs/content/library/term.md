@@ -156,6 +156,141 @@ overrides the descriptor without overriding the user's `NO_COLOR`, and that is e
 turns colour off whatever it contains, so `NO_COLOR=0` means no colour, while set-and-empty does not.
 A program reading it as a boolean and looking for `"1"` has misread the convention.
 
+## Taking the terminal over — `sysl.term.tty.raw`
+
+A terminal at a shell is in **cooked** mode: the kernel's line discipline echoes what is typed,
+honours backspace, and hands the program a whole line at Enter. That is why `sysl.io.console_lines`
+is all a hosted program usually needs — something else is doing the editing.
+
+`raw()` puts that out of the way, so a program sees each keystroke as it is typed.
+
+| name | does |
+|---|---|
+| `raw()` | cbreak mode — keystrokes arrive as typed, nothing is echoed. **Answers whether it worked** |
+| `cooked()` | puts back what `raw` changed, and only that |
+| `flush()` | pushes out what C is holding — a prompt with no newline after it |
+| `tty_writer()` | standard output as a sink that flushes what it is given |
+
+**`raw()` answering `false` is not an error — it is the other situation.** With input redirected from
+a file or a pipe there is no terminal to change, and an editor is the wrong facility anyway: nothing
+is being typed and nothing should be echoed. So a program picks its reader from the answer, and
+`prog < script.txt` goes on working.
+
+```sysl
+import sysl.io.{stdin, console_lines}
+import sysl.term.tty.{raw, cooked}
+
+main()
+    var input = stdin()
+
+    if raw()
+        print("a terminal")
+        cooked()
+    else
+        var cursor = console_lines(&input)
+
+        print("a pipe")
+```
+
+```output
+a pipe
+```
+
+That output is the point rather than an accident, exactly as above: this page's programs run with
+their input closed, so `raw()` declines and the cooked path is what runs.
+
+### What it sets, and the one thing it gives up
+
+`-icanon -echo -isig opost onlcr`. Output translation is **asserted rather than assumed** — nothing
+here turns it off, so leaving it out looked safe, and a terminal that arrives without it makes every
+`print` stair-step down the screen while the editor's own output looks fine.
+
+**Signals go, and that is not the obvious choice.** Leaving `isig` alone would keep Ctrl-C
+interrupting, which reads like a feature for a REPL. It cannot be had: a program interrupted in
+cbreak mode must restore the terminal from a signal handler, and restoring means allocating a command
+string and forking a shell, neither of which is async-signal-safe — so the handler deadlocks rather
+than tidying up. Ctrl-C arrives as **byte 3** for the editor instead.
+
+What that costs is worth saying plainly: a program that has stopped responding can no longer be
+interrupted from its own terminal, and the escape is `kill` from another one. What it buys is that
+the terminal is never left broken, and that a hosted program behaves exactly like one on a board —
+which never had signals to disable.
+
+**It is `stty` through `system`, not `termios`.** `struct termios` is caller-allocated and has no sysl
+spelling, and the library is written under a constraint it keeps everywhere: everything is reached by
+symbol alone, with no header included and no C structure transcribed. That is the same constraint that
+keeps `stat` out of `sysl.fs`.
+
+## Reading a line — `sysl.term.edit`
+
+The other half of what a console needs, and the reason it exists: **a terminal with no line
+discipline gives a program nothing.** Over a serial cable there is none at all; at a hosted terminal
+`raw()` has just removed it. Either way nothing appears as it is typed and a mistake cannot be
+corrected — which is not a program that reads badly but a program that looks broken.
+
+`editor(r, w)` is a line editor over a `*Reader` and a `*Writer`. It answers whole lines through
+`Iterate[string]`, the same as `sysl.io.lines` and `console_lines`, **so the three are
+interchangeable at a call site** and a program chooses by what is producing its input.
+
+```sysl
+import sysl.io.{bytes_reader, bytes_writer}
+import sysl.term.edit.editor
+
+main()
+    var typed = bytes_reader("one\rtwo\r".bytes)
+    var echo  = bytes_writer()
+    var ed    = editor(&typed, &echo)
+
+    for line in ed
+        print(line)
+```
+
+```output
+one
+two
+```
+
+| keys | do |
+|---|---|
+| `←` `→` `Home` `End` | move within the line — and `Ctrl-A` / `Ctrl-E` / `Ctrl-B` / `Ctrl-F` |
+| `Backspace` `Delete` | at the cursor, not only at the end |
+| `Ctrl-U` `Ctrl-K` | kill the line, or from the cursor on |
+| `↑` `↓` | the last 64 lines — and `Ctrl-P` / `Ctrl-N` |
+| `Ctrl-C` | abandon the line and answer an empty one |
+| `Ctrl-D` | end the input, **on an empty line only** |
+
+**The line is held as characters and measured in columns.** A cursor is an index rather than a byte
+offset, so a half character can never be left behind by a backspace — one never enters the line. And
+a wide character occupies two columns, so erasing a CJK character or an emoji clears both; an editor
+counting characters leaves half of one on the screen.
+
+**Both spellings of an arrow key are read.** `ESC [ D` is CSI and `ESC O D` is SS3, and a terminal
+chooses between them by whether application cursor key mode is on. Reading only the first is not a
+simplification — it means a left arrow inserts a stray `D` into the line.
+
+### What it is not
+
+There is no completion, no multi-line editing and no absolute cursor addressing. A program wanting
+those wants [linenoise](https://github.com/sysl-lang/linenoise). **A line that wraps past the
+terminal's width redraws wrong**, which is the honest cost of moving the cursor by writing `\b`: it
+stops at column zero rather than climbing to the row above.
+
+**It asks for nothing of the platform** — no capability, no C — which is what lets the same program
+run at a terminal and over a cable. It does allocate: the line is a `Buf[char]` and the answer is a
+`string`.
+
+### The prompt, and why the editor pokes its sink
+
+The editor prints no prompt and is not told one. Every movement it makes is relative, so it never
+needs to know how far along the row the line starts, and a caller goes on printing its own prompt —
+which is what makes a REPL's continuation prompt the caller's business rather than a field here.
+
+What it does do is hand its sink a **zero-length write** before waiting for a keystroke. A hosted sink
+buffers — `putbytes` goes through C's `putchar`, which line-buffers a terminal — so a prompt with no
+newline after it would sit in the buffer until something wrote one, which is one keystroke too late.
+The poke gives a buffering sink its chance, and keeps the obligation off every caller that prints a
+prompt. A board pays nothing for it: a sink with no buffer writes no bytes.
+
 ## What is deliberately not here
 
 **Anything that takes a number.** Moving the cursor to a row and column means building
