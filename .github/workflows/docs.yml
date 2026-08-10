@@ -92,8 +92,13 @@ jobs:
           name: docs-site
           path: _site
 
+      # **This guard has to name the same branch `deploy` does**, and it is easy to miss when that
+      # branch changes: the deploy job's own `if:` is the obvious one, and a build that skips this
+      # step is perfectly green. What fails is `deploy`, on *"No artifacts named github-pages were
+      # found for this workflow run"* — which reads as a problem with the deploy action rather than as
+      # a step that never ran. Caught exactly that way on 2026-08-09, moving the deploy to `stable`.
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/dev'
+        if: github.ref == 'refs/heads/stable'
         uses: actions/upload-pages-artifact@v5
         with:
           path: _site
