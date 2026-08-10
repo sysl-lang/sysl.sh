@@ -410,10 +410,31 @@ print(fixture())
 error: 'fixture' is declared in a file that said '@tests', so it is there for the module's tests and no build but 'sysl test' keeps it — only another such file, or a '@test' function, may name it
 ```
 
+**A closure counts as the body it was written in.** It is lowered to a function of its own under a
+name nobody wrote, so on its own terms it belongs to no file — but what decides is where it sits, not
+what it ends up called. A lambda inside a test may name the test file's own scaffolding, and so may a
+bare function name, which is the same thing written shorter:
+
+```sysl
+@tests
+
+fixture() -> int = 6 * 7
+
+apply(f: &Fn(int) -> int, n: int) -> int = f(n)
+
+@test("the fixture is the answer, reached through a callback")
+the_fixture_holds() =
+    assert_eq(apply(v -> fixture() + v, 0), 42)
+```
+
+It goes when the file goes, too, which is the half that makes the naming safe: the program that ships
+carries no body for it.
+
 **An `impl` block may not sit in one.** It declares no name; it fills a slot in a method table, which
 the rest of the program reads without naming anything. Kept in a test build and dropped everywhere
 else, it would mean a trait answering one way while the tests ran and another way in the program that
-ships. The impl belongs beside the type.
+ships. The impl belongs beside the type. A closure is the one exception the compiler makes for
+itself, and it is not a hole: the table it writes is dropped with the closure.
 
 **It stops at the package boundary.** A package is compiled from source and a library arrives as an
 artifact whose test files were never encoded, so a rule that let the reference cross would compile
