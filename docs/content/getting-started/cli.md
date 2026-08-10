@@ -214,6 +214,7 @@ x86_64-freestanding   x86_64-unknown-none-elf
 riscv64-freestanding  riscv64-unknown-elf
 thumb-freestanding    thumbv8m.main-none-eabihf
 thumb-freestanding-softfp  thumbv8m.main-none-eabi
+thumbv6m-freestanding  thumbv6m-none-eabi
 riscv32-freestanding  riscv32-unknown-elf
 x86-linux             i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
@@ -223,12 +224,12 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
-**The last three freestanding rows are 32-bit, and they are one board's two halves.** The RP2350 boots
-either a pair of Cortex-M33s or a pair of RV32IMAC cores, and both are here because a microcontroller
-is what *freestanding* is mostly for — the three 64-bit freestanding rows reach kernels and
-hypervisors, which is a different audience. `thumb` rather than `arm` names the Arm one because a
-Cortex-M executes Thumb only, so an arm written for A32 would assemble for a machine that cannot run
-it.
+**The last four freestanding rows are 32-bit, and they are the two Raspberry Pi microcontrollers.**
+The RP2350 — the Pico 2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040
+— the original Pico — has a pair of Cortex-M0+. All are here because a microcontroller is what
+*freestanding* is mostly for: the three 64-bit freestanding rows reach kernels and hypervisors, which
+is a different audience. `thumb` rather than `arm` names the Arm ones because a Cortex-M executes
+Thumb only, so an arm written for A32 would assemble for a machine that cannot run it.
 
 **The Cortex-M33 has two rows because the float ABI is the C project's to pick rather than sysl's.**
 `thumb-freestanding` passes floating-point arguments in VFP registers, which is what `eabihf` selects
@@ -243,8 +244,27 @@ already uses; if you do not know, `softfp` is the pico-sdk default.
 `-mfloat-abi=soft` means no FPU instructions at all, while `softfp` uses the `fpv5-d16` this core has
 and changes only the calling convention.
 
+**`thumbv6m-freestanding` is the third Thumb row and is a different architecture, not a third
+convention.** It is the RP2040's Cortex-M0+ — Armv6-M, which came before Armv8-M rather than being a
+subset of its options — and its name carries the sub-architecture where the other two do not, because
+that is the whole of what separates it. Build an original Pico's program for this one; building it
+for either `thumb-` row produces instructions the core cannot execute, and the failure is a fault at
+whatever ran first rather than a refusal at the link.
+
+Its float column would mislead if you read it beside the row above. Both are soft, for unrelated
+reasons: `softfp` is a *convention* chosen over an FPU that is present, and the M0+ has no FPU at
+all.
+
+**One thing needs the board's help on that target, and only one.** Armv6-M has no atomic
+instructions, so a program using `&sync` — the shared counted reference — compiles to calls the
+toolchain does not supply, and the link fails naming `__atomic_fetch_add_4`. Every other program is
+unaffected, because those calls are emitted only for a program that holds a `&sync`. The
+[`pico`](https://github.com/sysl-lang/pico) package supplies them over one of the chip's hardware
+spinlocks, which is what a dual-core part needs — masking interrupts is per-core and would leave the
+other core free to lose the update.
+
 `x86-linux` is listed *because* it cannot be built for. The limit is the compiler's rather than the
-machine's, and **it is no longer the width** — this page said so until the two rows above it arrived.
+machine's, and **it is no longer the width** — this page said so until the 32-bit rows above arrived.
 What is missing is a C calling convention measured against clang, which is the only way a target's
 answers are allowed to be arrived at. A reader who names it is better told that than told the name is
 unknown.
