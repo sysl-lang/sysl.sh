@@ -117,13 +117,17 @@ trait Float: Eq + Ord + Neg + Add + Sub + Mul + Div
     is_finite(self) -> bool
 ```
 
-**A trait rather than two sets of functions, and the shape is forced by a language decision that turns
-out to be the better one anyway.** sysl has [no overloading](/reference/expressions/), so free
-functions could not call the square root of a `real` and the square root of an `f32` by one name —
-it would need `sqrt` and `sqrtf` the way C does, and every caller would have to keep track of which
-width it was holding. A trait resolves that on the receiver: `x.sqrt()` is the same three words
-whichever width `x` is, and changing a declaration from `f32` to `real` sends nobody editing call
-sites.
+**A trait rather than two sets of functions.** The shape was forced by a language decision that has
+since been reversed, and is kept because it is the better one anyway. sysl had no
+[overloading](/reference/declarations/) when this was written, so free functions could not call the
+square root of a `real` and the square root of an `f32` by one name — it would have needed `sqrt`
+and `sqrtf` the way C does. Two free `sqrt`s would resolve correctly today.
+
+What the trait still buys is the half overloading does not: a member that is *arithmetic over the
+others* — the logarithm in an arbitrary base, the hypotenuse — is written **once** as a default and
+inherited by both widths, where two free functions would need it twice and could disagree. Dispatch
+on the receiver is worth having for its own sake too: `x.sqrt()` is the same three words whichever
+width `x` is, and changing a declaration from `f32` to `real` sends nobody editing call sites.
 
 **The split between what is required and what is answered is where the mathematics is.** A method
 whose result C computes — a range-reduced sine, a correctly rounded root — is required, and each width

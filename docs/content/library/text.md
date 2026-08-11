@@ -52,8 +52,9 @@ The module is seven files, and the boundaries between them are arguments rather 
 
 Two of those rows carry the module's whole design, and they are worth reading before anything else.
 
-**`Ascii` and `Search` are each written once over two receivers.** sysl has no overloading, so the
-obvious shape is two sets of functions — `is_digit` for a byte and some suffixed twin for a
+**`Ascii` and `Search` are each written once over two receivers.** sysl had no
+[overloading](/reference/declarations/) when they were written, so the obvious shape was two sets of
+functions — `is_digit` for a byte and some suffixed twin for a
 character; a search over `string` and another over `[]u8`. The older sysl did exactly that and paid
 1,630 lines of near-identical code for it. A trait says "either of these" instead: each
 implementation supplies two or three members and every operation is a default written once against
@@ -591,9 +592,10 @@ rather than a second rendering: a program that builds half a line with a builder
 interpolation must not be able to tell which half a number came through. `push_real` is `%g` for the
 same reason.
 
-They take `long` and `ulong` rather than one member per width — the bargain the `print` family makes,
-for the same want of overloading. The difference is that `print` has the compiler widening its
-arguments and a member cannot:
+They take `long` and `ulong` rather than one member per width — the bargain the `print` family
+makes. [Overloading](/reference/declarations/) would give a set of members one *name*; it would not
+give them one *body*, which is what the widening buys. The difference is that `print` has the
+compiler widening its arguments and a member cannot:
 
 ```sysl
 import sysl.text.str_builder

@@ -235,6 +235,27 @@ something else is a function the *processor* enters rather than a caller, and th
 a definition rather than of a foreign declaration — see `interrupt`
 below.
 
+### Several `extern`s may share a name
+
+**Two `extern`s of one name are two functions exactly when they name two symbols.** A C library's
+naming is not sysl's, and a family C spells `_solid`/`_shaded`/`_blended` is one operation with an
+option — which a binding may say directly, rather than inventing a sysl name per C symbol:
+
+```sysl
+extern "strlen" size(s: *u8) -> usize
+extern "strnlen" size(s: *u8, cap: usize) -> usize
+```
+
+Which one a call means is decided by its arguments, exactly as for any other
+[overloaded name](/reference/declarations/#overloading). Two declarations naming the **same** symbol
+are refused: that is one C function claimed at two signatures, and the symbol is what gets emitted,
+so both calls would reach the same code with different arguments. Where that is genuinely wanted — a
+`void *` interface used at several types — it is written where a reader can see it, by taking the
+address and casting it.
+
+An `extern` and a sysl function do not overload each other, in either order: what tells overloads of
+an `extern` apart is the symbol each names, and a sysl function declares none.
+
 ## `@export` — a definition C can call
 
 `@export` is `extern` read the other way. An `extern` names a symbol the linker has and states the

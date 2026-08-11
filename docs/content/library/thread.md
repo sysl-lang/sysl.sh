@@ -280,9 +280,11 @@ the constructor names every field of 'sysl.thread.Mutex' in order, and 'held' is
 
 ### `lock` answers an address, and releasing is written
 
-That is as far as a language with **no destructor** can take the idea. Rust returns a guard whose
-destruction releases the lock; sysl has nothing to hang that on, so `defer m.unlock()` is the idiom
-— the same one [`sysl.fs`](/library/fs/) uses for `close`, and for the same reason.
+Rust returns a guard whose destruction releases the lock. sysl has a
+[destructor](/reference/memory/) now and deliberately does not use it here: a destructor runs for a
+value held behind a `&T`, so a guard would mean a heap allocation per `lock` — on the one path where
+the whole point is to hold a lock for as few instructions as possible. `defer m.unlock()` is the
+idiom, the same one [`sysl.fs`](/library/fs/) uses for `close`, and for the same reason.
 
 ```sysl
 import sysl.thread.*

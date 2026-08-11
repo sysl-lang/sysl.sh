@@ -628,22 +628,54 @@ print(ticks)
 ```
 
 Its initializer may be **absent**, which a `val`'s may not — the type's zero is what it starts at, and
-that is the cheapest form and the one an arena wants. It is stricter in one place, and the question is
-asked of the **type** where a `val`'s is asked of the value:
+that is the cheapest form and the one an arena wants.
+
+**It holds a counted value, and the last one it holds is never released.** A `string`, a slice, a
+`&T`, a `weak T` and anything built out of them are all module storage; every assignment during the
+run gives back the count it replaces, and the only release with nowhere to go is the one at exit —
+which is the release a static is *defined* by not taking.
 
 ```sysl
-static var greeting: string = "hello"
+static var current: string = ""
 
-print(greeting)
+set(s: string) = current = "[" + s + "]"
+
+set("one")
+set("two")
+print(current)
+```
+
+```output
+[two]
+```
+
+That was refused until the reason behind it was read again: storage lasting the whole run has no line
+to write a release on, which is true and is a description of a static rather than an argument against
+one. What the refusal cost was the shape every callback interface needs — a C function that calls
+back takes an address and an opaque word, so a binding offering a sysl closure has to keep it where
+the trampoline finds it again, and module storage is the only storage that outlives the call.
+
+**What is refused instead is a type with no zero and no initializer**, which is a narrower rule about
+a different thing. A `&T` has no zero, because there is no such thing as a reference to nothing; an
+enum has none either, since a zeroed tag names no variant in particular. A `string` and a slice both
+zero to the empty one and need nothing written. It is the same question a **local** declared with no
+initializer is already held to.
+
+```sysl
+struct Cell
+    v: int
+
+static var cell: &Cell
 ```
 
 ```error
-cannot be module storage: storage that exists for the whole run is never let go of
+error: 'cell' needs a value: storage with no initializer starts at its type's zero, and &Cell has
+none — the same rule a local with no initializer is held to. A 'string' and a slice both start empty
+and need no value written; a reference and an enum need one
 ```
 
-A `static val` given that same literal is admitted, because a literal's owner word is null and nothing
-was built. A variable could be given `str(n)` on the next line, so what is asked is what the storage
-may *ever* hold.
+A [destructor](/reference/memory/) takes the same ruling and for the same reason: a value in module
+storage never reaches a count of zero, so its `drop` does not run when the program ends.
 
 **`static` is meaningful only in the entry file**, since only that file has a body for a declaration
 to *not* belong to. In a file with a `module` header, or a headerless file carrying no statements,
@@ -886,9 +918,8 @@ print(check(4), check(9))
 at the limit other
 ```
 
-The rest of what a module-level `val` may hold — read-only at every depth, nothing that owes a
-release, and the `[]const T` a slice of one yields — is on
-[declarations](/reference/declarations/#val).
+The rest of what a module-level `val` may hold — read-only at every depth, and the `[]const T` a
+slice of one yields — is on [declarations](/reference/declarations/#val).
 
 ## Separate compilation
 

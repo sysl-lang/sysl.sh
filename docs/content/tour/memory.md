@@ -181,6 +181,40 @@ There is no operator that makes a weak reference. A `&T` becomes one wherever a 
 asked for, which above is the struct field. Reach for `weak` when you have a genuine cycle, and not
 before.
 
+## When the last reference goes
+
+ARC returns the storage and releases whatever the value held. What it cannot do is close a
+descriptor, unmap a region, or hand a handle back to the C library that made it — those live behind a
+raw pointer or an integer, and nothing about either says it is owned. `impl Drop for T` is where that
+is said, once, beside the type:
+
+```sysl
+struct Handle
+    id: int
+
+impl Drop for Handle
+    drop(self) = print("closing", self.id)
+
+hold()
+    var h: &Handle = Handle(7)
+    print("working")
+
+hold()
+print("done")
+```
+
+```output
+working
+closing 7
+done
+```
+
+`defer` (in [statements](/reference/statements/)) is the other way to say it, and neither replaces
+the other: `defer` covers every site a program can *name*, and a destructor covers the deaths it
+cannot — an element of a container that goes out of scope dies at a point with no expression in the
+source. The [reference](/reference/memory/) has the four limits, of which the one to know first is
+that a destructor runs for a value held behind a `&T`.
+
 ## `*T` — the way out
 
 The third mode is C's pointer, and it is exactly as safe as C's pointer. It is spelled with a sigil

@@ -76,8 +76,10 @@ false
 ```
 
 Each of these **opens, does the one thing, and closes** — and closes through `defer`, so the handle is
-released down the failing paths too. That is the idiom the module is written to demonstrate: the
-language has no destructor, so a scope releases what the scope said it would.
+released down the failing paths too. That is the idiom the module is written to demonstrate: a
+scope releases what the scope said it would. A [destructor](/reference/memory/) is the other way to
+say it and wants the handle behind a `&T`; these functions never let one escape, so the scope is
+enough.
 
 **`read_bytes` reads in chunks and grows rather than sizing itself from the file's length first.**
 That costs a little copying and buys the case that matters — a file being written while this reads it,
@@ -311,9 +313,14 @@ the file is not open 9
 
 Four rules are in that output.
 
-**Closing is the program's to do, and `defer f.close()` is how it is written.** The language has no
-destructor, so nothing runs at the end of a scope that the scope did not say. Dropping a `File`
+**Closing is the program's to do, and `defer f.close()` is how it is written.** Dropping a `File`
 without closing it leaks the handle until the program exits, the same as in C.
+
+A [destructor](/reference/memory/) is the other way to arrange it, and `File` deliberately does not
+have one: a destructor runs for a value held behind a `&T`, so giving `File` one would mean a heap
+box per open file and would take the choice away from a program that would rather not have one. What
+a destructor is for is the resource that dies where no `defer` can be written — inside a container,
+inside a struct inside a container — and a handle a function opens and closes is not that.
 
 **`close` is idempotent, and the second call is not merely tolerated — it is the case `defer`
 creates.** A function that closes on one path and defers the close for the others reaches the end

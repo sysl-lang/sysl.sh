@@ -112,8 +112,8 @@ retain and release both test for that and do nothing. Three consequences:
   instruction to build either.
 - Allocator-free code can hold, pass, compare, index and slice literals.
 - Any string derived from a literal by slicing is immortal too, because it shares the owner.
-- A module-level `val` may hold one. That storage exists for the whole run and is never let go of, so
-  a value that owed a release would have nowhere to write it — and a literal owes none.
+- A module-level `val` holds one with no code running first. Module storage may hold a built string
+  too, and never releases it; a literal is the case that needs no prologue at all.
 
 A sentinel refcount in a header would say the same thing. The null owner is better because it is not
 string-specific: it is already how a slice of static storage says "nothing to keep alive", so
@@ -723,9 +723,10 @@ print(tail, name.len, name[0], count, tail == "console", name < "/dev/null")
 console 12 47 12 true true
 ```
 
-**A module-level `val` may hold one, which is where a table of messages lives.** Storage that exists
-for the whole run is never let go of, so such a `val` normally holds nothing that owes a release —
-but a literal owes none, so the refusal does not reach it ([`13 §7`](/reference/declarations/)):
+**A module-level `val` may hold one, which is where a table of messages lives** — and here the point
+is not that it may but that it costs nothing: a literal allocates nothing, so the table is complete
+before the program starts and a module with `@no_alloc` may carry it
+([declarations](/reference/declarations/)):
 
 ```sysl
 @no_alloc

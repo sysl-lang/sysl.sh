@@ -41,11 +41,12 @@ side: what a program cannot avoid needing arrives free, and what it has to ask f
 
 A container that sizes its own storage needs three things, and sysl's design notes once recorded all
 three as reasons this could not be a library type: `sizeof` over a type parameter, a cast to reach
-the elements through it, and above all a **destructor**, since the language has exactly one and no
+the elements through it, and above all a **destructor**, since the language had exactly one and no
 way to write another.
 
-All three were the wrong answer. **A container does not need a destructor if its storage is a value
-that already has one** — the `[]T` field is an ARC-owned buffer, so when a `Buf` goes, its storage
+All three were the wrong answer, and none of the three is an absence now — a
+[destructor](/reference/memory/) is writable. **A container does not need one if its storage is a
+value that already has one** — the `[]T` field is an ARC-owned buffer, so when a `Buf` goes, its storage
 goes with it, and nothing in the container has to say so. The one thing genuinely missing was the
 ability to ask for storage at a length worked out while running, and once a `[]T` could be sized that
 way, `Buf[T]` was a hundred lines with no unsafe primitive in them.

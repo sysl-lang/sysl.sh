@@ -191,9 +191,9 @@ it can size an array but cannot *be* one; a `val` is storage, so it may be index
 known while running, sliced, and iterated. What it may not be is written, and slicing one therefore
 yields a `[]const T` — which is the whole of why a `val` is sliceable at all.
 
-**A `val` may not hold a value the program had to build, and the reason is the count.** Storage that
-exists for the whole run is never let go of, so anything in it that owes a release has nowhere to
-write one:
+**A `val` may hold a value the program had to build.** Storage that exists for the whole run is never
+let go of, so the count it takes is never given back — which is what a static is, and is why this is
+admitted rather than refused:
 
 ```sysl
 squares(k: usize) -> []int
@@ -203,16 +203,19 @@ squares(k: usize) -> []int
 
     xs
 
-val table: []int = squares(4)
+static val table: []int = squares(4)
+
+print(table[0], table[3], table.len)
 ```
 
-```error
-'table' cannot be a 'val': storage that exists for the whole run is never let go of, so a count taken in one is a count with nowhere to write the release — and this []int is built while the program runs. One the object file can carry as it stands may be held: a string literal owns nothing, and neither does a table of them
+```output
+0 9 4
 ```
 
-What decides is the **value**, not the type. A string literal owes no release — its bytes are a
-constant in the object file and its owner word is null — so a table of them is storage all the way
-down, exactly as `order` above is:
+What the value **is** still decides where the storage gets filled. A string literal's bytes are a
+constant in the object file and its owner word is null, so a table of them is storage all the way
+down and needs no code to run first — which is what lets a module with no allocator hold one, exactly
+as `order` above is:
 
 ```sysl
 val names: [3]string = ["alpha", "beta", "gamma"]
@@ -664,7 +667,8 @@ still refused — storage the body did not declare.
 `Buf[T]` is the growable array, and it is **ordinary sysl in the library** rather than a type the
 compiler knows: a `[]T` field for the storage, a count of how much of it is live, and the methods
 over them. That it can be written at all is what the section on storage sized while running bought —
-a container does not need a destructor if its storage is a value that already has one.
+a container does not need a [destructor](/reference/memory/) if its storage is a value that already
+has one, which the `[]T` field is.
 
 It lives in [`sysl.buf`](/library/buf/), which is where the surface is documented. Nothing in the
 language reaches it: an array literal makes an array or a slice, and a `for` walks whatever

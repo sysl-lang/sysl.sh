@@ -1303,7 +1303,98 @@ Three facts place it against everything above:
   that state is how a corrupt program writes its corruption to disk on the way down.
 
 **What it is not is a destructor.** A destructor belongs to a *type* and runs wherever a value of that
-type dies; `defer` belongs to one place in one body and runs for the resource that body took.
+type dies; `defer` belongs to one place in one body and runs for the resource that body took. Both
+exist, and the next section is why neither replaces the other.
+
+## A destructor
+
+**`impl Drop for T` says what a type does when the last reference to one of its values goes.** It
+declares one member, `drop(self)`, and it answers nothing:
+
+```sysl
+struct Handle
+    id: int
+
+impl Drop for Handle
+    drop(self) = print("closing", self.id)
+
+hold()
+    var h: &Handle = Handle(7)
+    print("working")
+
+hold()
+print("done")
+```
+
+```output
+working
+closing 7
+done
+```
+
+**It is for the resource the language does not manage.** ARC returns the storage and releases
+whatever the value holds; what it cannot do is close a descriptor, unmap a region, or hand a handle
+back to the C library that made it. Those live at the far end of a `*T` or behind an integer, and
+nothing about either says it is owned. The destructor is where that is said, once, beside the type.
+
+**`defer` is the other way to say it, and neither replaces the other.** `defer close(f)` covers every
+site a program can *name*. Under ARC a value can also die where there is no site to write one — and
+that case is the whole argument for this being a capability rather than a shorthand:
+
+```sysl
+struct Handle
+    id: int
+
+impl Drop for Handle
+    drop(self) = print("closing", self.id)
+
+hold()
+    var xs: []&Handle = [Handle(1), Handle(2)]
+    print("holding", xs.len)
+
+hold()
+print("done")
+```
+
+```output
+holding 2
+closing 2
+closing 1
+done
+```
+
+Nothing in that program names the moment either element dies. The slice goes, and its elements go
+with it — so no `defer` could have been written, and a leak there would not be something the author
+could have prevented. Where both would work, the destructor is the better one: it is written once,
+and a caller cannot forget it.
+
+**It costs nothing to have.** Release already calls through a per-payload hook, and a destructor is a
+call at the top of that hook. A type without one produces exactly the hook it always did.
+
+### The four limits, each a consequence of where it runs
+
+**It runs before the value's own references are released**, so it is handed `self` intact and a field
+may be read to close what it names. It borrows rather than taking a count — the count is already
+zero, and taking one would resurrect the object into a second teardown.
+
+**It is not called for a value that never reached the heap.** A value type is copied, and a copy is
+not a second resource: there is no single point of death to hook, and running it per copy would close
+one descriptor several times. So a destructor is for a type held behind a `&T`, and a program that
+puts one on a type it then passes by value gets no destructor rather than a wrong one.
+
+**It is not called for a value in a reference cycle**, whose count never reaches zero. That is not a
+new consequence of this feature but the existing cost of counting rather than collecting — the
+*storage* already leaks there. A `weak T` is what breaks a cycle.
+
+**It is not called for module storage when the program ends.** Storage that lasts the whole run is
+never let go of, so its count never reaches zero. There is no exit pass and there will not be one: a
+process exiting is what returns what it held, and running destructors at exit is the feature C++ has
+spent decades regretting, because the order two statics come apart in has no good answer. What it
+costs is that a buffered writer held in a static is not flushed at exit; the program flushes it.
+
+**No order is promised among siblings.** Two values that die together — the elements of a slice, the
+fields of a struct — come apart in an order that follows the teardown worklist, which today makes it
+last-to-first. A program that needs one before another has to say so.
 
 ## Crossing a concurrency domain
 

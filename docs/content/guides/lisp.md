@@ -50,11 +50,12 @@ left over afterwards.
 
 ## How it is measured, which is the part worth stealing
 
-sysl has **no user-facing destructor** — a type-bound one is still an open want in the
-[memory model](/reference/memory/) — so a program cannot be told when an object dies. It can *ask*,
-though, and that turns out to be enough. A weak reference does not hold its referent alive, so a
-buffer of one witness per environment ever created is a **live-object counter that needs no runtime
-support and perturbs nothing it counts**:
+sysl has a [destructor](/reference/memory/) now, and this program deliberately does not use one —
+which is worth reading, because the technique below is what a program reaches for when a destructor
+is the wrong tool. A destructor would perturb what it measures: giving `Env` one means every
+environment does work as it dies, on the path being timed. Asking instead costs the objects nothing.
+A weak reference does not hold its referent alive, so a buffer of one witness per environment ever
+created is a **live-object counter that needs no runtime support and perturbs nothing it counts**:
 
 ```sysl
 after_run(src: string, owning: bool) -> &Buf[weak Env]

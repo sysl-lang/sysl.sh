@@ -33,12 +33,12 @@ level**, and a module-level `val` is part of the module's surface — something 
 so its type is stated rather than inferred from whatever happens to be on the right today. The same
 `val limit = 10` inside a function infers happily, because a local is nobody else's business.
 
-There is a second thing a module-level `val` will not do, and it is worth knowing before you go
-looking for it: it may not hold a value the program had to **build** — a reference, a slice, or a
-string put together while running. Storage that exists for the whole run is never let go of, so a
-count in one would be a count with nowhere to write the release. Numbers, characters, booleans,
-string *literals*, and tables of any of them are what a module-level `val` is for; text a program
-builds or reads is a `var` at the top of the file, which is a local of the entry point.
+A module-level `val` **may** hold a value the program had to build — a reference, a slice, a string
+put together while running. Storage that exists for the whole run is never let go of, so the count it
+takes is never given back, which is what a static is. What the value is decides only *when* the
+storage gets filled: numbers, characters, booleans, string literals and tables of them are complete
+before the program starts, and anything else is built by a prologue that runs before the first
+statement.
 
 `print` takes any number of arguments, renders each one, and puts a space between them. It comes from
 `sysl`, the standard module — the one module a file may name without importing it.

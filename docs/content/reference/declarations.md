@@ -68,10 +68,10 @@ because it is visible outside its file, and the one inside `show` is visible to 
 have to. The `static` is what asks for the member — this is the file the program starts in, so a plain
 `val` there would be a local of its body, and a local infers exactly as a `var` does.
 
-**A module-level `val` holds nothing that owes a release.** There is one thing true of module storage
-and of no other storage: it exists for the whole run and is therefore never let go of, so a count
-taken in one is a count with no line to write the release on. A `&T`, a `weak T` and a slice are each
-refused for that reason, and so is a `string` the program **builds**:
+**A module-level `val` may hold a counted value, and never releases it.** Storage that exists for the
+whole run is never let go of, so the one release with nowhere to go is the one at exit — and not
+taking it is what a static *is*. A `&T`, a `weak T`, a slice and a `string` the program **builds**
+are all admissible:
 
 ```sysl
 static val name: string = str(2026)
@@ -79,13 +79,15 @@ static val name: string = str(2026)
 print(name)
 ```
 
-```error
-'name' cannot be a 'val': storage that exists for the whole run is never let go of, so a count taken in one is a count with nowhere to write the release — and this string is built while the program runs. One the object file can carry as it stands may be held: a string literal owns nothing, and neither does a table of them
+```output
+2026
 ```
 
-The question is asked of the **value**, not of the type, and a string *literal* answers it: its bytes
-are a constant in the object file and its owner word is null, so nothing was allocated and nothing is
-owed. A `val` may hold one, and a table of them:
+That was refused until the reason was read again, and what it cost was every shape that needs a
+value to outlive every frame. What the initializer *is* still decides where the storage gets filled —
+a **literal**'s bytes are a constant in the object file and its owner word is null, so nothing is
+allocated and the storage is complete before the program starts, while a built value is stored by a
+prologue. That difference is why a module with `no alloc` may still hold a table of literals:
 
 ```sysl
 val greeting: string = "hello"
@@ -409,6 +411,155 @@ parenthesizing it.
 
 A **closure's** parameter declares no default. A call reaches a closure through the `Fn` traits,
 which carry the types and not the names, so there would be nothing at the call to fill one from.
+
+### Overloading
+
+**A name may be declared more than once, and every use of it still means exactly one declaration.**
+Which one is decided by the **arguments** a use passes: how many, and what type each is.
+
+```sysl
+show(x: int) -> string = s"int $x"
+show(x: string) -> string = s"str $x"
+show(x: int, y: int) -> string = s"pair $x $y"
+
+print(show(1))
+print(show("a"))
+print(show(1, 2))
+```
+
+```output
+int 1
+str a
+pair 1 2
+```
+
+**The result is never part of it.** A pair differing only in what they return is refused where the
+second is written. sysl reads an expected type *inwards*, from the context to the expression, so a
+call whose meaning depended on its own result would need its context typed before it could be
+resolved and would need resolving before its context could be typed.
+
+```sysl
+h(x: int) -> string = "s"
+h(x: int) -> int = 1
+```
+
+```error
+error: function 'h' is already declared — which declaration a call means is decided by its arguments
+and never by what it returns, so two that differ only in the result have no call that tells them
+apart
+```
+
+**That is the plain duplicate message with its sentence finished**, and the wording is deliberate:
+the two parameter lists are the same, so this *is* one declaration written twice. Somebody who wrote
+that by accident is told so plainly; the clause is added only where the results differ, because that
+is the pair a reader wrote on purpose and expected to work.
+
+The rule behind it is wider than the identical case. Each declaration takes a *range* of argument
+counts — from its parameters that have no default up to all of them — and two collide when their
+ranges overlap at some count and their first that-many parameters agree in type. So a difference
+hidden behind a default is refused too, and there the point is sharper: the default is
+**unreachable**, because no call could ever supply one argument to the longer declaration.
+
+```sysl
+g(x: int) -> string = "one"
+g(x: int, y: int = 0) -> string = "two"
+```
+
+```error
+error: 'g' is already declared with parameters this one could not be told from — a call passing 1
+argument would fit both, and which declaration a call means is decided by its arguments and never by
+what it returns. Two declarations of one name have to differ in a way a call site can show
+```
+
+**Reporting that at the declaration rather than at the call is the point.** The mistake is in the
+pair; reporting it where the name is *used* would report one mistake once per call site, in files
+whose authors did not write it.
+
+**A use that fits none of them, or several, is refused where the use is**, and the message carries
+the roster — the reader's question at that point is which declarations exist:
+
+```sysl
+k(x: int) -> string = "a"
+k(x: string) -> string = "b"
+
+print(k(1.5))
+```
+
+```error
+error: no 'k' takes these arguments — the declarations of that name are:
+    k(x: int)
+    k(x: string)
+```
+
+**Two tie-breaks decide a use that fits more than one, and both are about exactness.** A candidate
+that needed no default fitted the call as written and beats one that did; and a candidate whose
+parameters are exactly the arguments' own types beats one reached by a conversion — which is what
+lets a literal's natural type choose between two widths:
+
+```sysl
+width(x: int) -> string = "int"
+width(x: i64) -> string = "i64"
+
+print(width(1))
+print(width(1i64))
+```
+
+```output
+int
+i64
+```
+
+What is deliberately absent is any ranking *between* conversions. Two candidates each reached by a
+different one are ambiguous, and saying so beats a ladder of precedences nobody could predict from
+the source.
+
+**An address chooses by the type the context wants**, which is the mechanism a generic function's
+address already uses. With no expected type there is nothing to read, and the address is refused
+rather than guessed at.
+
+```sysl
+add(a: int) -> int = a + 1
+add(a: int, b: int) -> int = a + b
+
+val one: *extern(int) -> int = &add
+val two: *extern(int, int) -> int = &add
+
+print(one(41), two(6, 7))
+```
+
+```output
+42 13
+```
+
+### Overloading an `extern`
+
+**Two `extern`s of one name are two functions exactly when they name two symbols.** A C library's
+naming is not sysl's, and a family C spells `_solid`/`_shaded`/`_blended` is one operation with an
+option — which a binding may now say, without inventing a sysl name per C symbol.
+
+```sysl
+extern "strlen" size(s: *u8) -> usize
+extern "strnlen" size(s: *u8, cap: usize) -> usize
+```
+
+**Two naming the *same* symbol are refused.** That is one C function claimed at two signatures, and
+the symbol is what gets emitted — both calls would reach the same code with different arguments, and
+nothing downstream could tell which had been meant.
+
+```sysl
+extern "strlen" size(s: *u8) -> usize
+extern "strlen" size(s: *u8, cap: usize) -> usize
+```
+
+```error
+error: 'size' is already declared as an 'extern' for the symbol 'strlen' — two declarations of one
+name are two functions, and one C function cannot be two. Overloads of an 'extern' are told apart by
+the symbol each names, so give this one a symbol of its own or take its address and 'ptr_cast' it
+where the other signature is wanted
+```
+
+An `extern` and a sysl function do not overload each other, in either order, for the same reason:
+what tells overloads of an `extern` apart is the symbol, and a sysl function declares none.
 
 ### Type parameters
 

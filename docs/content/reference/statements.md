@@ -521,8 +521,11 @@ block outside it does the same, up to the function's own.
 any value; a program that does not use it emits nothing for it. That is what keeps it available under
 `no alloc`, where the resources it releases are the only ones there are.
 
-**What it is not is a destructor.** A destructor belongs to a *type* and runs wherever a value of that
-type dies; `defer` belongs to one place in one body and runs for the resource that body took.
+**What it is not is a [destructor](/reference/memory/).** A destructor belongs to a *type* and runs
+wherever a value of that type dies; `defer` belongs to one place in one body and runs for the
+resource that body took. Both exist and neither replaces the other: `defer` covers every site a
+program can name, and a destructor covers the deaths it cannot — a resource inside a container, or
+inside a struct inside a container, dies at a point with no expression in the source.
 
 ---
 

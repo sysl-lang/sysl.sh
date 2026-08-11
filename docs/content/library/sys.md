@@ -122,9 +122,11 @@ roundings; `fmod`; and the two sign-bit operations.
 
 ## Two entry points per operation
 
-C names the float widths apart and sysl has no overloading to hide it behind, so `sqrt` takes a
-`double` and `sqrtf` a `float`, and both are declared. **`sysl.math` is where that stops being
-visible**, and it stops there by dispatching on the receiver's type rather than by a caller
+C names the float widths apart, so `sqrt` takes a `double` and `sqrtf` a `float`, and both are
+declared. [Overloading](/reference/declarations/) could give the pair one sysl name, and
+deliberately does not here: these are the raw declarations, and a name that did not match the symbol
+it resolves to is the one thing this module exists not to do. **`sysl.math` is where the width stops
+being visible**, and it stops there by dispatching on the receiver's type rather than by a caller
 choosing which one they meant.
 
 The intrinsics are spelled the same twice for a different reason: one base name, two widths, and the

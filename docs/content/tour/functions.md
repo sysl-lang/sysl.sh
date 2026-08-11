@@ -102,6 +102,29 @@ print(window(width = 132, y = 10))
 
 A positional argument may not follow a named one — once a call starts naming, it names.
 
+## One name, several functions
+
+A name may be declared more than once. Which declaration a call means is decided by the arguments it
+passes — how many, and what type each is:
+
+```sysl
+show(x: int) -> string = s"int $x"
+show(x: string) -> string = s"str $x"
+
+print(show(1))
+print(show("a"))
+```
+
+```output
+int 1
+str a
+```
+
+Never by what they return, though: two declarations differing only in the result have no call that
+tells them apart, and the second is refused where it is written. The
+[reference](/reference/declarations/#overloading) has the rest, including what happens when a call
+fits two of them.
+
 ## Closures
 
 A function that takes a function writes the parameter's type with an arrow. One parameter needs no
