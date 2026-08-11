@@ -142,7 +142,7 @@ main()
 ```
 
 ```error
-function 'main' is already declared
+'main' is where a program starts, so there is one — a second declaration of it would overload the name, and a program has one beginning rather than a set of them
 ```
 
 ## Reading options: the scanner

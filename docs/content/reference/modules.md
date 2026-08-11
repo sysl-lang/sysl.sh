@@ -512,7 +512,7 @@ main(args: []string)
 ```
 
 ```error
-function 'main' is already declared
+'main' is where a program starts, so there is one — a second declaration of it would overload the name, and a program has one beginning rather than a set of them
 ```
 
 That is the reason C reserves the name: it is not a name the program calls, it is the name the

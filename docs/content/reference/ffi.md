@@ -52,7 +52,7 @@ abs(n: int) -> int = n
 ```
 
 ```error
-function 'abs' is already declared
+'abs' is already declared as an 'extern', which this would overload — what tells overloads of an 'extern' apart is the symbol each names, and a sysl function declares no symbol
 ```
 
 Where a program wants that name for itself, the link name below is what separates the two.
