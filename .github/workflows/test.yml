@@ -122,19 +122,23 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
-      # Both directory names are asked for. The library was `lib/` until it was renamed `library/`,
-      # and this workflow has to cope with a `syslVersion` on either side of that commit — so it
-      # fetches whichever is there and the step below settles on one name locally.
+      # **Cloned by hand rather than with `actions/checkout`, and the reason is the interim.** That
+      # action recognises a SHA only when it is the full forty characters; anything shorter is taken
+      # as a branch or tag *name*, so an interim's eight-character stamp made it fetch
+      # `refs/heads/f1244557*` and `refs/tags/f1244557*`, match nothing, and fail after three tries.
+      # A short SHA cannot be asked for over the wire either — a fetch's want-line needs a full
+      # object id — so the answer is an ordinary blobless clone, which carries the history and lets
+      # git resolve the abbreviation locally. Sparse keeps it to the one directory that is wanted.
+      #
+      # Both directory names are asked for: the library was `lib/` until it was renamed `library/`,
+      # and `syslVersion` may name a commit on either side of that.
       - name: Fetch the standard library at that commit
-        uses: actions/checkout@v6
-        with:
-          repository: sysl-lang/sysl
-          ref: ${{ steps.sysl.outputs.ref }}
-          path: sysl-src
-          sparse-checkout: |
-            lib
-            library
-          sparse-checkout-cone-mode: false
+        run: |
+          set -euo pipefail
+
+          git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl sysl-src
+          git -C sysl-src sparse-checkout set library lib
+          git -C sysl-src checkout --detach "${{ steps.sysl.outputs.ref }}"
 
       # `lib/` locally whichever it was called upstream, because `build.sbt` points `SYSL_LIB` at that
       # path and the variable names a root outright — what the directory is called here is this
