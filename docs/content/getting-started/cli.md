@@ -97,6 +97,19 @@ A library compiled once into the two halves a program links against. See
 [modules](/reference/modules/) for what an artifact holds and why the generic half of it travels as
 trees rather than as object code.
 
+**A library may itself be built on another one**, and `--lib` is what says so — it takes an artifact
+or a source root here exactly as it does for a compilation:
+
+```bash
+sysl build-lib sdl3 -o sdl3.syslib
+sysl build-lib sdl3-ttf --lib sdl3.syslib -o sdl3-ttf.syslib
+```
+
+**Unlike `build`, `run` and `test`, this does not fetch.** A package with a `dependencies` block is
+refused rather than resolved over the network, and the message names the dependency and points at
+`--lib`. A command whose whole job is to compile one tree into an artifact for one machine should not
+be the thing that goes looking; the cost is that such a package writes its dependency down twice.
+
 Building one needs an `llvm-ar` as well as a `clang`, because a `.syslib` **is** an `ar` archive —
 [installation](/getting-started/installation/) has the note about which `ar` and why the platform
 one will not do.

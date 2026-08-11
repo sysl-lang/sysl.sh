@@ -963,6 +963,27 @@ Five consequences, each a thing a reader would otherwise have to discover:
 - **A library may not sit in the anonymous root module.** A library is reached by naming its module,
   and the root module has no name, so nothing depending on it could write a path to what it declares.
 
+**A library may be built on another library**, and `--lib` is how one gets there:
+
+```bash
+sysl build-lib sdl3 -o sdl3.syslib
+sysl build-lib sdl3-ttf --lib sdl3.syslib -o sdl3-ttf.syslib
+```
+
+`build-lib` takes `--lib` exactly as a compilation does, and for the same reason: a library whose
+declarations are written in another library's types does not compile without them. `sdl3-ttf`'s
+`Font` renders to an `sdl3` `Surface`, so a package that could not say so would have to be a module
+inside its dependency rather than a package of its own. Nothing about the artifact changes, because
+the fourth bullet above already governs it — the dependency's compiled half is declared here and
+defined by whatever program links both.
+
+**What `build-lib` does not do is fetch.** A `dependencies` block is a coordinate to resolve over the
+network, and a command whose whole job is to compile one tree into an artifact for one machine does
+not go looking — so a package that declares dependencies and is handed no library is refused, naming
+the dependency and the flag that answers it. Such a package writes its dependency down twice, once in
+`package.hocon` and once on the command line, and that is the price of a compile step that is offline
+by construction.
+
 **The container is an `ar` archive**, which is what an `.rlib` is and for the same reason: the linker
 already reads one, so the compiled half needs no unwrapping and a member is pulled in only to resolve
 something a program actually left undefined. The metadata rides inside it wrapped in a real object
