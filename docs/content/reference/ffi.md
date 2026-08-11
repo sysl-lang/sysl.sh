@@ -1255,6 +1255,91 @@ Three build rules:
   other object, which is why the standard module goes on building for any target the toolchain can
   lower for.
 
+## `c const` — a value only the C compiler can work out
+
+**A shim answers for a function, and it does not answer for a value.** A constant reached through a
+call is not a constant: it has no value until the program runs, so it cannot size an array, cannot
+stand in a `match` arm, cannot be folded into a bound and cannot be checked by `@assert`. The macro
+row above still holds for `REG_EXTENDED` as an *argument*, and stops holding the moment the number
+has to be known while compiling — which is where a statically allocated FreeRTOS task lives, being a
+`[sizeof(StaticTask_t)]u8` the caller supplies.
+
+**A `c const` block is a constant whose value the C compiler works out, for the target being built
+for.** The right-hand sides are C, in quotes:
+
+```sysl
+@include("<limits.h>")
+
+c const
+    BITS: u32 = "CHAR_BIT"
+    WIDEST: usize = "sizeof(long long)"
+
+print(str(BITS) + " " + str(WIDEST))
+```
+
+```output
+8 8
+```
+
+`@include` is a header clause like `@link`, written the way C writes it — `"<limits.h>"` reaches a
+system header and `"qcbor.h"` one beside the module, which is the same choice a C file makes. Where
+the headers are and what they are configured with is `--include-path` and `--define`'s answer,
+exactly as it is for a shim. **No name from the header becomes visible in sysl**: a type still
+arrives by `opaque struct` and a function by `extern`, and what the block buys is only that the
+expressions compile.
+
+Which is what the motivating case looks like written out:
+
+```sysl
+@include("FreeRTOS.h")
+
+c const
+    STATIC_TASK_SIZE: usize = "sizeof(StaticTask_t)"
+    MAX_DELAY: u32          = "portMAX_DELAY"
+
+var tcb: [STATIC_TASK_SIZE]u8 = [0; STATIC_TASK_SIZE]
+```
+
+**The value is measured from a probe translation unit that is compiled and never linked or run** —
+the file's headers, one global per constant, lowered to IR for the target, and the number read back
+out of the IR. Nothing executes, so the answer is the *target's* rather than the host's: a pointer
+measures four bytes building for a Cortex-M and eight building for this machine, with no hardware
+involved either way.
+
+**The `c` is contextual and stays an ordinary name.** Nothing else in the language follows a name
+with a keyword, so `c const` cannot be anything but this, and a program counting characters keeps its
+variable `c`. The C needs no literal prefix for the same kind of reason: inside the block a string
+can mean nothing else, so the header marks the language once.
+
+**Any C constant expression, and the C compiler is the judge of which those are** — which is what
+makes that an honest claim rather than a subset somebody maintains. An expression it will not settle
+comes back in its own words:
+
+```sysl
+c const
+    N: usize = "atoi(\"3\")"
+```
+
+```error
+the C compiler refused this file's 'c const' block
+```
+
+Four more refusals go with it: a header that is not there, a value the declared type cannot hold
+(naming the value and both ends of the range), a type that is not an integer, and a block written
+inside a body, which has no file's headers to be compiled against.
+
+**A `string` from C is not written this way.** An integer is a number in the compiler's output and
+reads straight off; a string constant is a block of storage and a different job, and it would have to
+be written `"\"foo\""` — two quotings for one value, which is a form nobody would guess. The refusal
+says so rather than leaving it to be found.
+
+**A library ships the measured number, not the expression.** The lowering happens before the artifact
+is written, so a program linking a package needs neither the package's headers nor a C compiler of
+its own — and could not honestly be handed the expression anyway, since an artifact is built for one
+target and re-measuring it elsewhere would answer a different question under the same name.
+
+**A file that writes no block costs nothing** and never causes a C compiler to be looked for.
+
 ## What is deliberately absent
 
 | absent | instead |

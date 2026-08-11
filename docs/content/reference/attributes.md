@@ -11,7 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
-| `@no_alloc`, `@requires`, `@link`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
+| `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
 
@@ -34,11 +34,12 @@ may be stacked, and writing the same one twice is refused. `@test` and `@tailrec
 [verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
 the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of.
 
-**On the file** there are four, in its header directly below `module` and before everything else:
-`@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, and `@tests`. The first three say
-what the whole module may do and what its `extern`s need; the fourth says the file is scaffolding
-for the module's tests. All four attach to the file rather than to any declaration in it — and
-writing one further down is refused with a message saying where it belongs. The first three are
+**On the file** there are five, in its header directly below `module` and before everything else:
+`@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, `@include("...")`, and `@tests`. The
+first two say what the whole module may do; `@link` says what its `extern`s need at the linker and
+`@include` what its `c const` block needs at the C compiler; the last says the file is scaffolding
+for the module's tests. All five attach to the file rather than to any declaration in it — and
+writing one further down is refused with a message saying where it belongs. The first four are
 covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where what they *mean* is;
 `@tests` is below.
 
