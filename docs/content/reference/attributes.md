@@ -350,6 +350,18 @@ runs, and they do not stop being checked.
 A helper only a test calls leaves with it, because it becomes unreachable and pruning notices; a
 helper the program also calls stays, because the program still calls it.
 
+What a test build keeps regardless is the three definitions **nothing in the program names**: an
+interrupt handler, an [`@export`](/reference/ffi/), and a [destructor](/reference/memory/). Each is
+entered from somewhere no walk over the program can see — the processor, a caller outside this
+compilation, and the release hook generated from a payload type — so each is a root wherever the walk
+begins. A test build swaps the roots, putting the tests where the entry point was, and these three
+are roots there too. They have to be: leaving them out would not make them reachable from the tests
+instead, it would make them reachable from nothing.
+
+That matters most to a package, whose only build is its own suite. A test build dropping a destructor
+could not link at all, the release hook being left to call a symbol nothing defined; one dropping an
+export would link, pass, and quietly go without the surface the package exists to provide.
+
 **`sysl build-lib` is the exception, and drops them *before* analysis.** An artifact is the one
 output that outlives the compilation that made it, and analysis is not a passive reading: a test
 naming `Buf[int]` **creates** the whole of `Buf` at `int`, and that instantiation is an ordinary
