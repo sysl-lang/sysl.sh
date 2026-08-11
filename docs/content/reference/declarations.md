@@ -444,9 +444,7 @@ h(x: int) -> int = 1
 ```
 
 ```error
-error: function 'h' is already declared — which declaration a call means is decided by its arguments
-and never by what it returns, so two that differ only in the result have no call that tells them
-apart
+function 'h' is already declared — which declaration a call means is decided by its arguments and never by what it returns, so two that differ only in the result have no call that tells them apart
 ```
 
 **That is the plain duplicate message with its sentence finished**, and the wording is deliberate:
@@ -466,9 +464,7 @@ g(x: int, y: int = 0) -> string = "two"
 ```
 
 ```error
-error: 'g' is already declared with parameters this one could not be told from — a call passing 1
-argument would fit both, and which declaration a call means is decided by its arguments and never by
-what it returns. Two declarations of one name have to differ in a way a call site can show
+'g' is already declared with parameters this one could not be told from — a call passing 1 argument would fit both, and which declaration a call means is decided by its arguments and never by what it returns. Two declarations of one name have to differ in a way a call site can show
 ```
 
 **Reporting that at the declaration rather than at the call is the point.** The mistake is in the
@@ -486,7 +482,7 @@ print(k(1.5))
 ```
 
 ```error
-error: no 'k' takes these arguments — the declarations of that name are:
+no 'k' takes these arguments — the declarations of that name are:
     k(x: int)
     k(x: string)
 ```
@@ -552,10 +548,7 @@ extern "strlen" size(s: *u8, cap: usize) -> usize
 ```
 
 ```error
-error: 'size' is already declared as an 'extern' for the symbol 'strlen' — two declarations of one
-name are two functions, and one C function cannot be two. Overloads of an 'extern' are told apart by
-the symbol each names, so give this one a symbol of its own or take its address and 'ptr_cast' it
-where the other signature is wanted
+'size' is already declared as an 'extern' for the symbol 'strlen' — two declarations of one name are two functions, and one C function cannot be two. Overloads of an 'extern' are told apart by the symbol each names, so give this one a symbol of its own or take its address and 'ptr_cast' it where the other signature is wanted
 ```
 
 An `extern` and a sysl function do not overload each other, in either order, for the same reason:

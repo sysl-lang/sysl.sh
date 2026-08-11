@@ -669,9 +669,7 @@ static var cell: &Cell
 ```
 
 ```error
-error: 'cell' needs a value: storage with no initializer starts at its type's zero, and &Cell has
-none — the same rule a local with no initializer is held to. A 'string' and a slice both start empty
-and need no value written; a reference and an enum need one
+'cell' needs a value: storage with no initializer starts at its type's zero, and &Cell has none — the same rule a local with no initializer is held to. A 'string' and a slice both start empty and need no value written; a reference and an enum need one
 ```
 
 A [destructor](/reference/memory/) takes the same ruling and for the same reason: a value in module
