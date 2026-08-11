@@ -948,9 +948,9 @@ well under a second, announcing it on stderr. That is not the silent substitutio
 never make: a rebuild compiles against *this* library, from its own source, held to the same
 fingerprint on the way back in. Nothing is substituted, so there is nothing to be misled about.
 
-**The standard module's source ships with the compiler and is read off disk** — `share/sysl/lib`
-under the install prefix, found from the binary's own location the way `rustc` finds its sysroot.
-Running out of a checkout, it is `lib/` in the tree. You can read it, and you can edit it: a changed
+**The standard module's source ships with the compiler and is read off disk** —
+`share/sysl/library` under the install prefix, found from the binary's own location the way `rustc`
+finds its sysroot. Running out of a checkout, it is `library/` in the tree. You can read it, and you can edit it: a changed
 file changes the library's fingerprint, so the next compilation builds an artifact of its own rather
 than picking up a stale one. `SYSL_LIB` names a library root outright, which is what a broken install
 needs and nothing else does. A compiler that cannot find its library names every path it tried.

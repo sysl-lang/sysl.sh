@@ -90,33 +90,63 @@ jobs:
       # The published jar carries the compiler and NOT the standard library, which the compiler reads
       # off disk — so it has to come from somewhere, at exactly the version the jar is.
       #
-      # It comes from the compiler's repository **at the release tag**, sparsely. A tag is an exact
-      # version match, which is the whole requirement; the release tarball is not usable here because
-      # its assets are per-platform (`sysl-0.0.3-darwin-arm64.tar.gz`) and this runner is not that
-      # platform — the library is plain `.sysl` source and has no platform, so downloading a
-      # machine's binary distribution to extract text out of it would be the wrong shape of answer.
-      - name: Read the release under test
+      # It comes from the compiler's repository, sparsely, **at whatever commit `syslVersion` names**.
+      # The release tarball is not usable here because its assets are per-platform
+      # (`sysl-0.0.3-darwin-arm64.tar.gz`) and this runner is not that platform — the library is plain
+      # `.sysl` source and has no platform, so downloading a machine's binary distribution to extract
+      # text out of it would be the wrong shape of answer.
+      #
+      # **Two spellings of "whatever commit", because `dev` may pin an interim.** A release is
+      # `0.0.40` and the ref is the tag `v0.0.40`. An interim published from the compiler's own `dev`
+      # is `0.0.41-abc1234`, which is not tagged and never will be — but the suffix **is** the commit
+      # it was built from, which is exactly what that stamp was introduced to buy. So the ref is the
+      # tag for a release and the sha for an interim, and both are exact.
+      #
+      # Before this, `ref: v${version}` was the only form and an interim pin failed the checkout with
+      # a message about an unknown ref. Nothing had noticed, because `dev` had only ever pinned
+      # releases — so the half of the dev/stable split that lets a page be written while the feature
+      # is still on `dev` had never once been exercised from this end.
+      - name: Read the compiler under test
         id: sysl
         run: |
           set -euo pipefail
           version=$(sed -n 's/^val syslVersion = "\(.*\)"$/\1/p' build.sbt)
           test -n "$version"
-          echo "documenting sysl $version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch the standard library at that tag
+          case "$version" in
+            *-*) ref="${version#*-}"; kind="interim" ;;
+            *)   ref="v$version";     kind="release" ;;
+          esac
+
+          echo "documenting sysl $version ($kind, from $ref)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      # Both directory names are asked for. The library was `lib/` until it was renamed `library/`,
+      # and this workflow has to cope with a `syslVersion` on either side of that commit — so it
+      # fetches whichever is there and the step below settles on one name locally.
+      - name: Fetch the standard library at that commit
         uses: actions/checkout@v6
         with:
           repository: sysl-lang/sysl
-          ref: v${{ steps.sysl.outputs.version }}
+          ref: ${{ steps.sysl.outputs.ref }}
           path: sysl-src
-          sparse-checkout: lib
+          sparse-checkout: |
+            lib
+            library
           sparse-checkout-cone-mode: false
 
+      # `lib/` locally whichever it was called upstream, because `build.sbt` points `SYSL_LIB` at that
+      # path and the variable names a root outright — what the directory is called here is this
+      # repository's business and nobody else's.
       - name: Put the library where the build looks for it
         run: |
           set -euo pipefail
-          mv sysl-src/lib lib
+
+          if [ -d sysl-src/library ]; then mv sysl-src/library lib
+          else mv sysl-src/lib lib
+          fi
+
           test -d lib/sysl
 
       # **`GITHUB_TOKEN` has to be passed in explicitly.** Actions does not put it in a step's

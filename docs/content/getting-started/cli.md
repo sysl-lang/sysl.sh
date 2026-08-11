@@ -1,6 +1,6 @@
 ---
 title: The command line
-summary: Six subcommands, the flags they share, and what each one leaves as an exit status.
+summary: The subcommands, the flags they share, and what each one leaves as an exit status.
 weight: 30
 ---
 
@@ -21,7 +21,11 @@ the path is standing on.
 | `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
 | `sysl emit-header <path>` | print the C header for what a module exports |
+| `sysl doc <path>` | render a literate source as Markdown |
 | `sysl targets` | list the machines sysl can build for |
+
+`sysl prove` is a tenth, and it has a page of its own — see
+[verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
 
@@ -196,6 +200,32 @@ sysl emit-llvm hello.sysl
 
 The IR to stdout, the same text `run` and `build` hand to clang. Nothing is assembled and no
 toolchain is needed for it.
+
+### `doc`
+
+```bash
+sysl doc guide/lisp/lisp.lsysl
+sysl doc library/sysl/regex -o regex.md
+```
+
+A **literate** source rendered as Markdown. A `.lsysl` file is a Markdown document whose
+four-column-indented part is the program, which is what makes one readable with nothing rendering it
+— and it is also what this command exists to undo. An indented code block carries no *language*, so
+nothing can highlight it and nothing scanning for the code can find it. `doc` puts each block inside
+a fence tagged `sysl` instead. Prose, illustrations and heading levels come through exactly as
+written.
+
+The output goes to standard output, or to the file `-o` names. A path holding several literate files
+renders as one document with a rule between them, and the ordinary `.sysl` files in the same tree are
+passed over — a tree with no literate source at all is refused rather than producing an empty page.
+
+It is a **source-level** command: no target, no standard module, no libraries. A package's prose is
+worth reading on a machine that could not build it. What it does share with a compilation is the
+reading, so a file the compiler would refuse — a tab in an indent, a fence that is never closed — is
+refused here too, with the same message.
+
+This is not an API reference generated from declarations. sysl has no documentation comment yet, so
+there is nothing for such a thing to read.
 
 ### `targets`
 

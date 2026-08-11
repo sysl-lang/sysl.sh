@@ -53,6 +53,7 @@ starts, so each one is written on top of what the last one settled.
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |
 | [lisp](/guides/lisp/) | the reference cycle — the shape a count cannot reclaim, and `weak T` as the instrument that measures it |
 | [table](/guides/table/) | text measured for **display** — a column is as wide on screen as its widest cell, and both a byte count and a character count are the wrong unit |
+| [qsort](/guides/qsort/) | the C boundary in the direction nothing else goes — a C routine that calls *back*, and the trampoline it takes |
 
 **Two pairs are written to be compared**, and the comparison is the measurement:
 [scheduler](/guides/scheduler/) against [kernel](/guides/kernel/) is what reference counting was

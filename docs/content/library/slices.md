@@ -132,6 +132,32 @@ print(xs)
 `sort_stable` promises their order survives. That only matters for a type whose equality does not mean
 identity — a record ordered on one field — and when it matters, it matters a great deal.
 
+### Why these are written in sysl rather than calling qsort
+
+It is the first question anybody arriving from C asks, and the answer is not that the C library is
+slow.
+
+The binding is perfectly writable. `guide/qsort` in the compiler's repository writes it in a dozen
+lines, and everything it needs is in the language: the address of a per-instantiation comparison, the
+address of a slice's storage, and the size of an element.
+
+What decides it is what this module **promises**. `sysl.slices` requires no capability, which is a
+promise made to every machine sysl builds for — and several of those are freestanding, where there is
+no C library to call at all and `qsort` is an undefined symbol at the end of somebody's link. On a
+hosted machine the same promise fails more quietly: glibc's `qsort` sorts by merging into a temporary
+buffer and calls `malloc` to obtain one, while Darwin's sorts in place. One source text therefore
+allocates on one platform and not on the other.
+
+**Neither fact is visible to the compiler**, because what is behind an `extern` is behind it. A
+module whose whole selling point is that it needs nothing cannot offer a function whose needs are
+unknowable.
+
+Two smaller reasons stand behind that one. There is no portable **stable** sort in a C library —
+`mergesort` and `heapsort` are BSD extensions, present on macOS and absent from glibc, and ISO C has
+only the unstable `qsort` — so a binding could have replaced `sort` and never `sort_stable`. And a
+bound comparison is an indirect call per step, where a monomorphized `[T: Ord]` body inlines the
+same comparison.
+
 ## Searching a sorted slice
 
 `binary_search` answers a **pair**: whether the value was found, and the index it is at *or would be

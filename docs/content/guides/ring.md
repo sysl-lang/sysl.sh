@@ -78,4 +78,4 @@ about rather than being restated in a language the ring is not written in.
 ---
 
 [Source](https://github.com/sysl-lang/sysl/tree/dev/guide/ring) ·
-Next: [slab](/guides/slab/) — raw storage, and the one literate program in the set.
+Next: [slab](/guides/slab/) — raw storage, and the first of the two literate programs in the set.

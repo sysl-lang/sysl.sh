@@ -103,10 +103,14 @@ sbt "syslJVM/run run examples/hello.sysl"
 ## The standard library
 
 Every program is compiled against the standard module, and **its source ships with the compiler**.
-An install puts it at `share/sysl/lib` under the install prefix — on a Homebrew Mac that is
-`$(brew --prefix)/share/sysl/lib` — and the compiler finds it from its own location, the way `rustc`
-finds its sysroot. Running out of a checkout, it is the `lib/` directory in the tree. Nothing has to
-be configured, and there is no variable to set.
+An install puts it at `share/sysl/library` under the install prefix — on a Homebrew Mac that is
+`$(brew --prefix)/share/sysl/library` — and the compiler finds it from its own location, the way
+`rustc` finds its sysroot. Running out of a checkout, it is the `library/` directory in the tree.
+Nothing has to be configured, and there is no variable to set.
+
+The directory was called `lib/` until it was renamed, and both spellings are still looked for with
+the new one first — so a compiler installed before the change, and a checkout that has not been
+updated, both go on working.
 
 It is meant to be read. The library is ordinary sysl, laid out as an ordinary sysl library, and
 every function in it is one a program could have written; `sysl build-lib <root> --std` is the same
@@ -152,8 +156,8 @@ Point at LLVM's with `--ar /path/to/llvm-ar`.
 **`cannot find the standard module's source`** — the compiler could not find the library it ships
 with, and the message lists every path it tried. From a package install that means the install is
 incomplete: reinstall it. From a checkout it usually means the working directory is not in the tree.
-Either way `SYSL_LIB=/path/to/lib` names the library root outright, where the root is the directory
-holding `sysl` — that is, the `lib` above `lib/sysl`, not `lib/sysl` itself.
+Either way `SYSL_LIB=/path/to/library` names the library root outright, where the root is the
+directory holding `sysl` — that is, the `library` above `library/sysl`, not `library/sysl` itself.
 
 **sbt is slow on the first run** — it is downloading Scala and the dependency tree. This happens
 once.

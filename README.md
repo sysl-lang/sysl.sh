@@ -27,12 +27,19 @@ There is no `main/`. The compiler is a dependency, so the only Scala here is tes
 
 ## The version this site documents
 
-`build.sbt` names one release of the compiler in `syslVersion`, and the pages are checked against
-**that**, not against the compiler's dev branch. A website documents the released language; a page
-demonstrating unreleased behaviour would be wrong for the reader.
+`build.sbt` names one build of the compiler in `syslVersion`, and the pages are checked against
+**that**. Which build depends on the branch, and the two branches here are the whole of the split:
 
-Keeping up is therefore a step of every sysl release: cut the release, raise `syslVersion`, run the
-tests, fix whatever the language moved under.
+- **`dev`** may name an **interim** — `0.0.41-abc1234`, published to GitHub Packages from a push to
+  the compiler's own `dev`, whose suffix is the commit it was built from. That is what lets a page be
+  written and verified as a feature lands rather than at a release.
+- **`stable`** names a **release**, and is the branch Pages deploys. A website documents the released
+  language; a page demonstrating unreleased behaviour would be wrong for the reader, which is why it
+  is not the branch anybody reads.
+
+Keeping up is therefore a step of every sysl release *and* of every feature: raise `syslVersion` on
+`dev` with the pages that needed it, and at a release raise it to the release and merge `dev` into
+`stable`.
 
 ## Running the tests
 
@@ -41,18 +48,25 @@ They need a toolchain, because they build and run real programs:
 - `clang` and `llvm-ar`
 - the standard library's source in `lib/`. The published jar carries the compiler and not the
   library, which the compiler reads off disk — so take it from the compiler's repository **at the
-  release tag**, which is an exact version match:
+  commit `syslVersion` names**, which for a release is the tag and for an interim is the sha in the
+  version's own suffix:
 
 ```sh
 VERSION=$(sed -n 's/^val syslVersion = "\(.*\)"/\1/p' build.sbt)
-git clone --depth 1 --branch "v$VERSION" --filter=blob:none --sparse \
-  https://github.com/sysl-lang/sysl.git sysl-src
-git -C sysl-src sparse-checkout set lib
-mv sysl-src/lib lib
+case "$VERSION" in *-*) REF="${VERSION#*-}" ;; *) REF="v$VERSION" ;; esac
+
+git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl.git sysl-src
+git -C sysl-src checkout "$REF"
+git -C sysl-src sparse-checkout set library lib
+mv sysl-src/library lib 2>/dev/null || mv sysl-src/lib lib
 ```
 
-Or, if you have a sysl checkout already, point `SYSL_LIB` at its `lib/` — just be aware that a
-checkout on a branch is whatever that branch says now, not what the release said.
+The directory is `library/` in the compiler's tree and was `lib/` before the rename, which is why
+both are asked for. What it is called **here** is this repository's own business: `build.sbt` points
+`SYSL_LIB` at `lib/`, and that variable names a root outright.
+
+Or, if you have a sysl checkout already, point `SYSL_LIB` at its `library/` — just be aware that a
+checkout on a branch is whatever that branch says now, not what `syslVersion` said.
 
 Then:
 

@@ -378,7 +378,7 @@ print(sum == null)
 'atomic_add' is arithmetic, and what an address plus a number means is the question the raw tier does not answer — use 'atomic_swap' or 'atomic_cas' to change a pointer, or do the arithmetic on a 'usize' beside it
 ```
 
-**Read where those four diagnostics point.** The caret is on a line in `lib/sysl/sync/atomic.sysl`,
+**Read where those four diagnostics point.** The caret is on a line in `library/sysl/sync/atomic.sysl`,
 not on the line the program wrote — because the form that refuses is inside the method, and the
 method is ordinary library sysl like everything else here. It is the honest place for it to land,
 and it is also the clearest demonstration on this page that `Atomic[T]` really is a struct somebody

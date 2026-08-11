@@ -614,8 +614,32 @@ one a reader will assume is covered. A C interface that calls back pairs the poi
 `void *`, so a trampoline for one has the signature C fixed — `(*u8, Event) -> bool`. The state type
 appears nowhere in it, so there is nothing for the expected type to solve, and such a trampoline is
 refused by the rule below about a parameter the signature never mentions. Recovering the state means
-a `ptr_cast` from `*u8`, which is a promise rather than a deduction, and that pattern still takes a
-concrete trampoline per state type.
+a `ptr_cast` from `*u8`, which is a promise rather than a deduction.
+
+What it does **not** mean is a concrete trampoline per state type, which this paragraph used to say.
+The rule forbids a trampoline whose *signature* hides the type — and the signature is yours to
+choose. Write it over `*T`, name its address in a `val` whose type mentions `T`, and cast the
+**function pointer** at the call instead of casting inside the body:
+
+```sysl
+private compare[T: Ord](a: *T, b: *T) -> int
+    if *a < *b then -1
+    else if *b < *a then 1
+    else 0
+end compare
+
+sort_libc[T: Ord](xs: []T)
+    if xs.len < 2 then return
+
+    val cmp: *extern(*T, *T) -> int = &compare
+
+    c_qsort(ptr_cast(as_mut_ptr(xs)), xs.len, sizeof(T), ptr_cast(cmp))
+end sort_libc
+```
+
+One generic body then serves every element type — see [qsort](/guides/qsort/), which is written this
+way. What the limit really costs is the extra `ptr_cast` and a `val` that exists only because there
+is nowhere else to write the type.
 
 There is no written form `&f[T]`, and that is a grammar fact rather than a preference: `&f[T]` and
 `&xs[i]` are the same shape, and only knowing whether the name is a generic function separates them.

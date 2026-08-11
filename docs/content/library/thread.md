@@ -255,7 +255,7 @@ print(m.value)
 ```
 
 ```error
-field 'value' of 'sysl.thread.Mutex' is private to 'lib/sysl/thread/mutex.sysl', the file that declares it
+field 'value' of 'sysl.thread.Mutex' is private to 'library/sysl/thread/mutex.sysl', the file that declares it
 ```
 
 Private is the entirety of what "owns" means here. With `value` public, reading it would be an
@@ -275,7 +275,7 @@ print(*p)
 ```
 
 ```error
-the constructor names every field of 'sysl.thread.Mutex' in order, and 'held' is private to 'lib/sysl/thread/mutex.sysl', the file that declares it — build it through an associated function of its own
+the constructor names every field of 'sysl.thread.Mutex' in order, and 'held' is private to 'library/sysl/thread/mutex.sysl', the file that declares it — build it through an associated function of its own
 ```
 
 ### `lock` answers an address, and releasing is written

@@ -58,7 +58,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 //
 // A release bumps this to the real version on `dev`, then merges dev into `stable` in both
 // repositories. That is the one moment the two branches say the same thing.
-val syslVersion = "0.0.40"
+val syslVersion = "0.0.41-f1244557"
 
 lazy val root = project
   .in(file("."))
@@ -132,8 +132,14 @@ lazy val root = project
 
     // Where the standard library's *source* is. The published jar does not carry it: since the
     // library left the binary, the compiler reads it off disk and finds it through `SYSL_LIB`, an
-    // installed prefix, or a `lib/` in the tree. CI puts the compiler's own `lib/` **at the release
-    // tag** here, which is an exact version match — and not the release tarball, whose assets are
-    // per-platform while the library is plain source with no platform at all.
+    // installed prefix, or a `library/` in the tree. CI puts the compiler's own copy here **at the
+    // commit `syslVersion` names** — the tag for a release, the sha in the suffix for an interim —
+    // and not the release tarball, whose assets are per-platform while the library is plain source
+    // with no platform at all.
+    //
+    // **The directory is `lib/` here whatever it is called upstream**, which is not an oversight:
+    // `SYSL_LIB` names a root outright, so the name on this side is this repository's business. The
+    // compiler's own tree renamed it `library/`; the workflow copes with both and settles on one
+    // name locally, so this line never has to move again.
     Test / envVars += "SYSL_LIB" -> (baseDirectory.value / "lib").getAbsolutePath,
   )
