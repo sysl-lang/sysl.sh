@@ -177,7 +177,7 @@
         {
           "comment": "Compile-time operators over a type.",
           "name": "keyword.operator.word.sysl",
-          "match": "\\b(sizeof|alignof)\\b"
+          "match": "\\b(sizeof|alignof|offsetof)\\b"
         },
         {
           "name": "variable.language.self.sysl",

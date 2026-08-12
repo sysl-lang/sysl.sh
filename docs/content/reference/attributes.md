@@ -512,8 +512,8 @@ print(capacity)
 ```
 
 The condition is a [constant expression](/reference/modules/), folded by the machinery
-a `const` initializer already goes through — so it may name constants, `sizeof`, `alignof`, and the
-arithmetic and comparisons over them, including a constant declared *below* it. A true one emits
+a `const` initializer already goes through — so it may name constants, `sizeof`, `alignof`,
+`offsetof`, and the arithmetic and comparisons over them, including a constant declared *below* it. A true one emits
 nothing at all. A false one stops the compilation, quoting the message:
 
 ```sysl
@@ -576,16 +576,43 @@ struct Pair
 end Pair
 
 @assert(sizeof(Pair) == 8, "Pair must match struct pair")
+@assert(offsetof(Pair, b) == 4, "struct pair.b moved")
 
-print(sizeof(Pair))
+print(sizeof(Pair), offsetof(Pair, b))
 ```
 
 ```output
-8
+8 4
 ```
 
 Neither half finds the other's mistake, which is why both are written: the `.c` catches a header that
 moved, and the `@assert` catches a struct that was transcribed wrong.
+
+**Pin every field you read, not only the total.** A size catches a field that changed width and one
+that was added. It says nothing about **order** — so two same-width fields transposed in the mirror
+leave the total unchanged, and the size assertion on *both* sides passes while every read is off by
+the distance between them:
+
+```sysl
+struct Pair
+    b: i32
+    a: i32
+end Pair
+
+@assert(sizeof(Pair) == 8, "Pair must match struct pair")
+@assert(offsetof(Pair, b) == 4, "struct pair.b moved")
+
+print(1)
+```
+
+```error
+assertion failed: struct pair.b moved
+```
+
+That is the failure the whole pairing exists to prevent, arriving through the half that was not
+checked. `offsetof(T, field)` closes it: it takes a type and a field **name**, and answers where the
+field starts in bytes. A field the struct does not have is refused by name rather than reported as a
+condition that would not fold.
 
 ## `@tailrec` — an assertion that the frame is reused
 

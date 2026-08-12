@@ -186,6 +186,20 @@ The spelling deviates from Swift's `...` toward Kotlin's `..` / `..<`, because t
 visually parallel and read as "through" and "up to, less than". It lexes unambiguously: a float
 literal needs digits after the `.`, so `1..2` is three tokens and not two.
 
+**`..=` is not a spelling sysl has**, and is refused by name wherever a range may be written — it is
+Rust's inclusive range, and inclusive here is the bare `..`:
+
+```sysl
+val a = 1
+
+for i in a..=3
+    print(i)
+```
+
+```error
+'..=' is not a range — inclusive is 'a..b' and exclusive is 'a..<b'
+```
+
 ## `is` — a pattern where a condition is wanted
 
 `x is Pat` tests a value against a pattern and yields a `bool`; `x is not Pat` negates it. The right
@@ -450,10 +464,10 @@ table because it is where the language's guarantees stop.
 Because these are calls, they parse as postfix at level 13 rather than as an operator of their own.
 The name in front may be a **type parameter**, and then the row is chosen at the instantiation.
 
-## `sizeof` and `alignof`
+## `sizeof`, `alignof` and `offsetof`
 
-The two forms whose operand is a **type** rather than a value. Both take parentheses, and both yield
-a `usize`.
+The three forms whose first operand is a **type** rather than a value. All take parentheses, and all
+yield a `usize`.
 
 ```sysl
 struct Pair
@@ -470,6 +484,29 @@ print(sizeof(int), alignof(int), sizeof(Pair), alignof(Pair))
 They are read as their own grammar rather than left to look like calls, because a call's arguments
 are expressions and `sizeof(*Node)` would otherwise parse as a dereference. There is no form that
 takes a value — a value's type is what would be measured anyway.
+
+`offsetof` takes a type and then a **field name**, and answers where that field starts in bytes. The
+name is a name and not an expression, for the same reason the type is not one: there is no value here
+for a `p.x` to select from.
+
+```sysl
+struct Header
+    tag: u8
+    length: u32
+    flags: u16
+
+print(offsetof(Header, tag), offsetof(Header, length), offsetof(Header, flags), sizeof(Header))
+```
+
+```output
+0 4 8 12
+```
+
+The padding after `tag` is what puts `length` at 4 — `@packed` lays the same fields end to end and
+makes them 0, 1 and 5. Its use is
+[checking a mirrored C struct](/reference/attributes/#checking-a-c-structs-layout), where a size
+alone cannot see two same-width fields transposed. A field the struct does not have is refused by
+name.
 
 ## Closures
 

@@ -1118,9 +1118,9 @@ error, and says which word to add.
 
 **What is refused outside the declaring module is one list**: a binding, a field of another type, an
 element, an array, a slice, a `&`, a type argument, a by-value parameter or result, construction,
-reading or writing a field, a pattern naming the fields, a dereference, `sizeof`, `alignof`, and a
-by-value `self` method. Every one of them needs a size or an offset, which is the single fact being
-withheld, so they are one diagnostic rather than fourteen.
+reading or writing a field, a pattern naming the fields, a dereference, `sizeof`, `alignof`,
+`offsetof`, and a by-value `self` method. Every one of them needs a size or an offset, which is the
+single fact being withheld, so they are one diagnostic rather than fifteen.
 
 **The by-value `self` method is the case worth stating outright**, because it looks like a call and
 is not. The *function* was compiled by the library; what crosses the boundary is the **caller's

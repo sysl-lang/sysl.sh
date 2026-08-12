@@ -131,9 +131,9 @@ var p: *Conn       // fine — a pointer needs no shape
 ```
 
 Everything refused outside is refused for one reason: constructing, reading a field, taking an
-element, a by-value parameter or result, `sizeof`, `alignof`, a by-value `self` method. Each needs a
-size or an offset, and the size is exactly what is being withheld — so it is one rule rather than
-fourteen.
+element, a by-value parameter or result, `sizeof`, `alignof`, `offsetof`, a by-value `self` method.
+Each needs a size or an offset, and the size is exactly what is being withheld — so it is one rule
+rather than fifteen.
 
 The by-value `self` method is the case worth pointing at, because it looks like an ordinary call and
 is not. The *function* was compiled by the library, but what crosses the boundary is the **caller's

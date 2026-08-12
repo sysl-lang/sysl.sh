@@ -77,7 +77,7 @@ already declared rather than binding a new one.
 
 ## Reserved words
 
-Thirty-nine words are reserved and may not be used as identifiers:
+Forty words are reserved and may not be used as identifiers:
 
 | | | | | |
 |---|---|---|---|---|
@@ -85,10 +85,10 @@ Thirty-nine words are reserved and may not be used as identifiers:
 | `defer` | `do` | `elif` | `else` | `ensure` |
 | `enum` | `extern` | `false` | `for` | `if` |
 | `impl` | `import` | `in` | `loop` | `match` |
-| `module` | `null` | `override` | `private` | `ref` |
-| `require` | `return` | `self` | `sizeof` | `static` |
-| `struct` | `then` | `trait` | `true` | `type` |
-| `val` | `var` | `weak` | `while` | |
+| `module` | `null` | `offsetof` | `override` | `private` |
+| `ref` | `require` | `return` | `self` | `sizeof` |
+| `static` | `struct` | `then` | `trait` | `true` |
+| `type` | `val` | `var` | `weak` | `while` |
 
 **`alloc`, `no` and `requires` are *not* among them**, though they read like keywords where they
 appear. A capability is written as an [attribute](/reference/attributes/) — `@no_alloc`,

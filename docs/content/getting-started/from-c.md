@@ -31,7 +31,7 @@ confirming what you already expected.
 | `assert.h` | `assert`, and `require` / `ensure` | |
 | `printf` | `print`, and `f"…"` | |
 | a function pointer | `*extern(A) -> R` | |
-| `sizeof`, `_Alignof` | `sizeof`, `alignof` | over any type |
+| `sizeof`, `_Alignof`, `offsetof` | `sizeof`, `alignof`, `offsetof` | over any type |
 | `volatile T *` | `volatile` on the **field** | the storage is qualified, not the pointer to it |
 | `goto` | a labelled `break` / `continue` | |
 

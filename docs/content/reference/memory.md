@@ -1128,7 +1128,7 @@ A `weak T` is refused for the same reason, and the fat types — a slice, a `str
 and one more: they are wider than an address, so there is nothing to reinterpret. What comes out is a
 `*T`, and reaching anything else from it is the ordinary route through `*p`.
 
-`sizeof` and `alignof`, which measure what is being carved, are on the
+`sizeof`, `alignof` and `offsetof`, which measure what is being carved, are on the
 [expressions](/reference/expressions/) page.
 
 ## Device memory
