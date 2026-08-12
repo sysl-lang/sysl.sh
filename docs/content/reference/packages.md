@@ -113,6 +113,65 @@ belongs.
 For compatibility with packages already published, `alloc` is still accepted in this file and read as
 `heap`. Write `heap`.
 
+## Headers a package needs and does not carry
+
+A capability is answered by the target, and there is nothing for anybody to go and do. **A header is
+answered by a path on a machine the package has never seen**, and that is the other thing a package
+may need of its environment.
+
+Most bindings carry the C they include — sqlite3, qcbor, monocypher and termbox2 all vendor their
+library's source, so a relative include resolves and no flag is involved. A package binding something
+the *consumer's* build system owns cannot do that. `pico2` is the case: lwIP's headers live in an
+81 MB pico-sdk clone that only the consuming project has, and vendoring a copy would be vendoring the
+thing the package exists not to reimplement.
+
+```hocon
+requires {
+  headers { lwip = "lwIP's headers — the pico-sdk carries them at lib/lwip/src/include" }
+}
+```
+
+The consumer says where they are:
+
+```
+sysl build . --include-path lwip=$PICO_SDK_PATH/lib/lwip/src/include
+```
+
+**The package names the requirement and the driver supplies the path.** That is the same split as
+[`@link("png")` and `--link-path`](/reference/ffi/#where-the-library-is-where-its-headers-are-and-what-they-are-configured-with):
+a path in a committed file would be one machine's directory layout published as though it were a
+property of the package, and an environment variable read out of the consumer's shell would be a
+build that works for whoever wrote it.
+
+**The value is the reason, not a path.** It is prose for a person — what the headers are and where
+they come from — quoted back at whoever has to find them. A name on its own would report that
+something called `lwip` is missing and leave the reader to work out what that is.
+
+### What it buys is the refusal
+
+`--include-path` always worked, and a consumer who passed it always built. What did not exist was any
+way for the *package* to say it needed one, so a build without the flag failed inside a C compiler
+that names the header and knows nothing about sysl, the package, or the flag:
+
+```
+fatal error: 'lwip/tcp.h' file not found
+```
+
+Now the build stops before clang runs, naming all three:
+
+```
+github.com/sysl-lang/pico2 needs the 'lwip' headers and nothing supplied them — lwIP's headers,
+the pico-sdk carries them at lib/lwip/src/include. Say where they are with
+'--include-path lwip=<dir>'
+```
+
+A **bare** `--include-path` is not an answer, deliberately. The check is about what a build says it
+has rather than what it might happen to find; reading a bare path as an answer would let a consumer
+satisfy the requirement by accident and never learn they had.
+
+It is asked only where C is actually compiled, so `emit-llvm` and `prove` are not held up by a path
+they would never open.
+
 ## Dependencies
 
 A dependency is **a git repository and a version**. There is no registry, no account to create, and

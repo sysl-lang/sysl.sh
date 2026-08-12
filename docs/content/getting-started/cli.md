@@ -332,6 +332,7 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `--ar <path>` | the `llvm-ar` to build a library with |
 | `--link-path <dir>` | where to look for a library a `link` directive named; may be given more than once |
 | `--include-path <dir>` | where to look for a header the C beside a module includes; may be given more than once |
+| `--include-path <name>=<dir>` | the same, and it answers the header requirement a package declared under that name |
 | `-D NAME` or `-D NAME=value` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
 | `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines |
@@ -359,6 +360,11 @@ costs a build that fails somewhere its author cannot reach. What a project defin
 
 A build system that already knows these will have them: reading them out of CMake is a matter of
 asking the target for its `INCLUDE_DIRECTORIES` and `COMPILE_DEFINITIONS` and handing each along.
+
+A **package** whose C includes headers it does not carry can say so, and then the first failure above
+stops being a surprise: written `--include-path <name>=<dir>`, the flag answers a requirement the
+package declared, and a build that is missing one is refused by name before clang runs. See
+[packages](/reference/packages/#headers-a-package-needs-and-does-not-carry).
 
 ### `--lib` takes either a source tree or an artifact
 

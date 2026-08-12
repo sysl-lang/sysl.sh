@@ -514,6 +514,7 @@ command line rather than three more directives:
 | | |
 |---|---|
 | `--include-path <dir>` | where to look for a header the C beside a module includes |
+| `--include-path <name>=<dir>` | the same, and it answers the header requirement a package declared under that name |
 | `-D NAME` or `-D NAME=value` | a macro that C is compiled with |
 | `--link-path <dir>` | where to look for the library `@link` named |
 
@@ -528,6 +529,12 @@ compiler ruling on where a platform keeps its libraries, or on how a project con
 would be wrong on a machine its author cannot reach, and the cost of being wrong is a build that
 fails somewhere else. A build system that already knows these has them — from CMake, the target's
 `INCLUDE_DIRECTORIES` and `COMPILE_DEFINITIONS`.
+
+**A package may say which headers it needs, though never where they are.** A `--include-path` written
+as `<name>=<dir>` answers a requirement the package declared under that name, so a build missing one
+stops before clang runs and names the package rather than a header the reader has never heard of. The
+declaration goes in `package.hocon` — see
+[packages](/reference/packages/#headers-a-package-needs-and-does-not-carry).
 
 ## A function's address — `*extern(A, B) -> R`
 
