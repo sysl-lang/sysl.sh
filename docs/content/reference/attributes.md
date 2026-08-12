@@ -530,6 +530,13 @@ The message is optional and is the reader's own, because they know what the numb
 struct matches its C counterpart, that a table is the size a protocol fixes — where the expression
 alone says only that two numbers differ.
 
+**A failed comparison also says what each side came out as.** The compiler folded both in order to
+decide the condition, so it has the numbers at the moment it reports that one of them is wrong, and
+withholding them would leave you editing the literal and rebuilding to find out. A side you wrote as
+a literal is not repeated back — it is on the line above the message — so `sizeof(FRect) == 16`
+reports only the left; where both sides are computed, both are named. A condition that is not a
+comparison has nothing to add, since the thing that came out `false` is its only operand.
+
 **It is not `require`.** A `require` is a runtime precondition: it is compiled, it branches, and it
 traps when the program reaches it. This is settled while compiling and reaches the binary as nothing.
 A condition it cannot settle is refused rather than deferred — and a call is the line, since a call
@@ -606,7 +613,7 @@ print(1)
 ```
 
 ```error
-assertion failed: struct pair.b moved
+assertion failed: struct pair.b moved — the left side is 0
 ```
 
 That is the failure the whole pairing exists to prevent, arriving through the half that was not
@@ -645,7 +652,7 @@ print(slab(1u8))
 ```
 
 ```error
-assertion failed: a free block has to hold the link through it — where T = byte
+assertion failed: a free block has to hold the link through it — the left side is 1 and the right side is 8 — where T = byte
 ```
 
 **This is the check `require` cannot make.** A precondition over `sizeof(T)` written as a `require` is
