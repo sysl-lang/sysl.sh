@@ -261,6 +261,30 @@ and the first release to hit zero drains the list in a loop. A structure of any 
 O(1) stack. The worklist is **per thread**, because it is scratch space a drain uses rather than
 state anything shares.
 
+**On a freestanding target the worklist is asked for rather than assumed**, since there is no thread
+pointer to key it on. A `&sync` release that reaches zero fetches it through one weak symbol,
+`__sysl_arc_reaper`, which answers with a `head` pointer and a `draining` flag belonging to the
+running task:
+
+```c
+struct sysl_arc_reaper { void *head; unsigned char draining; };
+
+/* FreeRTOS, say: whatever this runtime keeps per task. The storage is the port's to give out and
+   must last as long as the task — set when the task is created, never shared with another:
+
+       static struct sysl_arc_reaper slots[MAX_TASKS];
+       vTaskSetThreadLocalStoragePointer(task, 0, &slots[n]);            */
+struct sysl_arc_reaper *__sysl_arc_reaper(void) {
+    return pvTaskGetThreadLocalStoragePointer(NULL, 0);
+}
+```
+
+Define nothing and the program uses the single slot it carries, which is right for a machine where
+nothing schedules — the overwhelming case, and why the symbol is weak. Define it in an RTOS port and
+`&sync T` means on that target what it means everywhere else. This is the arrangement `&sync`'s
+counts are already under there: with no `ldrex`/`strex` beneath it an atomic increment becomes a call
+to an `__atomic_*` the board defines, and on a two-core part that needs a hardware spinlock.
+
 The header is the same three words for every object whether or not anything weakly references it,
 which is what keeps the type-erased release path expressible at all. The cost is eight bytes on an
 allocation that already cost a `malloc`, and it lands only where the feature is used: values, fixed
