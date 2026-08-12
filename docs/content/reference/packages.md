@@ -249,6 +249,28 @@ satisfy the requirement by accident and never learn they had.
 It is asked only where C is actually compiled, so `emit-llvm` and `prove` are not held up by a path
 they would never open.
 
+### It is asked whichever way the package arrived
+
+A package reaches a build by three roads, and the declaration is worth the same on each — though they
+do not all need the same thing from it.
+
+| how the package arrived | what happens |
+|---|---|
+| named in `dependencies` | its manifest comes with the graph, and the requirement is asked |
+| handed over as a `.syslib` | nothing is asked, because nothing is needed |
+| given as a `--lib` source root | its manifest is read for this, and the requirement is asked |
+
+**The artifact needs no header at all**, which is worth knowing before going to look for a flag to
+pass. `build-lib` evaluates a `c const` while it builds and stores the **measured value** rather than
+the C expression that produced it, so a consumer of a `.syslib` needs neither a clang nor the
+library's headers — there is nothing left to require.
+
+**Only the header requirements are read from a `--lib` root.** That flag names a *source root*, which
+need not be a package at all, and one that is not has nothing to declare here. The rest of what a
+manifest can say — the allocator in particular — is deliberately not read there: a package taking
+over a build's allocator is something a consumer should write down, not something acquired by
+pointing a flag at a directory.
+
 ## Dependencies
 
 A dependency is **a git repository and a version**. There is no registry, no account to create, and
