@@ -22,6 +22,8 @@ targets {
   default = "aarch64-macos"
 }
 
+capabilities { heap = false }
+
 requires { os = true }
 
 dependencies {
@@ -54,6 +56,62 @@ config quietly moving the executable would be a worse surprise than anything it 
 The name reaches the filesystem, so it has to be a single path segment. `.`, `..`, anything holding a
 separator, and the empty string are refused when the file is read, rather than being sanitized into
 something that would build a differently-named executable without saying so.
+
+## Capabilities
+
+**Whether the machine has a heap, an operating system, POSIX or threads is a project engineering
+decision, and this is where it is stated.** The compiler's registry of targets deliberately carries no
+capabilities: a target's ABI is measured and its capabilities are policy, so the ABI is the registry's
+and the policy is yours.
+
+```hocon
+capabilities { heap = false }
+```
+
+That is the project's own statement and it applies to **every** target the project builds for. A
+capability the file does not mention is provided — the prior is that a machine can do everything,
+which is what every build had before there was a file to say otherwise, so what a config records is
+what a machine *cannot* do.
+
+**A target block layers over it, per capability, for the one machine that differs:**
+
+```hocon
+capabilities { heap = false }
+
+targets {
+  default = "thumbv7em-freestanding"
+  aarch64-macos { capabilities { heap = true } }
+}
+```
+
+Only the capabilities a target block names are overridden; everything else still comes from the
+project's own block. Writing the statement only inside target blocks — which was once the only place
+it could go — keys it to a machine's name, so a project building for three targets says it three
+times and cannot say it at all for a target the registry already has without a block that reads as
+redefining the machine.
+
+### `capabilities` against `requires`
+
+The two blocks point in opposite directions and neither substitutes for the other:
+
+| block | says | about |
+|---|---|---|
+| `capabilities` | this machine **has** these | the target being built for |
+| `requires` | this package **cannot be built without** these | the host it needs |
+
+`requires { heap = true }` buys one clean error when the package is built for a machine without one,
+instead of an error at every `&T`. A `false` there says nothing — a package does not need a facility
+*not* to exist — and is refused rather than quietly dropped, naming the two places that do mean it.
+
+### `heap`, and the module's own `@no_alloc`
+
+The capability is `heap`, a **facility** the machine either has or has not. A module's promise that
+its own code does not use one is spelled [`@no_alloc`](/reference/modules/#capabilities-are-a-module-property),
+a **conduct**. They are two words because they are two statements, and each is refused where the other
+belongs.
+
+For compatibility with packages already published, `alloc` is still accepted in this file and read as
+`heap`. Write `heap`.
 
 ## Dependencies
 

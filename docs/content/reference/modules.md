@@ -364,6 +364,26 @@ module is a module like any other.
 The other direction is `@requires(...)`, which takes a **list** because a module often needs more
 than one capability at once — `sysl.thread` is `@requires(threads, posix)`.
 
+**The heap has two names, and they say different things.** The capability is `heap` and the clause
+that gives it up is `@no_alloc`:
+
+- **`heap` names a facility** — whether the machine being built for *has* one. It sits beside `os`,
+  `posix` and `threads`, and it is what a project states in
+  [`package.hocon`](/reference/packages/#capabilities), because whether there is a heap is a project
+  engineering decision.
+- **`@no_alloc` names conduct** — a promise this module's code does not *allocate*, and so does not
+  need a heap to exist. A promise is about an action, which is why it reads as a verb.
+
+So `@no_alloc` narrows away `heap`: *I do not allocate, therefore I do not need one.* Each spelling is
+refused where the other belongs, naming it, since somebody who wrote one meant the other. The other
+three capabilities need only one word, because for them giving the facility up and not using it are
+the same act.
+
+**What `@no_alloc` promises, exactly: no execution that begins in this module's own code makes heap
+storage.** It is a *portability claim* — this module can be compiled into a project that has no heap —
+and its worth is that the compiler holds you to it while you are developing on a machine that does
+have one, rather than at the far end when you first build for the board.
+
 **They are annotations rather than grammar**, which is what keeps `alloc`, `no` and `requires`
 available as ordinary names; see [attributes](/reference/attributes/).
 
@@ -375,14 +395,14 @@ file.
 
 **Propagation is over the module graph.** A module's effective requirement is its own uses plus the
 requirements of every module it imports, transitively, and the whole graph must fit the target. A
-`@no_alloc` module importing a `@requires(alloc)` module is an error **at the import**, not deep in
+`@no_alloc` module importing a `@requires(heap)` module is an error **at the import**, not deep in
 codegen. Because the graph is acyclic, propagation is a **single sweep in reverse topological order**
 — each module's requirement set is final before any importer of it is visited — rather than an
 iterated fixpoint.
 
 Two of the capabilities are checked differently, and the difference is worth knowing:
 
-- **`alloc` is finer than the declaration**, and the standard library is why. Inferring it per module
+- **`heap` is finer than the declaration**, and the standard library is why. Inferring it per module
   would put the whole of `sysl` on one side of a line that runs through the middle of it, since
   `print` allocates nothing and `from_utf8` does — so the inferred half is asked of **what a module
   calls** rather than of which modules it depends on.
