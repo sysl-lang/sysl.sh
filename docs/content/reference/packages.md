@@ -113,6 +113,83 @@ belongs.
 For compatibility with packages already published, `alloc` is still accepted in this file and read as
 `heap`. Write `heap`.
 
+## One heap, and the package that names it
+
+Having a heap is one question; **which** heap is another. A program allocates through one pair of C
+functions, and a package that brings its own says which:
+
+```hocon
+allocator {
+  alloc = "pvPortMalloc"
+  free  = "vPortFree"
+}
+```
+
+Saying it settles the pair for the whole program, not for the package that said it. Every allocation
+the compilation emits calls that pair — a string concatenation, a `Buf` growing, a box the reference
+counter builds — and every release gives the storage back to it. Declare nothing anywhere and the pair
+is libc's `malloc` and `free`, which is what a program depending on nothing that says otherwise gets.
+
+**It is the program's pair rather than the package's, because there is one heap.** Ownership is
+settled by reference count, so which code frees a thing is not knowable when a package is written: a
+`Buf` filled inside an RTOS package and handed back is freed by the application, and one built by the
+application and passed in is freed by the package. Two allocators would make every one of those
+crossings a heap boundary that no signature marks.
+
+A package declares it rather than a target, and that is deliberate. The obvious alternative is a
+target fact — the machine knows it is a Cortex-M — and it does not survive contact: `thumbv7em` does
+not imply FreeRTOS, two RTOSes on one chip want different pairs, and a bare-metal program on that chip
+wants libc's. What knows the answer is the package carrying the heap.
+
+### Two that disagree, and two that agree
+
+Two packages naming different pairs is refused when the dependency graph is resolved:
+
+```
+two packages name different allocators, and a program has one heap — 'freertos' names
+pvPortMalloc / vPortFree; 'arena' names arena_alloc / arena_free. Drop one of the
+declarations, or depend on only one of them
+```
+
+Refused there rather than at the link, because the link will not refuse it: both symbols resolve, the
+program builds, and it hands one allocator's storage to the other's `free` at run time.
+
+Two packages naming the **same** pair unify to it. That is the ordinary case rather than a coincidence
+— a kernel package and a driver built on it both name the kernel's allocator, and neither has to know
+whether the other did.
+
+Both halves are said or neither is; half a pair is refused, since storage taken from one heap and
+given back to another is the one outcome worse than not building. The project's own manifest may
+declare a pair too, which covers an application with its own arena and no dependency that has one.
+
+### A library artifact is built for one allocator
+
+A `.syslib`'s object half is compiled code, and it calls the pair by name. So an artifact is built for
+one allocator exactly as it is built for one machine, and a program that allocates another way refuses
+it:
+
+```
+geom.syslib allocates through malloc / free and this program allocates through
+pvPortMalloc / vPortFree — a program has one heap, so a library compiled against
+another cannot be linked into it. Rebuild the library against this one
+```
+
+That refusal is sharper than the one for a mismatched target, and deliberately so: an artifact for the
+wrong machine is eventually refused by a linker that cannot read the object at all, while an artifact
+for the wrong allocator is refused by nothing. Recording the name is the only place it can be caught.
+
+The standard module is under the same rule and needs nothing done about it — its cache is keyed by the
+pair among the other things it is keyed by, so a program that names an allocator gets a standard
+module built for that allocator, built on demand and announced on stderr.
+
+### What it does not do
+
+Naming the pair says which functions the program uses. It says nothing about **where** the program may
+use them, and that distinction matters on a real RTOS: `pvPortMalloc` suspends the scheduler and is
+not usable from an interrupt handler, while sysl allocates implicitly — a string operation, a growing
+buffer, a box. Code reachable from a handler is the caller's to bound, and `@no_alloc` is how it is
+bounded.
+
 ## Headers a package needs and does not carry
 
 A capability is answered by the target, and there is nothing for anybody to go and do. **A header is

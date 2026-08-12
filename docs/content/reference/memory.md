@@ -238,7 +238,8 @@ cannot be forgotten rather than merely being unwise to forget.
 Every ARC object carries **three header words**: the strong count, a pointer to the function that
 destroys it, and a weak count. Release decrements the strong count; at zero it calls through the
 hook, which releases whatever the payload holds and returns the storage to the heap the object came
-from.
+from — [one heap for the whole program](/reference/packages/#one-heap-and-the-package-that-names-it),
+libc's unless a package named another pair.
 
 Putting the destructor behind a hook rather than inline at each release site is what makes letting go
 of a reference **type-erased** — one instruction sequence, no static type. Slices need exactly that,
