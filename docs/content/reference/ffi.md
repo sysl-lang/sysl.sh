@@ -1159,7 +1159,8 @@ interrupt fault(f: *Frame)      // x86-64: the ABI requires the frame
 |---|---|---|
 | **x86-64** | an LLVM calling convention, `x86_intrcc` | a pointer to the frame the hardware pushed, optionally then an integer error code |
 | **RISC-V** | a function *attribute*, `"interrupt"="machine"` | nothing at all |
-| **AArch64** | it does not exist | — |
+| **AArch64** | it does not exist — a handler is assembly | — |
+| **Arm M-profile** (`thumb`) | it does not exist — a handler is an ordinary function | — |
 
 So the annotation names the **concept** and the back end decides what that becomes. A directive
 spelling `x86_intrcc` would put one machine's answer in a source file and be wrong on the other
@@ -1186,6 +1187,25 @@ corruption in whatever was interrupted.
 table the processor indexes by cause, where each entry is a fixed-size slot of instructions — so the
 entry point is assembly by construction, and there is nothing for a convention on a sysl function to
 describe.
+
+**M-profile's absence is a different absence, and the refusal says which one it is.** Every `thumb`
+target is Armv6-M, Armv7-M or Armv8-M, and there an exception is entered with `xPSR`, `PC`, `LR`,
+`R12` and `R3`–`R0` already stacked by the hardware and `EXC_RETURN` in the link register — so a
+plain function returning normally *is* a correct handler, and the vector table holds its address
+rather than its code. Nothing is needed, which is why nothing is accepted:
+
+```sysl target=thumbv7em-freestanding
+interrupt systick()
+    ()
+```
+
+```error
+'interrupt' is not something thumb has: a Cortex-M exception is entered with the caller-saved registers already stacked by the processor and 'EXC_RETURN' in the link register, so an ordinary function is already a correct handler and there is no prologue for a convention to arrange — write one, and give it the name the vector table holds with '@export("SysTick_Handler")'
+```
+
+So **a Cortex-M handler is an ordinary function named for the vector table with `@export`**, which is
+already a reachability root — the symbol survives pruning and carries the name the table was built
+against, which is the whole of what a handler needs there.
 
 Three more rules:
 
