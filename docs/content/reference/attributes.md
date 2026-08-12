@@ -374,9 +374,14 @@ a fact about its tests.
 **The line falls between parsing and analysis.** Every source is parsed before the drop, so a
 **syntax** error in a `@tests` file still stops a `build-lib`. What such a file no longer gets is
 everything after the parse — name resolution, types, visibility, capabilities, the `@test`
-well-formedness rules above, generic instantiation. So a library test that is well-formed text and
-wrong in every other way builds clean, and its real errors are reported by
-[`sysl test --std`](/getting-started/cli/), which is where a library's tests are run.
+well-formedness rules above, generic instantiation, and the duplicate-`@export` check. So a library
+test that is well-formed text and wrong in every other way builds clean, and its real errors are
+reported by [`sysl test --std`](/getting-started/cli/), which is where a library's tests are run.
+
+That last one is worth naming because it is the case where "everything after the parse" is easy to
+apply to only half of a build. An `@export` in a `@tests` file names a symbol **this** build is about
+to discard, so it can collide with nothing — and a check that read the tree before the drop would
+refuse a program over a name that was never going to be emitted.
 
 ### `@tests` — a file of scaffolding
 

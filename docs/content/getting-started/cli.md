@@ -159,6 +159,13 @@ The tree is compiled once, into a binary that runs one named test per process, a
 it once per test. [Attributes](/reference/attributes/) has `@test` itself — what a test may be, what
 every other build does with one, and why the process per test is the mechanism rather than a cost.
 
+**It takes the search-path flags too** — `--link-path`, `--include-path` and `-D`, exactly as `build`
+does, and it needs them for the same reasons. A tree whose C includes a header the toolchain does not
+already know about, or whose constants come from a [`c const`](/reference/ffi/) block over one, is a
+tree whose *tests* have to compile that C as much as its programs do. A package binding a system
+library is the ordinary case rather than a corner of one, so a `test` that could not be given those
+directories would be a `test` most packages could not run.
+
 `--std` says the tree **is** the standard module, which is how sysl's own library is tested. The
 compiler supplies `sysl` to every compilation, so without it the library arrives twice — once as the
 tree being compiled and once as the copy handed over — and every declaration is already declared.
