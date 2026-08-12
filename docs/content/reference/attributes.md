@@ -614,6 +614,68 @@ checked. `offsetof(T, field)` closes it: it takes a type and a field **name**, a
 field starts in bytes. A field the struct does not have is refused by name rather than reported as a
 condition that would not fold.
 
+### Inside a generic, where it is settled once per instantiation
+
+A generic's interesting facts are not properties of its declaration — they are properties of each set
+of arguments it is compiled for. `sizeof(T)` has no width until something chooses a `T`, so an
+assertion about one is settled at every instantiation rather than once:
+
+```sysl
+slab[T](x: T) -> usize
+    @assert(sizeof(T) >= sizeof(*u8), "a free block has to hold the link through it")
+    sizeof(T)
+
+print(slab(1u64))
+```
+
+```output
+8
+```
+
+An argument the claim does not hold for stops the compilation, and the report names which one asked —
+the mistake is at the call that chose the type, while the sentence explaining why is at the
+declaration, so a message carrying only one of the two sends its reader to the wrong file:
+
+```sysl
+slab[T](x: T) -> usize
+    @assert(sizeof(T) >= sizeof(*u8), "a free block has to hold the link through it")
+    sizeof(T)
+
+print(slab(1u8))
+```
+
+```error
+assertion failed: a free block has to hold the link through it — where T = byte
+```
+
+**This is the check `require` cannot make.** A precondition over `sizeof(T)` written as a `require` is
+a runtime branch for a fact that was settled at the call: a container instantiated at a type too
+narrow compiles, ships, and traps the first time anybody uses it. `guide/slab` was written that way
+before this and is the worked example of the difference.
+
+A **value** parameter is bound the same way and so is checked the same way, which is what lets a
+generic hold its caller to a bound on a length:
+
+```sysl
+scratch[const N: usize](xs: [N]int) -> usize
+    @assert(N <= 4, "the scratch buffer is a stack array")
+    N
+
+var small: [2]int = [1, 2]
+
+print(scratch(small))
+```
+
+```output
+2
+```
+
+**A generic nothing instantiates is not checked**, and that is the same deferral an array bound
+already lives under: `[sizeof(T)]u8` is a well-formed length nobody can name until a `T` is chosen,
+and the width is not wrong there — it is not being measured yet. The claim is settled at the first
+call, which is the first moment there is anything to settle. A condition that could *never* fold is
+still refused inside a generic, exactly as it is outside one.
+
 ## `@tailrec` — an assertion that the frame is reused
 
 A function whose last act is a call to itself compiles to a branch back to its own entry rather than

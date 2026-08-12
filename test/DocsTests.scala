@@ -69,7 +69,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/errors.md"                 -> (20, 27, 1),
     "docs/content/reference/ffi.md"                    -> (14, 21, 9),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
-    "docs/content/reference/attributes.md"             -> (16, 21, 4),
+    "docs/content/reference/attributes.md"             -> (18, 22, 4),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
