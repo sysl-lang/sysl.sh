@@ -795,6 +795,22 @@ the value of 'called' is not a constant expression
 A function call in a constant expression is a request for compile-time evaluation of arbitrary code,
 which is a language of its own.
 
+**"A `const`" above means the declaration, not a spelling of it.** A constant reached by its full path
+is the same constant as one reached by an import, and the two fold alike in every position below —
+what decides is what the name resolves to, and the three steps above are the whole of how a name
+resolves:
+
+```sysl
+import bits.byte_width
+
+var packed: [byte_width]u8            -- imported
+var padded: [bits.byte_width]u8       -- the same declaration, named through its module
+```
+
+It is worth saying only because the two spellings are different enough to be implemented separately,
+and once were. A [`c const`](/reference/ffi/) is no different: a binding keeps its measured
+constants in a sub-module of their own, so every consumer names them qualified.
+
 **Where a constant may stand:** anywhere an expression may, plus the four places a literal was
 previously the only thing accepted — an **array bound**, an **enum discriminant**, a **pattern**, and
 the bounds of a **`within` range**:
