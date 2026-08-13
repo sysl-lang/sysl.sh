@@ -30,11 +30,17 @@ arch_cli()
         [aarch64]          "msr daifset, #2"
         [riscv64, riscv32] "csrci mstatus, 8"
         [thumb]            "cpsid i"
+        [wasm32]           unavailable "a wasm module has no interrupts to disable"
 ```
 
 An arm names one processor or several, spelled as [`#if`](/reference/attributes/) spells them:
-`aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`. A name outside that set is an error rather
-than a machine nobody has heard of.
+`aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`. A name outside that set is an
+error rather than a machine nobody has heard of.
+
+**`wasm32` is the one that is not a processor**, and it will not carry instructions at all: a wasm
+module has no registers to name and no assembler behind it. Its arm is therefore always empty or
+`unavailable` — both forms are below — which makes it the standing reminder that these arms are
+about *targets* rather than about chips.
 
 **`riscv32` and `thumb` are one board's two halves**, which is why they are usually written together
 in what follows. The RP2350 boots either a pair of Cortex-M33s or a pair of RV32IMAC cores, and a
@@ -51,6 +57,7 @@ spin_hint()
         [x86_64]           "pause"
         [aarch64, thumb]   "yield"
         [riscv64, riscv32] "nop"
+        [wasm32]
 
 spin_hint()
 print("hinted")
@@ -79,7 +86,7 @@ halt()
 ```
 
 ```error
-this assembly has no arm for 'aarch64', 'riscv64', 'riscv32' or 'thumb'
+this assembly has no arm for 'aarch64', 'riscv64', 'riscv32', 'thumb' or 'wasm32'
 ```
 
 This is the rule `#if` follows one level up, where every condition is checked in the branches being
@@ -100,7 +107,7 @@ port_out(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
 ```
 
 The x86-64 build compiles that. A build for a processor the arm covers is refused, and the reason
@@ -111,7 +118,7 @@ since leaving it out fails *every* build instead:
 port_out()
     asm
         [x86_64] "outb %al, %dx"
-        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
 
 port_out()
 ```
@@ -133,6 +140,7 @@ barrier()
         [aarch64]          "dmb ish"
         [thumb]            "dmb sy"
         [riscv64, riscv32] "fence rw, rw"
+        [wasm32]
 ```
 
 An empty arm cannot be confused with a forgotten one, because a forgotten arm is not empty — it is
@@ -159,6 +167,7 @@ copy(n: int) -> int
             "mv {v}, {n}"
             in n : reg
             out v : reg
+        [wasm32] unavailable "there are no registers for an operand to land in"
     v
 
 print(copy(7))
@@ -179,7 +188,7 @@ out_byte(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64, riscv32, thumb] unavailable "port I/O is x86-only"
+        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only"
 ```
 
 **A bare word is sysl's and a quoted word is the assembler's.** That rule decides every case in the
@@ -213,6 +222,7 @@ f()
             "add {n}, {n}, {n}"
             in n : reg
             out n : reg
+        [wasm32] unavailable "there are no registers for an operand to land in"
 
 f()
 ```
@@ -235,7 +245,7 @@ f()
         [x86_64]
             "nop"
             clobbers "rax", "rdx"
-        [aarch64, riscv64, riscv32, thumb] unavailable "x86 only here"
+        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "x86 only here"
 ```
 
 **Memory and the condition flags are assumed clobbered, always**, and cannot currently be given
@@ -319,6 +329,7 @@ arch_reset() -> never
             "csrci mstatus, 8"
             "1: wfi"
             "j 1b"
+        [wasm32] unavailable "a wasm module cannot halt its host"
 ```
 
 The promise is yours to keep here, which is true of the instructions themselves anyway.
