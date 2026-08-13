@@ -648,42 +648,50 @@ print(xs[0], xs[1], xs[2])
 A comparison written once over `*T` is now usable at every element type, where before a program
 needed a concrete copy of it per type.
 
-**It does not reach the `void *userdata` pattern**, which is the case worth naming because it is the
-one a reader will assume is covered. A C interface that calls back pairs the pointer with an untyped
-`void *`, so a trampoline for one has the signature C fixed — `(*u8, Event) -> bool`. The state type
-appears nowhere in it, so there is nothing for the expected type to solve, and such a trampoline is
-refused by the rule below about a parameter the signature never mentions. Recovering the state means
-a `ptr_cast` from `*u8`, which is a promise rather than a deduction.
+### The `void *userdata` pattern — the arguments are written
 
-What it does **not** mean is a concrete trampoline per state type, which this paragraph used to say.
-The rule forbids a trampoline whose *signature* hides the type — and the signature is yours to
-choose. Write it over `*T`, name its address in a `val` whose type mentions `T`, and cast the
-**function pointer** at the call instead of casting inside the body:
+A C interface that calls back pairs the pointer with an untyped `void *`, so a trampoline for one has
+the signature C fixed — `(*u8, Event) -> bool`. The state type appears nowhere in it, so nothing in
+the expected type can settle it, and no annotation written anywhere else could supply it either. The
+arguments are written where the address is taken, and **this is the one position in the language that
+takes them**:
 
 ```sysl
-private compare[T: Ord](a: *T, b: *T) -> int
-    if *a < *b then -1
-    else if *b < *a then 1
-    else 0
-end compare
+extern qsort(base: *u8, n: usize, size: usize, cmp: *extern(*u8, *u8) -> i32)
 
-sort_libc[T: Ord](xs: []T)
-    if xs.len < 2 then return
+compare[T: Ord](a: *u8, b: *u8) -> i32
+    var x: *T = ptr_cast(a)
+    var y: *T = ptr_cast(b)
 
-    val cmp: *extern(*T, *T) -> int = &compare
+    if *x < *y then -1 else if *y < *x then 1 else 0
 
-    c_qsort(ptr_cast(as_mut_ptr(xs)), xs.len, sizeof(T), ptr_cast(cmp))
-end sort_libc
+var xs: [3]i32 = [30, 10, 20]
+
+qsort(ptr_cast(&xs[0]), 3, 4, &compare[i32])
+print(xs[0], xs[1], xs[2])
 ```
 
-One generic body then serves every element type — see [qsort](/guides/qsort/), which is written this
-way. What the limit really costs is the extra `ptr_cast` and a `val` that exists only because there
-is nowhere else to write the type.
+```output
+10 20 30
+```
 
-There is no written form `&f[T]`, and that is a grammar fact rather than a preference: `&f[T]` and
-`&xs[i]` are the same shape, and only knowing whether the name is a generic function separates them.
-The expected type carries the same information unambiguously, and is information the caller has
-anyway — a `*extern` is handed to something whose signature is already fixed.
+Recovering the state is still a `ptr_cast` from `*u8`, which is a promise rather than a deduction —
+that is C's shape and nothing here changes it. What is no longer needed is the shape the *language*
+was forcing: a trampoline written over `*T` because it could not be written over `*u8`, a second
+`ptr_cast` of the function pointer, and a `val` whose only job was to be somewhere to put the type.
+[qsort](/guides/qsort/) is written the new way.
+
+More than one argument is written the same way, `&f[A, B]`, and a value parameter takes its place in
+the list like any other.
+
+**`&f[T]` and `&xs[i]` are the same shape, and the analyzer is what separates them**: the name has to
+resolve to a function declaration with no local shadowing it. A local shadowing the name keeps the
+ordinary indexed reading, so a subscript is never re-read as a feature its author did not reach for.
+
+What the brackets can hold is the *expression* grammar's reading of a type — a name, a qualified
+name, a name applied to arguments, `*T`, `&T`, a tuple, and an integer for a value parameter. A
+slice, a `weak`, a `volatile` and a callable have no spelling there; the annotated `val` reaches
+every one of them, and the diagnostic says so.
 
 ### What has no address, and why
 
@@ -705,8 +713,8 @@ print(1)
 nothing here says what they are
 ```
 
-**A type parameter the signature never mentions** — nothing in the expected type can settle it, which
-is the honest limit of reading an instantiation off a type:
+**A type parameter the signature never mentions, left to be inferred** — nothing in the expected type
+can settle it, and the message names the form that can:
 
 ```sysl
 tagged[T](n: i32) -> i32 = n
@@ -719,6 +727,9 @@ print(1)
 ```error
 does not say what 'T' should be
 ```
+
+Written out, `&tagged[i32]`, it is an ordinary address — that is the case the written form exists
+for.
 
 **A variadic function** — C reads a tail relative to the last named argument, and a `*extern` states
 the arguments a call passes:

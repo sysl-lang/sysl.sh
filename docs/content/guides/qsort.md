@@ -16,51 +16,48 @@ that is generic in the element type, the address of a slice's storage, and the s
 ## The binding, in full
 
 ```sysl
-private extern "qsort" c_qsort(base: *u8, n: usize, size: usize, cmp: *u8)
+private extern "qsort" c_qsort(base: *u8, n: usize, size: usize, cmp: *extern(*u8, *u8) -> int)
 
-private compare[T: Ord](a: *T, b: *T) -> int
-    if *a < *b then -1
-    else if *b < *a then 1
+private compare[T: Ord](a: *u8, b: *u8) -> int
+    var x: *T = ptr_cast(a)
+    var y: *T = ptr_cast(b)
+
+    if *x < *y then -1
+    else if *y < *x then 1
     else 0
 end compare
 
 sort_libc[T: Ord](xs: []T)
     if xs.len < 2 then return
 
-    val cmp: *extern(*T, *T) -> int = &compare
-
-    c_qsort(ptr_cast(as_mut_ptr(xs)), xs.len, sizeof(T), ptr_cast(cmp))
+    c_qsort(ptr_cast(as_mut_ptr(xs)), xs.len, sizeof(T), &compare[T])
 end sort_libc
 ```
 
 `compare` is **one function per element type**, and that is the whole trick. `qsort` is told the
 width of an element and otherwise moves anonymous bytes; the only thing that knows what those bytes
 *are* is that body, and it knows because the compiler made a copy of it for each `T` a program
-sorted. A C programmer does the same thing by hand and writes the cast themselves.
+sorted. A C programmer does the same thing by hand and writes the cast themselves — which is exactly
+what the two lines at the top of the body are.
 
 The two comparisons are not clumsiness either. C's convention has three answers — negative, zero,
 positive — and `<` has two, so there is no third answer to read off a single test.
 
 ## What it found
 
-**The obvious trampoline has no address.** The natural shape is C's own signature with the cast
-inside it:
+**The obvious trampoline had no address, and now it has one.** The natural shape is C's own signature
+with the cast inside it — `compare[T: Ord](a: *u8, b: *u8) -> int` — and `T` appears in neither
+parameter nor result. An address settles a generic function's instantiation from the **expected
+type**, and the expected type here is `*extern(*u8, *u8) -> int`, which does not mention `T` at all.
+There was nothing to read, and no annotation written anywhere else could have supplied it.
 
-```sysl
-private compare[T: Ord](a: *u8, b: *u8) -> int = ...
-```
-
-and it cannot be given to anything. The address of a generic function takes its instantiation from
-the **expected type** — there is no written `&f[T]`, because it could not be told from `&xs[i]` — and
-the expected type here is `*extern(*u8, *u8) -> int`, which does not mention `T` at all. There is
-nothing to read.
-
-What works is above: let the *pointers* carry the type, and cast the pointer **to the function** at
-the call rather than casting inside the body. The `val` exists only because there is nowhere else to
-write the type. The [FFI reference](/reference/ffi/) states the limit; what this program
-corrected is the sentence that followed it, which said such a pattern therefore needs a concrete
-trampoline per element type. It does not — one generic body serves them all, at the cost of an extra
-`ptr_cast` and a `val`.
+So the argument is written where the address is taken: `&compare[T]`, the one position in the
+language that takes written type arguments. **This program is why it exists.** What it had to be
+written as before was a trampoline over `*T` rather than `*u8`, a second `ptr_cast` of the function
+pointer, and a `val` whose only job was to be somewhere to put the type — a shape imposed by the
+language rather than chosen, and one every C callback would have copied, since every one of them
+fixes its signature and leaves the payload type to its caller. The
+[FFI reference](/reference/ffi/) has the form and what its brackets can hold.
 
 **There is no clock.** [`sysl.time`](/library/time/) has `Instant`, `Duration` and the calendar
 between them, and nothing in the library reads one — no monotonic counter and no wall clock. So this

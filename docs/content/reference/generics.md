@@ -55,6 +55,12 @@ print(id[int](7))
 Inference supplies them instead, and the one case inference cannot reach is answered by annotating
 what receives the result.
 
+**There is one position where they are written, and it is an address**: `&f[T]` names one
+instantiation of a generic function. Nothing is being indexed there — `&xs[i]` is the address of an
+*element* — so the collision above does not arise, and no annotation could stand in, because the
+case it exists for is a C callback whose signature mentions the type parameter nowhere. See
+[the FFI reference](/reference/ffi/).
+
 ## Construction
 
 Applying a generic type names a concrete instance: `Box[int]` is the type of a box of `int`,
@@ -981,7 +987,7 @@ stands in for expansion, in the one direction the catalog needs.
 
 | absent | why, and what to write instead |
 |---|---|
-| explicit call-site type arguments | `id[int](7)` collides with indexing; annotate what receives the result |
+| explicit type arguments **at a call** | `id[int](7)` collides with indexing; annotate what receives the result. At an **address** they are written — `&f[T]` |
 | `where` clauses | the inline `[T: A + B]` list is the settled baseline; an out-of-line form is a possible ergonomic addition |
 | type-level arithmetic (`[N + 1]T`) | a value parameter may stand as a length but not be computed with in a type; deciding that `N + 1` and `1 + N` are one type is a feature of its own |
 | pack expansion (`f(..a)`, `(..A, int)`) | a pack may be matched and walked, not spread into an argument list or appended to; `for const` is what stands in for it |
