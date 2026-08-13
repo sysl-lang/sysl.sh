@@ -249,6 +249,19 @@ satisfy the requirement by accident and never learn they had.
 It is asked only where C is actually compiled, so `emit-llvm` and `prove` are not held up by a path
 they would never open.
 
+**`build-lib` compiles C, so it is asked too — and it is asked for its own manifest and nothing
+else.** That is the narrowest scope of any command here, and it follows from the same rule rather
+than being an exception to it: `build-lib` compiles the C of the tree it was handed and no other, so
+a `--lib` source root's declaration is not charged to a library built against it. That build never
+opens the root's header, and the root is asked for it when the root is built itself.
+
+This is the road a package is *packaged* by, so it is the one that matters most to whoever is
+publishing one — and it was the last to be asked. Until it was, building a declaring package into an
+artifact answered with `fatal error: 'lwip/tcp.h' file not found` out of the package's own shim, and,
+worse, a **bare** `--include-path` satisfied the requirement in effect, because nothing was asking.
+A requirement that can be met by accident on the machine that built the artifact and nowhere else is
+exactly what the paragraph above exists to prevent.
+
 ### It is asked whichever way the package arrived
 
 A package reaches a build by three roads, and the declaration is worth the same on each — though they

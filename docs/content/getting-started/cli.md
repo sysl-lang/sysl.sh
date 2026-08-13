@@ -114,6 +114,13 @@ Building one needs an `llvm-ar` as well as a `clang`, because a `.syslib` **is**
 [installation](/getting-started/installation/) has the note about which `ar` and why the platform
 one will not do.
 
+**It compiles the package's C, so it asks what that C needs.** A package that declares its
+[header requirements](/reference/packages/#headers-a-package-needs-and-does-not-carry)
+is refused here without `--include-path <name>=<dir>`, exactly as it is for a `build` — this being
+the command a package is *published* by rather than merely built by. It is asked for the package's
+own manifest and nothing else: the C of a `--lib` source root is not compiled here, so that root's
+declaration is not charged to a library built against it.
+
 ### `build-c`
 
 ```bash
