@@ -10,7 +10,9 @@ because a Lisp **cannot avoid** the one thing reference counting cannot do.
 
 **The second literate program in the set**, after [slab](/guides/slab/): a `.lsysl` file is Markdown
 whose four-column-indented part is the program, so the argument for each arm of `eval` sits beside
-that arm. As a comment above the function, nobody would read it where it mattered.
+that arm. As a comment above the function, nobody would read it where it mattered. `sysl weave
+guide/lisp/lisp.lsysl -o lisp.html` sets it as a document — its derivations included — and `sysl
+tangle` prints just the program. See [the CLI](/getting-started/cli/#weave).
 
 **The axis: the reference cycle.** sysl's headline memory claim is that it counts references rather
 than checking borrows, and the honest cost of that choice is a cycle — an island of objects that all

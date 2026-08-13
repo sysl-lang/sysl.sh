@@ -9,6 +9,10 @@ own storage. **The first literate program in the set** — its findings ran to s
 comment before anything executable appeared, which is the length at which a comment stops being one,
 so `slab.lsysl` is a document with the program indented inside it.
 
+It reads perfectly well unrendered, which is the point of the format — but `sysl weave
+guide/slab/slab.lsysl -o slab.html` sets it as one, and `sysl tangle` on the same file prints the
+program the compiler reads out of it. See [the CLI](/getting-started/cli/#weave).
+
 **The axis: raw storage** — reinterpreting bytes as a typed pointer, asking what a type's storage
 costs, and the address arithmetic between the two. Nothing else in the set touches any of it.
 [kernel](/guides/kernel/) is allocator-free but never *makes* storage; it is handed three fixed tables
