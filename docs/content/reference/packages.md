@@ -162,6 +162,10 @@ Both halves are said or neither is; half a pair is refused, since storage taken 
 given back to another is the one outcome worse than not building. The project's own manifest may
 declare a pair too, which covers an application with its own arena and no dependency that has one.
 
+**Whichever road the package arrived by.** A package named in `dependencies` and the same package
+handed over as a `--lib` source root declare the same thing and settle the same question — this is a
+property of the package, not of the flag that reached it.
+
 ### A library artifact is built for one allocator
 
 A `.syslib`'s object half is compiled code, and it calls the pair by name. So an artifact is built for
@@ -278,11 +282,20 @@ pass. `build-lib` evaluates a `c const` while it builds and stores the **measure
 the C expression that produced it, so a consumer of a `.syslib` needs neither a clang nor the
 library's headers — there is nothing left to require.
 
-**Only the header requirements are read from a `--lib` root.** That flag names a *source root*, which
-need not be a package at all, and one that is not has nothing to declare here. The rest of what a
-manifest can say — the allocator in particular — is deliberately not read there: a package taking
-over a build's allocator is something a consumer should write down, not something acquired by
-pointing a flag at a directory.
+**The header requirements and the allocator are read from a `--lib` root, and nothing else is.** That
+flag names a *source root*, which need not be a package at all, and one that is not has nothing to
+declare here.
+
+The allocator is read because it is a property of the *package* rather than of the road the package
+arrived by — a directory handed over with `--lib` is the same package as one named by a coordinate,
+so it brings its heap either way. It used to be read only from a coordinate, and the two roads then
+disagreed **in silence**: the package's own objects came out of its heap and every string, `Buf` and
+box in the same program out of libc's, with nothing said at any point. A silent mixed heap is worse
+than a rule somebody has to know, which is what decided it.
+
+What is still not read is the rest of the manifest. A root's own `dependencies` are not fetched, and
+its capabilities are the program's to state — neither has the one-answer-per-program character that
+makes the allocator settle for everybody.
 
 ## Dependencies
 
