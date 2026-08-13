@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the seven annotations a declaration takes, the four a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the seven annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -11,6 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
+| `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
@@ -33,6 +34,11 @@ may be stacked, and writing the same one twice is refused. `@test` and `@tailrec
 `@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
 the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of.
+
+**On a type, or on storage** there are three, and they are about *where* rather than about what the
+declaration does. `@packed` and `@align(n)` lay out a struct — no interior padding, and the boundary
+the aggregate begins on — and `@align(n)` marks one binding's storage as well. `@section("...")` marks
+a binding **or** a function, and says which linker section it lands in. All three are below.
 
 **On the file** there are five, in its header directly below `module` and before everything else:
 `@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, `@include("...")`, and `@tests`. The
@@ -937,6 +943,100 @@ print(a, b)
 
 The bound is held to the same rule a struct's is — a power of two, folded rather than lexed, so a
 `const` or arithmetic over one is what a program writes.
+
+## `@section("...")` — where a symbol lands
+
+`@align(n)` says what boundary storage begins on. `@section` says **where the storage is**, and it is
+what a program reaches for when the address of a thing is part of what it is: a vector table at the
+address the processor fetches from, storage in `.noinit` that survives a warm reset, a DMA buffer in
+the RAM bank the engine can reach, a function copied into RAM so it can run while flash is being
+erased.
+
+It marks whatever occupies an address — a module `var`, a module `val`, and a function.
+
+```sysl
+@section(".noinit")
+var crash_reason: u32
+
+@section(".ramfunc")
+erase_page(n: usize) -> bool = n < 64
+```
+
+**Nothing on this page runs one of these.** A section name belongs to the target's object format —
+`.noinit` is ELF's spelling, `__DATA,__mine` is Mach-O's — so a program that places something is a
+program about one machine, and the machine this page's examples run on is not the interesting one.
+
+That is also why the compiler does not check what is in the string. A set of characters chosen by
+sysl would refuse a section some target requires, and the assembler that will not take one says so
+better than a rule here could. It is `extern`'s link name and `@export`'s symbol read a third time:
+a spelling belongs to whoever consumes it.
+
+### It composes with `@align(n)`
+
+The two are different axes — one is the boundary an object *begins* on, the other is where it
+*lives* — and a statically placed stack is written with both. The order does not matter.
+
+```sysl
+@align(4096)
+@section(".noinit")
+var page_table: [512]u64
+```
+
+### A placed symbol is kept
+
+Nothing inside the program reads a table that a linker script gathers — that is the whole point of
+writing one — so a placed definition is a **root**, exactly as an interrupt handler and an `@export`ed
+function are, and a placed symbol is marked so that the optimizer does not delete an object with no
+reader.
+
+Without that second half the attribute would compile, link, and place nothing. The failure would be
+the *absence* of a section, which is not a thing anybody looks for.
+
+### What it may not mark
+
+A `const` is folded into every use and has no storage; a type is not an object. Neither takes a
+section:
+
+```sysl
+@section(".rodata")
+const N: int = 4
+
+print(N)
+```
+
+```error
+'@section("...")' places one object in a linker section, so it marks a 'var', a 'val' or a function
+```
+
+A **local** is refused for a different reason, and the message says which — its storage is the frame
+of whichever call is running, while a section is a region of the image, decided once at the link:
+
+```sysl
+f() -> int
+    @section(".noinit")
+    var n: int = 1
+    n
+
+print(f())
+```
+
+```error
+'n' is a local, so it cannot be placed in section ".noinit"
+```
+
+A binding that names several things has no one object for a section to be about, which is the rule
+`@align(n)` above already follows:
+
+```sysl
+@section(".data")
+static var a, b = 1, 2
+
+print(a, b)
+```
+
+```error
+'@section("...")' places one object, and a binding that names several has no one object for it to be about
+```
 
 ## `#if` — gating lines before the lexer
 
