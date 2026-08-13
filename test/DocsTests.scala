@@ -69,7 +69,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/errors.md"                 -> (20, 27, 1),
     "docs/content/reference/ffi.md"                    -> (15, 22, 8),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
-    "docs/content/reference/attributes.md"             -> (21, 28, 6),
+    // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
+    // that asserted a refusal is now a register written through and read back.
+    "docs/content/reference/attributes.md"             -> (22, 28, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),

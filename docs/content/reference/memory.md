@@ -1260,7 +1260,14 @@ the source wrote, so it is only meaningful where an access is one instruction:
 - **a constrained subtype is refused**, and this one is about trust rather than instructions. A
   `Level = int within 0..7` is the claim that a value *has been checked*; a register holds whatever
   the device put there. So the register is declared at the base type and what comes back is converted
-  — one written conversion, checked, at the point the value arrives.
+  — one written conversion, checked, at the point the value arrives;
+- **a data enum is refused** — a tag beside a payload is more than one access however it is written.
+
+A **simple enum** is admitted, since it *is* its underlying integer: it is one load, and it is the
+spelling a register's mode field wants. So is a **bitfield**, which is the one case where the access
+reaches more than the field named — the qualifier applies to the container the field is bits of, so a
+write is a read-modify-write of the whole of it. `@packed` on
+[attributes](/reference/attributes/) states that rule and what it costs a driver.
 
 **A struct that holds a register carries no `invariant`.** A check is a call taking every field, so it
 reads the whole block however few fields the clause names — an invariant written over the shadow value

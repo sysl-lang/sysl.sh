@@ -922,30 +922,62 @@ print(sizeof(Block), b.ctrl.enable, b.ctrl.mode, b.count)
 5 1 2 3
 ```
 
-**A bitfield may not be `volatile`.** A sub-word volatile access is a read-modify-write of the whole
-struct where a device is entitled to one bus cycle, and a register with clear-on-read or
-write-1-to-clear semantics is corrupted by it:
+**A bitfield may be `volatile`, and it means a volatile access of the container.** Reading a field is
+one volatile load of the whole container; writing one is a volatile load and a volatile store of it —
+what C does with `volatile unsigned x : 3`, and what lets a `@packed` struct describe a hardware
+register rather than only a data layout:
 
 ```sysl
 @packed
 struct Reg
-    a: volatile u3
+    enable: volatile u1
+    mode: volatile u3
+    prescale: volatile u4
+
+var block: [4]u8 = [0u8; 4]
+var r: *Reg = ptr_cast(&block[0])
+
+r.enable = 1
+r.prescale = 9
+r.mode = 5
+
+print(block[0], r.enable, r.mode, r.prescale)
+```
+
+```output
+155 1 5 9
+```
+
+**The qualifier belongs to the container rather than to one range of it**, so writing it on any field
+qualifies every access to the struct. Every field of a bitfield struct is bits of one word, so there
+is no shadow field here to stay ordinary — which is the thing per-field qualification buys in an
+ordinary register block. The struct itself still may not carry the qualifier, and does not need to:
+
+```sysl
+@packed
+struct Ctrl
+    a: u3
     b: u5
 
-val r = Reg(1, 2)
+var p: *volatile Ctrl = ptr_cast(4096usize)
 
-print(r.a)
+print(p.a)
 ```
 
 ```error
-is a bitfield — it occupies part of a byte
+'volatile Ctrl' is not a type
 ```
 
-**A bitfield register is therefore not yet writable**, and that is worth saying plainly rather than
-leaving to be discovered. `volatile` qualifies *scalar* storage — a struct-typed field and a
-`*volatile Ctrl` are both refused for their own reason — so the qualifier cannot go on the struct
-instead. A driver keeps its `volatile u32` and its shifts for now; bitfields today are for laying
-data out, not for reaching a device.
+**A write is a read-modify-write, and nothing diagnoses what that costs.** A device is entitled to one
+bus cycle, so writing a field of a register with **clear-on-read** or **write-1-to-clear** semantics
+corrupts the ranges beside it — the read that begins the sequence has already had its effect. Nothing
+in the language describes a register's read semantics, so this is stated rather than refused, exactly
+as it is in C. A register of that kind keeps its `volatile u32` and its shifts, where the single
+access is written out.
+
+A field that is a set of named values is a **simple enum**, which is one integer and may be `volatile`
+like any other. A **data enum** may not — a tag beside a payload is more than the one access the
+qualifier promises.
 
 **A bitfield has no byte offset**, so `offsetof` says so rather than rounding down to the byte the
 field begins in:

@@ -257,6 +257,8 @@ pointer-and-length pair C makes you carry by hand, with the bounds check that pa
   inside a `@packed` struct a `u5` field already occupies exactly five bits, so a width is written
   where every other width is. What sysl adds is that the two things C leaves to the implementation —
   which end the bits fill from, and whether one may cross a byte — are fixed by the language.
+  `volatile unsigned x : 3` carries over as well, and means what it means in C: a volatile access of
+  the container, so a write is a read-modify-write of it.
   [attributes](/reference/attributes/) has the rules.
 - **`goto`.** Not even a reserved word. A labelled `break` or `continue` reaches the case that
   actually comes up, which is leaving a nested loop.
