@@ -411,6 +411,72 @@ Two of the capabilities are checked differently, and the difference is worth kno
   the import graph, which is load-bearing: a qualified path reaches another module with no import at
   all, so a rule about imports would have missed the shorter of the two ways to write the mistake.
 
+### A generic answers for what it wrote, not for what its caller chose
+
+A generic has no execution until a type is chosen, and whoever chose it is usually somebody else. So
+the promise is asked of the generic's body **as written**, and a monomorphized instance answers for
+nothing at all. An allocator-free library may therefore be instantiated at a type whose `impl`
+allocates: the library promised nothing about a type it never saw.
+
+```sysl
+module lib
+@no_alloc
+
+trait Sink
+    put(*self, s: string)
+
+twice[S: Sink](s: *S, msg: string)
+    s.put(msg)
+    s.put(msg)
+```
+
+`put` is the caller's choice, so the program below is accepted although its `impl` allocates on every
+call — and it is accepted whether or not `lib` carries the clause, which is the point of it being a
+promise about `lib`'s own conduct.
+
+```sysl
+import lib.*
+import sysl.text.cstring
+
+struct Loud
+    n: int
+
+impl Sink for Loud
+    put(*self, s: string)
+        val c = cstring(s)
+        self.n += 1
+
+main()
+    var l = Loud(0)
+    twice(&l, "hi")
+    print(l.n)
+```
+
+**What the generic itself constructs is unchanged by the type argument**, so it is charged where it
+is written, at every instantiation:
+
+```sysl
+@no_alloc
+
+boxed[T](x: T) -> &T = x
+
+print(*boxed(3))
+```
+
+```error
+a reference needs an allocator, and this module declared '@no_alloc'
+```
+
+The same rule answers the two cases that look like ways around it. A trait's **default** body is
+written once, in the trait's own file, so a default that allocates is that module's conduct however
+the implementing type is chosen. And a generic that reaches an allocator through **another generic**
+is still its own module's, since a call in a generic body leads to the body that was written.
+
+Nothing is given up where the promise is load-bearing. On a target with no heap every module is
+allocator-free with no clause written anywhere, so the module that chose the type is itself checked,
+and the walk from its body goes straight through the instance to whatever the type argument dragged
+in. What the rule gives up is a refusal aimed at the wrong file.
+
 ## Platform selection rides the same name
 
 A module's members may be **split across platform-specific files** — `cpu.aarch64.sysl` and
