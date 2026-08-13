@@ -941,10 +941,11 @@ print(r.a)
 is a bitfield — it occupies part of a byte
 ```
 
-The **struct** may still be volatile where it is held, and that is the shape a register block wants:
-a `ctrl: volatile Ctrl` field makes `regs.ctrl.enable = true` one volatile read and one volatile
-write of the whole register, which is what C does. The two cycles a read-write register costs are not
-removable, and are not what is being refused.
+**A bitfield register is therefore not yet writable**, and that is worth saying plainly rather than
+leaving to be discovered. `volatile` qualifies *scalar* storage — a struct-typed field and a
+`*volatile Ctrl` are both refused for their own reason — so the qualifier cannot go on the struct
+instead. A driver keeps its `volatile u32` and its shifts for now; bitfields today are for laying
+data out, not for reaching a device.
 
 **A bitfield has no byte offset**, so `offsetof` says so rather than rounding down to the byte the
 field begins in:
