@@ -21,8 +21,14 @@ sysl --version
 sysl --help
 ```
 
-**macOS on Apple silicon only, for now.** Other platforms build from source, below; a Linux binary
-needs a build machine that is not the author's laptop and is not here yet.
+**macOS on Apple silicon, and Linux on x86_64 and arm64.** The tap picks the right one for the
+machine it is run on. Anything else builds from source, below.
+
+The Linux binaries need **glibc 2.34 or newer** — Ubuntu 22.04, Debian 12, RHEL 9, and anything
+later. That is a property of the machine they were built on rather than of sysl, and it is the one
+way an install can fail that the formula cannot check for you: `version GLIBC_2.34 not found` from
+the dynamic loader is this, and not a corrupted download. On an older distribution, build from
+source.
 
 ## Your first compile
 
