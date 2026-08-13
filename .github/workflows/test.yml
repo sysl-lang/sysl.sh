@@ -132,12 +132,16 @@ jobs:
       #
       # Both directory names are asked for: the library was `lib/` until it was renamed `library/`,
       # and `syslVersion` may name a commit on either side of that.
+      # `grammars` comes along for the same reason the library does. The highlighting grammar was
+      # this repository's until `weave` needed it, and it now lives beside the `SyslLexical` it is a
+      # claim about, where the test reconciling the two can see both. Fetching it here is what keeps
+      # the site and the compiler colouring sysl by one grammar rather than two.
       - name: Fetch the standard library at that commit
         run: |
           set -euo pipefail
 
           git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl sysl-src
-          git -C sysl-src sparse-checkout set library lib
+          git -C sysl-src sparse-checkout set library lib grammars
           git -C sysl-src checkout --detach "${{ steps.sysl.outputs.ref }}"
 
       # `lib/` locally whichever it was called upstream, because `build.sbt` points `SYSL_LIB` at that
@@ -152,6 +156,34 @@ jobs:
           fi
 
           test -d lib/sysl
+
+      # **The grammar is checked rather than copied, and that is deliberate.** It lives in the
+      # compiler now, beside the `SyslLexical` it is a claim about and the test that reconciles the
+      # two — but `docs.yml` builds the published site from this repository alone and fetches
+      # nothing, so the committed copy here is what the site actually renders with and cannot be
+      # replaced by one that only exists during a test run.
+      #
+      # So the two are diffed. Overwriting would be worse than duplicating: the tests would pass
+      # against the compiler's grammar while the deploy shipped this one, and a drift between them
+      # would be invisible in exactly the runs meant to catch it.
+      #
+      # Skipped where the compiler predates the move, since `syslVersion` may name a commit from
+      # before the grammar lived there at all.
+      - name: Check the grammar has not drifted from the compiler's
+        run: |
+          set -euo pipefail
+
+          if [ ! -f sysl-src/grammars/sysl.tmLanguage.json ]; then
+            echo "this compiler predates the grammar moving into it — nothing to check against"
+            exit 0
+          fi
+
+          if ! diff -u sysl-src/grammars/sysl.tmLanguage.json docs/grammars/sysl.tmLanguage.json; then
+            echo
+            echo "docs/grammars/sysl.tmLanguage.json differs from the compiler's."
+            echo "The compiler's is canonical — copy it over and commit."
+            exit 1
+          fi
 
       # **`GITHUB_TOKEN` has to be passed in explicitly.** Actions does not put it in a step's
       # environment the way it does `GITHUB_ACTOR` and the rest — it exists only as

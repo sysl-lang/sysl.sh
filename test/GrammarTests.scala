@@ -13,6 +13,12 @@ import org.scalatest.matchers.should.Matchers
  * simply has little to highlight rather than like a fault, so it survives being looked at. `ref` did
  * exactly that: reserved, taught in the tour, and unstyled on the published page.
  *
+ * **The compiler owns the grammar now** — `sysl weave` renders literate sources with it, so it lives
+ * beside the `SyslLexical` it is a claim about and has a `GrammarTests` of its own there. The copy
+ * here is not redundant with that one: `docs.yml` builds the published site from this repository
+ * alone and fetches nothing, so **this file is what the site actually renders with**. `test.yml`
+ * diffs the two and fails on a drift; this suite checks the one that deploys.
+ *
  * Both directions are checked against the grammar's **`keyword` section only**. The predeclared
  * scalars are styled from a section of their own and are deliberately *not* reserved words — that is
  * what lets the open `iN` / `uN` families need no lexical support — so a check spanning the whole

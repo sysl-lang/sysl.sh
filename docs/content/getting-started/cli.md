@@ -21,10 +21,11 @@ the path is standing on.
 | `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
 | `sysl emit-header <path>` | print the C header for what a module exports |
-| `sysl doc <path>` | render a literate source as Markdown |
+| `sysl weave <path>` | render a literate source as an HTML document |
+| `sysl tangle <path>` | print the program a literate source holds |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is a tenth, and it has a page of its own — see
+`sysl prove` is an eleventh, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -228,23 +229,31 @@ sysl emit-llvm hello.sysl
 The IR to stdout, the same text `run` and `build` hand to clang. Nothing is assembled and no
 toolchain is needed for it.
 
-### `doc`
+### `weave`
 
 ```bash
-sysl doc guide/lisp/lisp.lsysl
-sysl doc library/sysl/regex -o regex.md
+sysl weave guide/lisp/lisp.lsysl -o lisp.html
+sysl weave library/sysl/regex -o documents/
 ```
 
-A **literate** source rendered as Markdown. A `.lsysl` file is a Markdown document whose
+A **literate** source rendered as an HTML document. A `.lsysl` file is a Markdown document whose
 four-column-indented part is the program, which is what makes one readable with nothing rendering it
-— and it is also what this command exists to undo. An indented code block carries no *language*, so
-nothing can highlight it and nothing scanning for the code can find it. `doc` puts each block inside
-a fence tagged `sysl` instead. Prose, illustrations and heading levels come through exactly as
-written.
+— and an indented code block carries no *language*, so nothing can highlight it. `weave` tells the
+renderer that an indented block is sysl, which is the whole of the transformation: the source reaches
+the renderer exactly as written, and prose, tables, illustrations and heading levels are its own
+business.
 
-The output goes to standard output, or to the file `-o` names. A path holding several literate files
-renders as one document with a rule between them, and the ordinary `.sysl` files in the same tree are
-passed over — a tree with no literate source at all is refused rather than producing an empty page.
+What comes out is one file that opens by itself. It carries its own styling, in a light and a dark
+palette; its code is coloured by the same grammar this site highlights with; and its mathematics is
+set by KaTeX, which the page links. That last is the one thing a woven document needs the network
+for — the prose and the code are markup in the file, so a document read offline loses its equations
+to TeX source and nothing else.
+
+The output goes to standard output, or to what `-o` names. **A path holding several literate sources
+writes one document each**, and `-o` then names a directory: a woven document is something somebody
+opens, so the unit is the file that was written rather than the tree. The ordinary `.sysl` files
+alongside are passed over, and a tree with no literate source at all is refused rather than producing
+an empty page.
 
 It is a **source-level** command: no target, no standard module, no libraries. A package's prose is
 worth reading on a machine that could not build it. What it does share with a compilation is the
@@ -252,7 +261,26 @@ reading, so a file the compiler would refuse — a tab in an indent, a fence tha
 refused here too, with the same message.
 
 This is not an API reference generated from declarations. sysl has no documentation comment yet, so
-there is nothing for such a thing to read.
+there is nothing for such a thing to read, and `doc` is left unclaimed for the day there is.
+
+### `tangle`
+
+```bash
+sysl tangle guide/lisp/lisp.lsysl
+sysl tangle guide/lisp/lisp.lsysl -o lisp.sysl
+```
+
+The other half of a literate system: the program, with the prose stripped. A build tangles anyway —
+that is how a `.lsysl` file compiles at all — so what this adds is a way to **see** it.
+
+That is worth having when a literate file misbehaves. A block indented that should not have been, a
+fence that swallowed a function: the question is always what the compiler actually read, and this is
+how to ask. It also hands the program to anything that does not know the format — a tool, a paste, a
+bug report.
+
+**The prose is replaced by blank lines rather than removed**, so line 100 of the output is line 100
+of the source. That is what lets a diagnostic about the program point into the document it was
+written in, and it is why the output is not as short as the program looks.
 
 ### `targets`
 
