@@ -260,20 +260,24 @@ The registry, one line per machine — the name to write after `--target`, the L
 for, and, for a target sysl knows and cannot build for, why not:
 
 ```
-aarch64-macos         arm64-apple-macosx
-x86_64-macos          x86_64-apple-macosx
-aarch64-linux         aarch64-unknown-linux-gnu
-x86_64-linux          x86_64-unknown-linux-gnu
-riscv64-linux         riscv64-unknown-linux-gnu
-x86_64-windows        x86_64-pc-windows-msvc
-aarch64-freestanding  aarch64-none-elf
-x86_64-freestanding   x86_64-unknown-none-elf
-riscv64-freestanding  riscv64-unknown-elf
-thumb-freestanding    thumbv8m.main-none-eabihf
-thumb-freestanding-softfp  thumbv8m.main-none-eabi
-thumbv6m-freestanding  thumbv6m-none-eabi
-riscv32-freestanding  riscv32-unknown-elf
-x86-linux             i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
+aarch64-macos                arm64-apple-macosx
+x86_64-macos                 x86_64-apple-macosx
+aarch64-linux                aarch64-unknown-linux-gnu
+x86_64-linux                 x86_64-unknown-linux-gnu
+riscv64-linux                riscv64-unknown-linux-gnu
+x86_64-windows               x86_64-pc-windows-msvc
+aarch64-freestanding         aarch64-none-elf
+x86_64-freestanding          x86_64-unknown-none-elf
+riscv64-freestanding         riscv64-unknown-elf
+thumb-freestanding           thumbv8m.main-none-eabihf
+thumb-freestanding-softfp    thumbv8m.main-none-eabi
+thumb-freestanding-soft      thumbv8m.main-none-eabi
+thumbv6m-freestanding        thumbv6m-none-eabi
+thumbv7m-freestanding        thumbv7m-none-eabi
+thumbv7em-freestanding       thumbv7em-none-eabihf
+thumbv7em-freestanding-soft  thumbv7em-none-eabi
+riscv32-freestanding         riscv32-unknown-elf
+x86-linux                    i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
 
 The line for the machine you are on is marked `(this machine)`, and a last line repeats what that
@@ -281,36 +285,49 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
-**The last four freestanding rows are 32-bit, and they are the two Raspberry Pi microcontrollers.**
-The RP2350 — the Pico 2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040
-— the original Pico — has a pair of Cortex-M0+. All are here because a microcontroller is what
-*freestanding* is mostly for: the three 64-bit freestanding rows reach kernels and hypervisors, which
-is a different audience. `thumb` rather than `arm` names the Arm ones because a Cortex-M executes
-Thumb only, so an arm written for A32 would assemble for a machine that cannot run it.
+**The last eight freestanding rows are 32-bit, and they are microcontrollers.** The RP2350 — the Pico
+2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040, the original Pico, has
+a pair of Cortex-M0+; the Armv7E-M rows are ST's parts; and Armv7-M is the Cortex-M3. All are here
+because a microcontroller is what *freestanding* is mostly for: the three 64-bit freestanding rows
+reach kernels and hypervisors, which is a different audience. `thumb` rather than `arm` names the Arm
+ones because a Cortex-M executes Thumb only, so an arm written for A32 would assemble for a machine
+that cannot run it.
 
-**The Cortex-M33 has two rows because the float ABI is the C project's to pick rather than sysl's.**
-`thumb-freestanding` passes floating-point arguments in VFP registers, which is what `eabihf` selects
-and what clang does with `thumbv8m.main` unasked; `thumb-freestanding-softfp` passes them in core
-registers, which is what `-mfloat-abi=softfp` means and what pico-sdk builds by default. The two
+**The Cortex-M33 has three rows, because neither the float ABI nor the FPU's presence is sysl's to
+pick.** `thumb-freestanding` passes floating-point arguments in VFP registers, which is what `eabihf`
+selects and what clang does with `thumbv8m.main` unasked; `thumb-freestanding-softfp` passes them in
+core registers, which is what `-mfloat-abi=softfp` means and what pico-sdk builds by default. The two
 cannot be mixed — GNU ld refuses the link outright, saying one object *"uses VFP register arguments"*
 and the other *"does not"* — so a sysl archive joining a C build has to agree with that build, and
 offering only the first row meant the C had to be rebuilt to follow sysl. Pick the one your project
 already uses; if you do not know, `softfp` is the pico-sdk default.
 
-`softfp` is not `soft`, and the difference is worth a sentence because both words are in circulation:
-`-mfloat-abi=soft` means no FPU instructions at all, while `softfp` uses the `fpv5-d16` this core has
-and changes only the calling convention.
+**`thumb-freestanding-soft` is the third, and it is for a board with no unit at all.** `softfp` is not
+`soft`: `-mfloat-abi=soft` means no FPU instructions whatever, while `softfp` uses the `fpv5-d16` this
+core has and changes only the calling convention. That distinction is not something a triple can
+carry — both rows are `thumbv8m.main-none-eabi`, and clang compiles `a * b` on an `f32` to `vmla.f32`
+under either suffix — so sysl adds `-mfpu=none` for the `soft` row and the two are told apart by that
+rather than by their names. **Reach for it when your board's headers say the FPU is off**, which is
+where the difference announces itself: CMSIS refuses the build with *"Compiler generates FPU
+instructions for a device without an FPU (check `__FPU_PRESENT`)"*, and every Zephyr MPS2 board is
+configured that way. Getting it wrong the other way is worse than a refusal — the image links, boots,
+and takes a fault at whatever arithmetic reached a VFP instruction first.
 
-**`thumbv6m-freestanding` is the third Thumb row and is a different architecture, not a third
-convention.** It is the RP2040's Cortex-M0+ — Armv6-M, which came before Armv8-M rather than being a
-subset of its options — and its name carries the sub-architecture where the other two do not, because
-that is the whole of what separates it. Build an original Pico's program for this one; building it
-for either `thumb-` row produces instructions the core cannot execute, and the failure is a fault at
-whatever ran first rather than a refusal at the link.
+`thumbv7em-freestanding` and `thumbv7em-freestanding-soft` are that same pair for Armv7E-M — an
+STM32 F4 or H7 with the FPU on, and one with it off.
 
-Its float column would mislead if you read it beside the row above. Both are soft, for unrelated
-reasons: `softfp` is a *convention* chosen over an FPU that is present, and the M0+ has no FPU at
-all.
+**`thumbv6m-freestanding` and `thumbv7m-freestanding` are different architectures, not further
+conventions.** The first is the RP2040's Cortex-M0+ — Armv6-M, which came before Armv8-M rather than
+being a subset of its options — and the second is the Cortex-M3. Build an original Pico's program for
+`thumbv6m`; building it for a `thumb-` row produces instructions the core cannot execute, and the
+failure is a fault at whatever ran first rather than a refusal at the link. Neither core has a
+floating-point unit in the architecture, so neither needs a `-soft` sibling: there was never a second
+answer to give.
+
+Build a Cortex-M3's program for `thumbv7m` rather than for `thumbv6m`, even though Armv6-M code runs
+on an M3. What does not survive the substitution is the *headers*: a real project reads its own
+configuration, so it takes `CONFIG_CPU_CORTEX_M3` to mean Armv7-M and reaches for `BASEPRI`, while
+CMSIS reading an Armv6-M triple hands it an intrinsic set that has none.
 
 **One thing needs the board's help on that target, and only one.** Armv6-M has no atomic
 instructions, so a program using `&sync` — the shared counted reference — compiles to calls the
@@ -404,7 +421,7 @@ sysl: error: 'run' executes what it builds, and 'x86_64-linux' is not this machi
 A name the registry does not have is answered with the names it does:
 
 ```
-sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, riscv32-freestanding, x86-linux
+sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, x86-linux
 ```
 
 ### `-v`, `--verbose`
