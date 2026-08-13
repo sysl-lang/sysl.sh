@@ -1247,11 +1247,24 @@ for, and that building it for another fails loudly.
 
 ## A library may carry C
 
-**A `.c` file dropped anywhere in a library's tree is compiled with it and archived beside it.**
+**A `.c` file dropped in any module of a library's tree is compiled with it and archived beside it.**
 Nothing declares it and nothing lists it: the build already walks every directory, and a C file found
-there is compiled for the same target and becomes one more member of the `.syslib`. The sysl side
-reaches it through the `extern` that was already the way to name a symbol the linker has — so the
-*language* gains nothing, and the whole of the feature is in the build.
+in one that holds source is compiled for the same target and becomes one more member of the
+`.syslib`. The sysl side reaches it through the `extern` that was already the way to name a symbol
+the linker has — so the *language* gains nothing, and the whole of the feature is in the build.
+
+**A module, and not merely a directory.** A project is not the only thing that writes into its own
+tree: `cmake -B build` puts a build directory *inside* it and fills that with generated C meant for
+another compiler. A directory holding no sysl was never a module, so its C was never the tree's and
+the build passes it by — while still descending through it, because a module may sit any depth below
+a directory holding nothing itself. **The tree's own root is the exception**, since the root is the
+tree rather than a directory in it: a package namespaced by reverse DNS has its modules at
+`sh/sysl/foo/` and nothing at the top, so C belonging to no single module goes there.
+
+What this costs is a vendored C library laid out in sub-directories of its own: the ones holding no
+sysl are skipped, and a link error naming the symbols is what says so. Put the `.sysl` that declares
+those `extern`s in the directory and it is a module — which is where every binding written so far has
+put it anyway.
 
 **It exists because a binding to a real C library cannot be written without it.** Three things are
 reachable from C and from nothing else, and each blocks an ordinary POSIX interface:

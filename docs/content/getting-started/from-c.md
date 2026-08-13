@@ -286,7 +286,7 @@ open.
 **sysl on top, your C underneath.** An `extern` declares a symbol the linker already has, and
 `@link("z")` names the library that resolves it. Nothing is generated and no header is parsed — you
 write the declarations you use and no more, and one nothing calls costs the output nothing. A `.c`
-file dropped anywhere in the tree is compiled with it, which is how the parts a header hides — a
+file dropped in any module of the tree is compiled with it, which is how the parts a header hides — a
 macro, a `sizeof` only the header knows, an untagged union — get reached at all.
 
 **Your C on top, sysl underneath.** `@export` publishes a definition under a plain, unmangled symbol,
