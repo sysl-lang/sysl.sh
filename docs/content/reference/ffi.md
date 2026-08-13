@@ -230,6 +230,17 @@ convention asks for, and the call converts each value into and out of them. The 
 wrote is unchanged, nothing about it is visible in a program, and nothing about it applies to a
 struct handed over behind a `*T`.
 
+**A scalar narrower than a register is not quite free either.** A `u8` is a byte to both languages, so
+there is nothing to coerce — but it travels in a register a whole word wide, and most conventions
+require whoever hands it over to widen it to fill one first. Sysl writes that widening where the
+convention asks for it: on an argument at the call, and on the result of every function it defines,
+so that a `bool` answered to a C caller is a `bool` rather than one bit beside thirty-one undefined
+ones. Which values are widened, and whether by sign or by zero, is the *target's* answer rather than
+the language's — AArch64 outside Darwin widens nothing at all, Windows widens only `bool`, and
+RISC-V 64 widens a 32-bit value even when it is unsigned. As with the coercion above, none of it is
+visible in a program; it is worth stating because it is the part of the boundary a reader is likeliest
+to assume away.
+
 **`extern` implies C's convention and says nothing about any other.** The one case that needs
 something else is a function the *processor* enters rather than a caller, and that is a property of
 a definition rather than of a foreign declaration — see `interrupt`
