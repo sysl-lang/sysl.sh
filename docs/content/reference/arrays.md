@@ -31,7 +31,7 @@ var a = [1, 2, 3, 4]
 
 print(scribble(a), a[0])
 
-set_first(a[..])
+set_first(a)
 
 print(a[0])
 ```
@@ -250,7 +250,7 @@ decode(header: []const u8) -> []u8
     out
 
 var frame: [2]u8 = [3, 10]
-var body = decode(frame[..])
+var body = decode(frame)
 
 print(body.len, body[0], body[2])
 ```
@@ -479,12 +479,63 @@ total(xs: []const int) -> int
 
 var boxed: &[4]int = [1, 2, 3, 4]
 
-print(total(boxed[..]), boxed[2], boxed.len)
+print(total(boxed), boxed[2], boxed.len)
 ```
 
 ```output
 10 3 4
 ```
+
+That call says `total(boxed)` rather than `total(boxed)`, which is the next section.
+
+## An array where a view is asked for
+
+**A `[N]T` standing where a `[]T` is wanted is `a[..]`, written by the position instead of by hand.**
+An array is the one value that already knows both halves a view is made of — where the elements are,
+and how many — so nothing is taken on trust and no bound is guessed.
+
+It matters most where a whole API is caller-supplied storage, which is how anything freestanding is
+written: the caller lends, the callee fills, and nobody allocates.
+
+```sysl
+fill(s: []int, v: int)
+    for i in 0..<s.len do s[i] = v
+
+var a: [4]int = [0; 4]
+
+fill(a, 7)
+
+print(a[0], a[3], a.len)
+```
+
+```output
+7 7 4
+```
+
+It happens at every position that asks for a view rather than merely requiring one — an argument, a
+`val` or `var` with the view's type written on it, a `return`, a parameter's default — and a `&[N]T`
+converts on the same terms, with the reference as what the view is taken over.
+
+**What it does not do is change the storage's own terms.** A view of a `val` array is a `[]const T`,
+exactly as `a[..]` would give, so a `val` array reaching a `[]T` is refused and told which half is
+missing:
+
+```sysl
+fill(s: []int, v: int)
+    for i in 0..<s.len do s[i] = v
+
+val a = [1, 2, 3]
+
+fill(a, 7)
+```
+
+```error
+is a licence to write them — so the one does not become the other
+```
+
+A `&sync [N]T` does not convert either, for the reason it cannot be sliced. And a `*[N]T` is left
+out on purpose: the raw-pointer tier is written out where it is used, and a view of pointed-at
+storage taken silently is the one case where nothing in the type says the elements are really there.
 
 ## `[]const T` — a view that may not be written
 
@@ -498,7 +549,7 @@ scale(xs: []const int)
 
 var data = [1, 2, 3]
 
-scale(data[..])
+scale(data)
 ```
 
 ```error
@@ -529,10 +580,12 @@ is a licence to write them — so the one does not become the other
 Giving up the ability to write is a promise the caller can always make; inventing one is the whole of
 what the type exists to stop.
 
-**What produces one.** Slicing a `val`, since read-only storage gives a read-only view. `s.bytes`,
-whose elements are a string's own and may be a literal's. Re-slicing one, because a bit a second
-subscript dropped would make `xs[..]` the way around `xs`. And a buffer literal written where one is
-wanted, since storage an expression makes has no other holder to disagree with it.
+**What produces one.** Slicing a `val`, since read-only storage gives a read-only view — and so is
+a `val` array standing where a view is asked for, which is the same rule reached without the
+brackets. `s.bytes`, whose elements are a string's own and may be a literal's. Re-slicing one,
+because a bit a second subscript dropped would make `xs[..]` the way around `xs`. And a buffer
+literal written where one is wanted, since storage an expression makes has no other holder to
+disagree with it.
 
 ```sysl
 readonly(xs: []const int) -> usize
@@ -545,7 +598,7 @@ first(xs: []const int) -> int
 
 var a = [1, 2, 3, 4]
 
-print(readonly(a[..]), first(a[..]))
+print(readonly(a), first(a))
 ```
 
 ```output

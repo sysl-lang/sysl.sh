@@ -18,10 +18,10 @@ import sysl.slices.{sort, is_sorted, binary_search}
 
 var xs = [5, 3, 8, 1, 9, 2]
 
-sort(xs[..])
+sort(xs)
 
 print(xs)
-print(is_sorted(xs[..]))
+print(is_sorted(xs))
 ```
 
 ```output
@@ -40,9 +40,9 @@ import sysl.slices.{index_of, last_index_of, contains, min_index, max_index}
 
 var xs = [1, 2, 3, 2, 5]
 
-print(index_of(xs[..], 2).unwrap(), last_index_of(xs[..], 2).unwrap())
-print(contains(xs[..], 5), contains(xs[..], 4))
-print(min_index(xs[..]).unwrap(), max_index(xs[..]).unwrap())
+print(index_of(xs, 2).unwrap(), last_index_of(xs, 2).unwrap())
+print(contains(xs, 5), contains(xs, 4))
+print(min_index(xs).unwrap(), max_index(xs).unwrap())
 ```
 
 ```output
@@ -62,16 +62,16 @@ import sysl.slices.{equal, starts_with, ends_with, reverse, fill, swap}
 
 var a = [1, 2, 3, 4]
 
-print(equal(a[..], [1, 2, 3, 4][..]))
-print(starts_with(a[..], [1, 2][..]), ends_with(a[..], [3, 4][..]))
+print(equal(a, [1, 2, 3, 4]))
+print(starts_with(a, [1, 2]), ends_with(a, [3, 4]))
 
-reverse(a[..])
+reverse(a)
 print(a)
 
-swap(a[..], 0, 3)
+swap(a, 0, 3)
 print(a)
 
-fill(a[..], 7)
+fill(a, 7)
 print(a)
 ```
 
@@ -101,7 +101,7 @@ import sysl.slices.sort_stable
 var xs = [(2, 1), (1, 1), (2, 2), (1, 2)]
 var scratch = [(0, 0); 4]
 
-print(sort_stable(xs[..], scratch[..]))
+print(sort_stable(xs, scratch))
 print(xs)
 ```
 
@@ -119,7 +119,7 @@ import sysl.slices.sort_by
 
 var xs = [1, 5, 3, 2]
 
-sort_by(xs[..], (a, b) -> b < a)
+sort_by(xs, (a, b) -> b < a)
 
 print(xs)
 ```
@@ -168,8 +168,8 @@ import sysl.slices.binary_search
 
 var xs = [1, 3, 5, 7, 9]
 
-val (found, at) = binary_search(xs[..], 5)
-val (missing, where) = binary_search(xs[..], 4)
+val (found, at) = binary_search(xs, 5)
+val (missing, where) = binary_search(xs, 4)
 
 print(found, at)
 print(missing, where)
@@ -203,7 +203,7 @@ import sysl.slices.as_ptr
 
 var xs = [10, 20, 30]
 
-print(*as_ptr(xs[..]))
+print(*as_ptr(xs))
 print(as_ptr(xs[0..<0]) == null)
 ```
 

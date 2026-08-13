@@ -168,8 +168,8 @@ find(xs: []const int, target: int) -> Option[usize]
 
 var data = [4, 5, 6]
 
-print(find(data[..], 5).is_some(), find(data[..], 9).is_none())
-print("fallback:", find(data[..], 9).unwrap_or(99))
+print(find(data, 5).is_some(), find(data, 9).is_none())
+print("fallback:", find(data, 9).unwrap_or(99))
 ```
 
 ```output

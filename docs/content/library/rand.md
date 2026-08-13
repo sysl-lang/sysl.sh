@@ -130,7 +130,7 @@ import sysl.rand.rng
 var g = rng(2024, 1)
 var xs = [1, 2, 3, 4, 5]
 
-g.shuffle(xs[..])
+g.shuffle(xs)
 
 print(xs.len)
 ```

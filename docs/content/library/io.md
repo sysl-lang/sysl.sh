@@ -99,11 +99,11 @@ var m = Memory("alpha\nbeta".bytes, 0)
 var r: *Reader = &m
 var window: [4]u8
 
-var got = r.read(window[..])
+var got = r.read(window)
 
 print(got.len, got[0], got[3])
 
-var more = r.read(window[..])
+var more = r.read(window)
 
 print(more.len, more[0])
 print(m.failed())

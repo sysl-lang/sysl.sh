@@ -178,7 +178,7 @@ first_even(xs: []const int) -> Option[int]
 
 var data = [1, 3, 6, 7]
 
-first_even(data[..]) match
+first_even(data) match
     Some(n) -> print("found:", n)
     None    -> print("none")
 ```
@@ -329,9 +329,9 @@ find(xs: []const int, target: int) -> Option[usize]
 
 var data = [4, 5, 6]
 
-if find(data[..], 5) is Some(i) then print("at index:", i)
+if find(data, 5) is Some(i) then print("at index:", i)
 
-if find(data[..], 9) is not Some(_) then print("nine is not there")
+if find(data, 9) is not Some(_) then print("nine is not there")
 ```
 
 ```output
