@@ -58,7 +58,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 //
 // A release bumps this to the real version on `dev`, then merges dev into `stable` in both
 // repositories. That is the one moment the two branches say the same thing.
-val syslVersion = "0.0.47-0a4270b2"
+val syslVersion = "0.0.47"
 
 lazy val root = project
   .in(file("."))
