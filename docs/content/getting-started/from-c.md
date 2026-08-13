@@ -253,9 +253,11 @@ pointer-and-length pair C makes you carry by hand, with the bounds check that pa
 - **An untagged union.** A `union` whose discriminant lives somewhere else has no spelling. Where
   the discriminant is real, an `enum` is it; where the point is reinterpreting bytes, that is
   `ptr_cast` and it is in [memory](/reference/memory/).
-- **A bitfield laid out in bits.** `u5` and `u12` are real types with real arithmetic, but storage
-  rounds up to whole bytes — a narrow width buys correct wrapping and range checking, not tight
-  packing.
+- **A bitfield *declarator*.** There is no `unsigned x : 5`, and nothing is missing by its absence:
+  inside a `@packed` struct a `u5` field already occupies exactly five bits, so a width is written
+  where every other width is. What sysl adds is that the two things C leaves to the implementation —
+  which end the bits fill from, and whether one may cross a byte — are fixed by the language.
+  [attributes](/reference/attributes/) has the rules.
 - **`goto`.** Not even a reserved word. A labelled `break` or `continue` reaches the case that
   actually comes up, which is leaving a nested loop.
 - **The preprocessor.** No macros, no textual inclusion, no include guards. `const` covers a
