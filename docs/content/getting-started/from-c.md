@@ -16,7 +16,7 @@ confirming what you already expected.
 | `int`, `char`, `unsigned` | `int`, `byte`, `uint` | a width is a **type**; nothing promotes |
 | `T *` | `*T` | the same pointer, spelled so you can grep for it |
 | `malloc` / `free` | `&T` | construct where a `&T` is expected; the count frees it |
-| `T a[N]` | `[N]T` | a fixed array — and it does **not** decay |
+| `T a[N]` | `[N]T` | a fixed array — it converts to a view, and the length comes with it |
 | a `T *` plus a length | `[]T` | one value that carries the length |
 | `const T *` | `[]const T` | the read-only-ness is in the type and travels with it |
 | `char *` | `string` | validated UTF-8, with a length, and no terminator |
@@ -64,10 +64,12 @@ without thinking. A parent pointer, a back-link, an entry in an index: in C thos
 and the reason they work is that they do not own. `weak` is that, said out loud — it does not keep
 the object alive, and reading it is a question rather than an assumption.
 
-## An array does not decay
+## An array converts, and the length comes with it
 
-In C, an array in an expression becomes a pointer to its first element and the length is gone. In
-sysl the two are different types and the conversion is written:
+In C, an array in an expression becomes a pointer to its first element and **the length is gone** —
+which is why every C function taking a buffer takes a count beside it, and why the two can disagree.
+sysl has the same convenience and none of the loss: an array converts where a view is asked for, and
+what it converts to carries the length.
 
 ```sysl
 var buf: [4]int
@@ -75,7 +77,7 @@ var buf: [4]int
 buf[0] = 10
 buf[1] = 20
 
-var view = buf[..]
+var view: []int = buf
 
 print(view.len, view[1])
 ```
@@ -84,22 +86,30 @@ print(view.len, view[1])
 4 20
 ```
 
-`[4]int` is the storage; `[]int` is a view of it that carries `len` along with the pointer. `buf[..]`
-is the whole array as a view, and it is written because leaving it implicit is where C loses the
-length. Ask for the conversion without writing it and the compiler says so:
+`[4]int` is the storage; `[]int` is a view of it — three words rather than one: owner, pointer,
+length. So a function that takes a buffer takes one parameter, and the call reads as it does in C:
 
 ```sysl
+zero(xs: []int)
+    for i in 0..<xs.len do xs[i] = 0
+
 var a = [1, 2, 3]
-var v: []int = a
-print(v.len)
+
+zero(a)
+
+print(a[0], a[2], a.len)
 ```
 
-```error
-cannot initialize 'v': declared []int but the value is [3]int
+```output
+0 0 3
 ```
+
+`a` is still a `[3]int`, and `zero` cannot be told a wrong length because it was not told one. The
+explicit `a[..]` writes the same conversion; what you reach for it for is *part* of the array rather
+than all of it — `a[1..]`, `a[..<2]`.
 
 Every index through a view is bounds-checked against the length it carries. That is the one cost
-sysl adds here, and it buys the class of bug that C's decay makes unfindable.
+sysl adds here, and it buys the class of bug C's decay makes unfindable.
 
 ## Widths are types, and nothing promotes
 

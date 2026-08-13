@@ -237,7 +237,7 @@ total(shapes: []const &Shape) -> int
 
 var shapes: [2]&Shape = [Rect(3, 4), Square(5)]
 
-print("total:", total(shapes[..]))
+print("total:", total(shapes))
 ```
 
 ```output

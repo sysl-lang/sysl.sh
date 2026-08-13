@@ -77,7 +77,7 @@ half(7) match
     Ok(v)  -> print("half:", v)
     Err(e) -> print("refused:", e)
 
-print(first_even(data[..]).unwrap_or(-1))
+print(first_even(data).unwrap_or(-1))
 ```
 
 ```output

@@ -53,11 +53,11 @@ import sysl.text.from_utf8
 var good: [2]u8 = [0xC3, 0xA9]
 var bad: [2]u8 = [0xC3, 0x28]
 
-from_utf8(good[..]) match
+from_utf8(good) match
     Ok(t) -> print("ok", t.len, t)
     Err(e) -> print("bad", e.offset)
 
-from_utf8(bad[..]) match
+from_utf8(bad) match
     Ok(t) -> print("ok", t.len)
     Err(e) -> print("bad at", e.offset, "truncated:", e.truncated)
 ```
@@ -93,7 +93,7 @@ could do is that last line, because every safe route to a `string` already carri
 ```sysl
 var bytes: [3]u8 = [104, 105, 33]
 
-print(from_utf8_unchecked(bytes[..]))
+print(from_utf8_unchecked(bytes))
 ```
 
 ```output

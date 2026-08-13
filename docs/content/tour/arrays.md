@@ -110,15 +110,17 @@ sum(xs: []int) -> int
 
 var data = [1, 2, 3, 4, 5]
 
-print(sum(data[..]), sum(data[1..3]), sum(data[..<2]), sum(data[3..]))
+print(sum(data), sum(data[1..3]), sum(data[..<2]), sum(data[3..]))
 ```
 
 ```output
 15 9 3 9
 ```
 
-`data[..]` is the whole thing as a slice, `data[1..3]` is elements 1 through 3, `data[..<2]` is the
-first two, and `data[3..]` runs to the end. "The first `n`" is `xs[..<n]`, which matches the
+`data` on its own is the whole thing: an array standing where a view is asked for **is** a view of
+itself, so the first call needs no subscript at all. The rest name part of it — `data[1..3]` is
+elements 1 through 3, `data[..<2]` is the first two, and `data[3..]` runs to the end. Written out,
+the whole of it is `data[..]`, which is what the position does for you. "The first `n`" is `xs[..<n]`, which matches the
 `for i in 0..<n` that walks it — the two must agree, and that is why the inclusive `..` is the one
 that looks unusual rather than the one that is wrong.
 
@@ -136,7 +138,7 @@ scale(xs: []const int)
 
 var data = [1, 2, 3]
 
-scale(data[..])
+scale(data)
 ```
 
 ```error

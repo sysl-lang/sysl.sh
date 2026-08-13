@@ -223,15 +223,15 @@ var good: [3]u8 = [104, 195, 169]
 var cut: [2]u8 = [104, 195]
 var surr: [3]u8 = [237, 160, 128]
 
-from_utf8(good[..]) match
+from_utf8(good) match
     Ok(t) -> print("ok", t)
     Err(e) -> print("refused", e.offset, e.truncated)
 
-from_utf8(cut[..]) match
+from_utf8(cut) match
     Ok(t) -> print("ok", t)
     Err(e) -> print("refused", e.offset, e.truncated)
 
-from_utf8(surr[..]) match
+from_utf8(surr) match
     Ok(t) -> print("ok", t)
     Err(e) -> print("refused", e.offset, e.truncated)
 ```
@@ -270,8 +270,8 @@ var cut: [3]u8 = [97, 226, 130]
 var stray: [3]u8 = [97, 255, 98]
 
 print(from_utf8_lossy("héllo".bytes))
-print(from_utf8_lossy(cut[..]))
-print(from_utf8_lossy(stray[..]))
+print(from_utf8_lossy(cut))
+print(from_utf8_lossy(stray))
 ```
 
 ```output
@@ -435,8 +435,8 @@ import sysl.text.Search
 var raw: [3]u8 = [104, 105, 33]
 var needle: [2]u8 = [105, 33]
 
-print(raw[..].contains(needle[..]), raw[..].index_of(needle[..]).unwrap())
-print(raw[..].starts_with([104u8][..]), raw[..].is_empty())
+print(raw[..].contains(needle), raw[..].index_of(needle).unwrap())
+print(raw[..].starts_with([104u8]), raw[..].is_empty())
 print("  hello  ".bytes.trim().len)
 ```
 
@@ -466,7 +466,7 @@ var words = ["x", "y", "z"]
 
 print(parts.len, parts[0], parts[2] == "", parts[3])
 print(fields("  one   two  ").len)
-print(join(words[..], "-"))
+print(join(words, "-"))
 print(repeat("ab", 3), repeat("ab", 0) == "")
 print(replace_all("aaa", "aa", "b"))
 print(to_upper("héllo"), to_lower("HÉLLO"))
@@ -534,7 +534,7 @@ import sysl.text.join
 
 var words = ["a", "b"]
 
-print(join(words[..], "-"))
+print(join(words, "-"))
 ```
 
 ```error

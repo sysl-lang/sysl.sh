@@ -232,7 +232,7 @@ import sysl.fs.open
 var f = open("/tmp/sysl-fs-doc-3.txt").unwrap()
 var window: [4]u8
 
-f.read(window[..])
+f.read(window)
 ```
 
 ```error
@@ -256,7 +256,7 @@ var window: [4]u8
 
 f.seek(6).unwrap()
 
-var got = f.read(window[..])
+var got = f.read(window)
 
 print(f.tell().unwrap(), got.len, got[0])
 print(f.size().unwrap())
@@ -297,7 +297,7 @@ print(f.close().is_ok())
 print(f.seek(0).unwrap_err(), f.seek(0).unwrap_err().code())
 
 var window: [4]u8
-var got = f.read(window[..])
+var got = f.read(window)
 
 print(got.len, f.failed())
 

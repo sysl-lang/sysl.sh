@@ -228,11 +228,11 @@ import sysl.text.from_utf8
 var good: [3]u8 = [104, 105, 33]
 var bad: [2]u8  = [104, 255]
 
-from_utf8(good[..]) match
+from_utf8(good) match
     Ok(s)  -> print("text:", s)
     Err(e) -> print("bad at", e.offset)
 
-from_utf8(bad[..]) match
+from_utf8(bad) match
     Ok(s)  -> print("text:", s)
     Err(e) -> print("bad at", e.offset, "truncated:", e.truncated)
 ```

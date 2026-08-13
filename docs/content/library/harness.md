@@ -117,7 +117,7 @@ to look is a debugger and a stopped core:
 import sysl.harness.*
 
 bytes()
-    check_slice_eq([u8(1), u8(2), u8(3)][..], [u8(1), u8(9), u8(3)][..])
+    check_slice_eq([u8(1), u8(2), u8(3)], [u8(1), u8(9), u8(3)])
 
 run("bytes", &bytes)
 finish()

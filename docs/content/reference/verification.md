@@ -444,7 +444,7 @@ insertion(a: []int, n: int) -> int
 
 var xs = [5, 2, 9, 1, 7]
 
-print(insertion(xs[..], 5))
+print(insertion(xs, 5))
 print(xs[0], xs[1], xs[2], xs[3], xs[4])
 ```
 
