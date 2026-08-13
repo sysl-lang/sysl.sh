@@ -357,11 +357,12 @@ runs, and they do not stop being checked.
 A helper only a test calls leaves with it, because it becomes unreachable and pruning notices; a
 helper the program also calls stays, because the program still calls it.
 
-What a test build keeps regardless is the three definitions **nothing in the program names**: an
-interrupt handler, an [`@export`](/reference/ffi/), and a [destructor](/reference/memory/). Each is
-entered from somewhere no walk over the program can see — the processor, a caller outside this
-compilation, and the release hook generated from a payload type — so each is a root wherever the walk
-begins. A test build swaps the roots, putting the tests where the entry point was, and these three
+What a test build keeps regardless is the four definitions **nothing in the program names**: an
+interrupt handler, an [`@export`](/reference/ffi/), a `@section` definition (below), and a
+[destructor](/reference/memory/). Each is entered from somewhere no walk over the
+program can see — the processor, a caller outside this compilation, a linker script gathering a named
+section, and the release hook generated from a payload type — so each is a root wherever the walk
+begins. A test build swaps the roots, putting the tests where the entry point was, and these four
 are roots there too. They have to be: leaving them out would not make them reachable from the tests
 instead, it would make them reachable from nothing.
 
@@ -1178,6 +1179,13 @@ reader.
 
 Without that second half the attribute would compile, link, and place nothing. The failure would be
 the *absence* of a section, which is not a thing anybody looks for.
+
+**A placed definition a dependency supplied is kept only where your program reaches its module**,
+which is the rule [the FFI page](/reference/ffi/) states for every kind of root at once. It bites
+hardest here, because being marked is exactly what stops anything downstream undoing it: a placed
+definition kept for want of the rule is bytes in your image that no optimizer will remove, in the
+region the attribute exists to manage. A package whose placed definition you want is one you name —
+an `import` is enough.
 
 ### What it may not mark
 

@@ -457,18 +457,30 @@ distinction the standard module fails.
 `sysl emit-header` prints the same declarations without building anything, for a project that
 generates its headers as a build step.
 
-### An export a dependency supplied
+### What a dependency's module contributes
 
-**An `@export` in a module a dependency supplied reaches the archive only where your program reaches
-that module.** In your own tree the attribute means what it says and nothing qualifies it: the export
-is a root of the reachability walk, which is what lets a `build-c` compilation — with no entry point
-at all — keep anything.
+**A module a dependency supplied contributes to your build only where your program reaches that
+module.** In your own tree the four attributes below mean what they say and nothing qualifies them:
+each is a root of the reachability walk, which is what lets a `build-c` compilation — with no entry
+point at all — keep anything.
 
 A dependency is different because a package's source root is compiled **whole** rather than by what
 you import, so every module of every `--lib` root and every fetched package is in the compilation
 whether or not you named it. For an ordinary declaration that costs nothing, since pruning drops what
-no body reaches. An export is the one declaration no body reaches, so without this rule an unimported
-module's symbol landed in your archive.
+no body reaches. **These four are the declarations no body reaches**, so without this rule an
+unimported module's contribution landed in your build anyway:
+
+| in a module you never reach | what it used to cost you |
+|---|---|
+| an `@export` | its symbol in your archive |
+| an `interrupt` handler | a handler in your vector table |
+| a [`@section`](/reference/attributes/) definition | bytes in your image, marked so that nothing removes them |
+| a [destructor](/reference/memory/) | a function nothing can call |
+
+**The rule is about where the declaration came from rather than about which attribute it carries**,
+and that is what makes it hold. A kind left unconditional would keep whatever *else* the same
+function carries — an export that is also placed, or that is also a handler, would survive for the
+second reason and land its symbol anyway.
 
 What that cost was a package **carrying its own program**. A binding whose tests have to run on real
 hardware writes them as an application with an `@export("main")`, and inside the package that handed
@@ -486,9 +498,11 @@ the walk over function bodies: a module holding nothing but an exported C entry 
 anything calls, and a rule asking whether you *called* something there would drop exactly the case an
 export exists for.
 
-**If a package wants a symbol published regardless, it puts it in a module its consumers import.** An
-export is a claim about a symbol *your* artifact publishes, and an artifact that never reaches the
-module has not asked for it.
+**If a package wants a symbol, a handler or a placed definition published regardless, it puts it in a
+module its consumers import.** Each is a claim about what *your* image contains, and an image that
+never reaches the module has not asked for it. That reading is at its strongest where the attributes
+matter most: a vector table slot and a RAM-resident `.ramfunc` region are the scarcest things on the
+parts they exist for, so gaining every unimported module's silently is the worse way to be wrong.
 
 ## `@link` — which library resolves the externs
 
