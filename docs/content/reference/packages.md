@@ -282,20 +282,34 @@ pass. `build-lib` evaluates a `c const` while it builds and stores the **measure
 the C expression that produced it, so a consumer of a `.syslib` needs neither a clang nor the
 library's headers — there is nothing left to require.
 
-**The header requirements and the allocator are read from a `--lib` root, and nothing else is.** That
+**The header requirements, the allocator and the `dependencies` are read from a `--lib` root.** That
 flag names a *source root*, which need not be a package at all, and one that is not has nothing to
-declare here.
+declare — so a root with no `package.hocon` goes on building exactly as it always did.
 
-The allocator is read because it is a property of the *package* rather than of the road the package
-arrived by — a directory handed over with `--lib` is the same package as one named by a coordinate,
-so it brings its heap either way. It used to be read only from a coordinate, and the two roads then
-disagreed **in silence**: the package's own objects came out of its heap and every string, `Buf` and
-box in the same program out of libc's, with nothing said at any point. A silent mixed heap is worse
-than a rule somebody has to know, which is what decided it.
+All three are read for one reason: each is a property of the *package* rather than of the road the
+package arrived by. A directory handed over with `--lib` is the same package as one named by a
+coordinate, so it brings its heap, its header requirements and what it is written against either way.
 
-What is still not read is the rest of the manifest. A root's own `dependencies` are not fetched, and
-its capabilities are the program's to state — neither has the one-answer-per-program character that
-makes the allocator settle for everybody.
+The allocator used to be read only from a coordinate, and the two roads then disagreed **in silence**:
+the package's own objects came out of its heap and every string, `Buf` and box in the same program out
+of libc's, with nothing said at any point. A silent mixed heap is worse than a rule somebody has to
+know, which is what decided it.
+
+The `dependencies` were the last of the three. Read only by coordinate, the same directory gave a
+build the package's sysl and nothing it was written against, and what came back was a page of
+unresolved names pointing into a package you did not write — naming neither the missing dependency nor
+a flag. They are fetched now, into the **same** graph the project's own go through, so version
+selection sees every claim at once and a package two roots share is one copy at one version. What a
+root's manifest binds is reachable from your own files as well, which is no more true of a
+dependency's name than it always was of the root's own modules.
+
+`build-lib` is the one command that refuses them instead, and that is not an inconsistency: it
+compiles one tree into an artifact for one machine and does not reach the network, so it has nothing
+to fetch **with**. It says so, and names `--lib` as what to write instead.
+
+What is still not read is the rest of the manifest. A root's capabilities are the program's to state,
+and they have none of the one-answer-per-program character that makes the allocator settle for
+everybody.
 
 ## Dependencies
 
@@ -397,6 +411,12 @@ a `json` and your own project has a `json/` directory of source, the build stops
 than picking one. So does one offering a path *inside* another's — a package offering `sh.sysl` and
 one offering `sh.sysl.table` share no name, but an import of `sh.sysl.table` could be read as either,
 and resolving it to the longer would be a rule nobody wrote down.
+
+**"Your own modules" includes every `--lib` source root**, since a root's modules are filed under your
+project's names rather than under a prefix of their own. So a root that declares a dependency offering
+a name the root itself declares is refused in the same words, and the message names the root as you
+gave it. Without that, the root's own module answered, its dependency's was unreachable, and the build
+was green — the silent winner the whole rule exists to refuse.
 
 Write a `mount` to say what one of them is called here:
 
