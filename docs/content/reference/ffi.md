@@ -457,6 +457,39 @@ distinction the standard module fails.
 `sysl emit-header` prints the same declarations without building anything, for a project that
 generates its headers as a build step.
 
+### An export a dependency supplied
+
+**An `@export` in a module a dependency supplied reaches the archive only where your program reaches
+that module.** In your own tree the attribute means what it says and nothing qualifies it: the export
+is a root of the reachability walk, which is what lets a `build-c` compilation — with no entry point
+at all — keep anything.
+
+A dependency is different because a package's source root is compiled **whole** rather than by what
+you import, so every module of every `--lib` root and every fetched package is in the compilation
+whether or not you named it. For an ordinary declaration that costs nothing, since pruning drops what
+no body reaches. An export is the one declaration no body reaches, so without this rule an unimported
+module's symbol landed in your archive.
+
+What that cost was a package **carrying its own program**. A binding whose tests have to run on real
+hardware writes them as an application with an `@export("main")`, and inside the package that handed
+every consumer a second `main`:
+
+```text
+$ nm -g probe.a
+0000000000000008 T _main              <- yours
+0000000000000000 T _main              <- the package's test application
+```
+
+Reaching is asked of the module graph, so an `import` counts as readily as a call, and it follows the
+graph out — a package you reach through another package is reached. It is deliberately coarser than
+the walk over function bodies: a module holding nothing but an exported C entry point has no function
+anything calls, and a rule asking whether you *called* something there would drop exactly the case an
+export exists for.
+
+**If a package wants a symbol published regardless, it puts it in a module its consumers import.** An
+export is a claim about a symbol *your* artifact publishes, and an artifact that never reaches the
+module has not asked for it.
+
 ## `@link` — which library resolves the externs
 
 `@link("z")` in a file's header names a library the linker must be given, and it sits beside the
