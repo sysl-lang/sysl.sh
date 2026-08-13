@@ -817,6 +817,160 @@ of one is entitled to assume the address is aligned. Only the escaped address lo
 would lose it arbitrarily far from the `&` that made it. **The struct's own address is untouched**,
 being an ordinary pointer to an ordinary aggregate.
 
+### Bitfields — an `iN` field in exactly N bits
+
+**Inside `@packed`, an integer field occupies exactly its declared width.** A packed struct whose
+fields all lower to an integer, at least one of them narrower than a byte, **is** one unsigned
+integer — and its fields are ranges of it:
+
+```sysl
+@packed
+struct Ctrl
+    enable: u1
+    mode: u3
+    prescale: u4
+
+val c = Ctrl(1, 5, 9)
+
+print(sizeof(Ctrl), c.enable, c.mode, c.prescale)
+```
+
+```output
+1 1 5 9
+```
+
+No syntax was needed for this, which is why there is none: the open integer family already does the
+work C needs `int x : 3` for, so a five-bit field is written `u5` in a struct exactly as it is
+anywhere else.
+
+Two things follow that C leaves to the implementation, and pinning them is the point of the feature
+rather than a detail of it — it is why portable embedded C avoids bitfields and writes the shifts out
+by hand. **The bits fill from the least significant upward in declaration order**, and **a field
+straddles a byte boundary** rather than moving off it. Both are visible in the storage:
+
+```sysl
+@packed
+struct Ctrl
+    enable: u1
+    mode: u3
+    prescale: u4
+
+var arena: [4]u8 = [0; 4]
+var c: *Ctrl = ptr_cast(&arena[0])
+
+c.enable = 1
+c.mode = 5
+c.prescale = 9
+
+print(arena[0])
+```
+
+```output
+155
+```
+
+`155` is `1 | 5 << 1 | 9 << 4`: the first field declared is the low bits.
+
+The rule is stated over the **integer's value** and never over memory bytes. Written the other way —
+"the low bits of byte 0" — it would be a claim about endianness, which nothing in sysl is allowed to
+make. Written this way it costs nothing: the struct is an integer, so how it reaches memory is the
+target's ordinary byte order for an integer of that width. A wire format's byte order belongs to the
+protocol rather than to the CPU, and stays with
+[`sysl.encoding.binary`](/library/encoding/)'s `get_u16_le` and the rest.
+
+**Every field has to be an integer.** A `bool` is not one here — its storage is a byte and its
+representation a bit — and neither is a pointer, a float or an array:
+
+```sysl
+@packed
+struct Mixed
+    p: *u8
+    a: u3
+
+val m = Mixed(null, 1)
+
+print(m.a)
+```
+
+```error
+is one integer, and every field of it has to be one too
+```
+
+**Nesting is the composition path**, and it costs nothing: a bitfield struct is a leaf, and an
+ordinary `@packed` struct lays one out as a field of its size.
+
+```sysl
+@packed
+struct Ctrl
+    enable: u1
+    mode: u3
+    prescale: u4
+
+@packed
+struct Block
+    ctrl: Ctrl
+    count: u32
+
+var b = Block(Ctrl(1, 5, 9), 3)
+
+b.ctrl.mode = 2
+
+print(sizeof(Block), b.ctrl.enable, b.ctrl.mode, b.count)
+```
+
+```output
+5 1 2 3
+```
+
+**A bitfield may not be `volatile`.** A sub-word volatile access is a read-modify-write of the whole
+struct where a device is entitled to one bus cycle, and a register with clear-on-read or
+write-1-to-clear semantics is corrupted by it:
+
+```sysl
+@packed
+struct Reg
+    a: volatile u3
+    b: u5
+
+val r = Reg(1, 2)
+
+print(r.a)
+```
+
+```error
+is a bitfield — it occupies part of a byte
+```
+
+The **struct** may still be volatile where it is held, and that is the shape a register block wants:
+a `ctrl: volatile Ctrl` field makes `regs.ctrl.enable = true` one volatile read and one volatile
+write of the whole register, which is what C does. The two cycles a read-write register costs are not
+removable, and are not what is being refused.
+
+**A bitfield has no byte offset**, so `offsetof` says so rather than rounding down to the byte the
+field begins in:
+
+```sysl
+@packed
+struct Ctrl
+    enable: u1
+    mode: u3
+    prescale: u4
+
+print(offsetof(Ctrl, mode))
+```
+
+```error
+is a bitfield — it starts at bit 1 of the struct and is 3 bits wide, so it has no byte offset
+```
+
+It has no address either, which is the packed rule above and needs no separate ruling.
+
+**Across a C boundary it travels as what it is** — a packed struct of one integer — and not as a C
+bitfield struct. Those are different things on some machines, and it is C's own doing: MSVC allocates
+`unsigned a:1` into a four-byte unit where the Itanium ABI packs it into a byte, so a C bitfield
+struct of the same fields need not even be the same *size* everywhere. A sysl bitfield struct is one
+integer on every target.
+
 ### `@align(n)` — where the aggregate begins
 
 ```sysl
@@ -887,9 +1041,9 @@ print(sizeof(Head), alignof(Head))
 16 16
 ```
 
-**Sub-byte fields are not part of this.** An `iN` field occupies its allocated width wherever it sits,
-packed or not, so a hardware register's five-bit field is still shifts and masks. That is the bitfield
-question and it is open on its own.
+**Sub-byte fields are a separate axis and `@align(n)` does not touch them.** Inside `@packed` an `iN`
+field occupies exactly N bits ([bitfields](#bitfields--an-in-field-in-exactly-n-bits) above); the
+boundary the aggregate *begins* on is this attribute, and a bitfield struct takes one like any other.
 
 ### `@align(n)` on a binding
 
@@ -1238,7 +1392,7 @@ because the trees a library ships are now a per-target answer.
 | absent | why |
 |---|---|
 | a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost` and `@export` on a declaration, `@packed` and `@align(n)` on a struct, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
-| a sub-byte field | `@packed` removes the padding *between* fields and not the width *of* one, so an `iN` field occupies its allocated width wherever it sits and a five-bit hardware register is still shifts and masks. That is the bitfield question, and it is open on its own |
+| bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
 | a test framework in the library | a test asserts in the language it is testing, and passes by returning |
