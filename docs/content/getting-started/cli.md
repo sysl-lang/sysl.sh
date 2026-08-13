@@ -379,7 +379,7 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `--include-path <name>=<dir>` | the same, and it answers the header requirement a package declared under that name |
 | `-D NAME` or `-D NAME=value` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
-| `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines |
+| `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines, and where `build-lib` staged |
 | `--explain-escapes` | report every local array promoted to the heap |
 
 The standard-module flags and `-O` are covered in
@@ -454,6 +454,18 @@ standard module** the compilation got and whether it was linked or compiled from
 it read**, and the **command lines** handed to clang together with the `--lib`, `--link-path` and
 `--include-path` searches behind them. There are no phase timings: a build that is slow is diagnosed
 by asking what it *did*.
+
+`build-lib` adds a fourth, because it is the one command that writes anywhere but the artifact it
+was asked for:
+
+```
+sysl: members staged in /var/folders/…/sysl-lib-1729384756
+```
+
+The members are archived under names of their own rather than under whatever a temporary file was
+called, which is what the directory is for, and it is removed whether the build succeeded or gave up
+partway. The line is there for the run that is interrupted in between: what is left behind is a
+directory nothing else would have named.
 
 ### `--explain-escapes`
 
