@@ -487,10 +487,10 @@ no 'k' takes these arguments — the declarations of that name are:
     k(x: string)
 ```
 
-**Two tie-breaks decide a use that fits more than one, and both are about exactness.** A candidate
-that needed no default fitted the call as written and beats one that did; and a candidate whose
-parameters are exactly the arguments' own types beats one reached by a conversion — which is what
-lets a literal's natural type choose between two widths:
+**Three tie-breaks decide a use that fits more than one.** A candidate that needed no default fitted
+the call as written and beats one that did; and a candidate whose parameters are exactly the
+arguments' own types beats one reached by a conversion — which is what lets a literal's natural type
+choose between two widths:
 
 ```sysl
 width(x: int) -> string = "int"
@@ -508,6 +508,42 @@ i64
 What is deliberately absent is any ranking *between* conversions. Two candidates each reached by a
 different one are ambiguous, and saying so beats a ladder of precedences nobody could predict from
 the source.
+
+**Exactness is asked of the types a candidate was fitted at, which for a generic one is what the call
+solved it to.** `g[T]` below takes the `[]int` at `T = []int`, as it was written; the other takes it
+only by giving up the ability to write. So the generic declaration is the exact one:
+
+```sysl
+g(s: []const int) -> string = "const"
+g[T](x: T) -> string = "generic"
+
+var a = [1, 2, 3]
+val v: []int = a[..]
+
+print(g(v))
+```
+
+```output
+generic
+```
+
+**The third tie-break is that a candidate that named its parameters beats one that was solved for
+them, where both are exact.** `f(x: int)` and `f[T](x: T)` both fit `f(0)` at `int`, and the ordinary
+declaration is the one that said what it takes:
+
+```sysl
+f(x: int) -> string = "plain"
+f[T](x: T) -> string = "generic"
+
+print(f(0))
+```
+
+```output
+plain
+```
+
+That ranks a declaration against a declaration, which is a different question from ranking the routes
+the arguments took — the thing the paragraph above refuses.
 
 **An address chooses by the type the context wants**, which is the mechanism a generic function's
 address already uses. With no expected type there is nothing to read, and the address is refused
