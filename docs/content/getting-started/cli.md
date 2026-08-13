@@ -277,6 +277,7 @@ thumbv7m-freestanding        thumbv7m-none-eabi
 thumbv7em-freestanding       thumbv7em-none-eabihf
 thumbv7em-freestanding-soft  thumbv7em-none-eabi
 riscv32-freestanding         riscv32-unknown-elf
+wasm32-freestanding          wasm32-unknown-unknown
 x86-linux                    i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
 
@@ -285,7 +286,7 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
-**The last eight freestanding rows are 32-bit, and they are microcontrollers.** The RP2350 — the Pico
+**Eight of the freestanding rows are 32-bit microcontrollers.** The RP2350 — the Pico
 2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040, the original Pico, has
 a pair of Cortex-M0+; the Armv7E-M rows are ST's parts; and Armv7-M is the Cortex-M3. All are here
 because a microcontroller is what *freestanding* is mostly for: the three 64-bit freestanding rows
@@ -336,6 +337,18 @@ unaffected, because those calls are emitted only for a program that holds a `&sy
 [`pico`](https://github.com/sysl-lang/pico) package supplies them over one of the chip's hardware
 spinlocks, which is what a dual-core part needs — masking interrupts is per-core and would leave the
 other core free to lose the update.
+
+**`wasm32-freestanding` is the odd row: 32-bit, freestanding, and not a board at all.** It is
+WebAssembly — a browser, `wasmtime`, or whatever else embeds a module — and `unknown-unknown` in the
+triple is the literal truth, so it comes with no libc, no loader and nothing that runs before an
+exported function is called. Sysl links it with `-nostdlib` and names `main` as the module's entry,
+which is what makes `main` reachable and exports it under that name; a program that does not print
+comes out as a couple of hundred bytes of `.wasm` that `wasmtime` will run, and a program that does
+print fails at the link naming `putchar`, exactly as on any other bare target.
+
+It needs a clang with the WebAssembly back end. Apple's has eleven back ends and this is not among
+them, so on a Mac sysl reaches for Homebrew's LLVM by itself — the same fallback it already makes for
+the RISC-V rows — and says so if it cannot find one.
 
 `x86-linux` is listed *because* it cannot be built for. The limit is the compiler's rather than the
 machine's, and **it is no longer the width** — this page said so until the 32-bit rows above arrived.
