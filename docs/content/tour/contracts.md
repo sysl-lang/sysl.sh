@@ -66,6 +66,27 @@ print(n)
 42
 ```
 
+Being its base means its **name converts what the base's name converts**. `Age(n)` on a `usize` is
+the `int(n)` you would otherwise write, and the range is checked on the value that arrives — so the
+conversion is a conversion rather than a way past the constraint:
+
+```sysl
+type Age = int within 0..150
+
+var n: usize = 42
+var f: f64 = 7.9
+
+print(Age(n), Age(f))
+```
+
+```output
+42 7
+```
+
+That matters most where the base cannot be *named*. A [`c type`](/reference/ffi/) is a transparent
+subtype of a width the C compiler measured for the target being built for, so `u32(n)` would be one
+machine's answer written into the source, and the type's own name is the only portable way in.
+
 With `new` it is a **distinct nominal type**, and that is a large difference. Two derived types over
 one base do not mix:
 
@@ -85,6 +106,8 @@ print(f64(m + f))
 
 A derived type does not mix with its **base** either, and going in either direction is a written
 conversion: `Meters(x)` wraps and `f64(m)` unwraps, and the wrap is where the constraint is checked.
+The wrap takes a value that is already at the base — `Meters(3.0)` and not `Meters(3)` — which is the
+one place the two kinds differ in call position, and it follows from `new` making the type distinct.
 
 The payoff is a specific bug. A table-driven program has several small integers that index different
 things — a task number, a lock number, a priority level — and the mistake such a program actually

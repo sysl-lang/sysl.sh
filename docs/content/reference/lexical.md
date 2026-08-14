@@ -330,9 +330,11 @@ inside a three-clause `for` header: it is deliberately not a statement terminato
 already ends a statement and a token that could also end one would give the language two answers to
 the same question.
 
-`#` opens an attribute, and is a declaration's only prefix that is not a word. Nothing in the
-expression grammar spells `#`, so a line beginning with one can only be an attribute and needs no
-lookahead to recognize.
+`@` opens an annotation and `#` opens a directive, and between them they are a declaration's only
+prefixes that are not words. Nothing in the expression grammar spells either, so neither needs
+lookahead to recognize. The two are told apart by the sigil and not by the margin, though a directive
+is taken by a pass that runs before the lexer and reads only column 1 — so an *indented* `#` reaches
+the grammar like any other token, and [attributes](/reference/attributes/) says what it is told there.
 
 ## Layout
 

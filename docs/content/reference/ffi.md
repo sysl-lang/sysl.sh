@@ -316,7 +316,7 @@ surprise.
 | refused | because |
 |---|---|
 | a **generic** | an exported symbol is one function at one signature, so there is no way to say which instantiation the linker holds |
-| a **member** | C has no receiver to hand it. The grammar refuses this before any rule does: an annotation is read above a top-level declaration only, so `@test` and `@pure` are as unavailable on a method |
+| a **member** | C has no receiver to hand it. The grammar refuses this before any rule here is reached, and says so in as many words: a member takes no annotation at all ([attributes](/reference/attributes/)), so `@test` and `@pure` are as unavailable on a method |
 | a **`private`** definition | `private` gives the symbol internal linkage, which promises every caller is inside the module; an export promises the opposite |
 | a **`@ghost`** | it is erased before there is a symbol at all |
 | a **`@test`** | only `sysl test` builds one, and an export has to be in the artifact a C project links |
@@ -1597,6 +1597,60 @@ answer rather than the question. A program that wants to *state* a width writes 
 
 A `c const` **declared at** a measured type is the other half of the pair, and is written out above.
 Two blocks in one file are one question, and a binding usually writes both.
+
+### A number your program worked out reaches one under the type's own name
+
+A measured type is a transparent subtype, so a value of the integer it turns out to be flows in and
+out with no cast at all. What a program *has*, though, is usually a `usize` — a `sizeof`, a slice's
+`len`, or arithmetic over them — and that is a different type from whatever C measured. The
+conversion is the type's own name:
+
+```sysl
+@include("<stddef.h>")
+
+c type
+    Size = "size_t"
+
+take(n: Size) -> Size = n
+
+var xs: [3]u32 = [0, 0, 0]
+
+print(take(Size(xs.len)) + Size(sizeof(u32)))
+```
+
+```output
+7
+```
+
+**That spelling is the only portable one**, which is the whole reason it exists: the width is the
+target's, so writing `u32(xs.len)` would be one configuration's answer copied into the source — the
+transcription a `c type` is for abolishing. It is the ordinary case in a binding rather than a corner
+of one: a queue's item size and a task's stack depth are both a number sysl worked out and C has a
+typedef for.
+
+The conversion is **written**, and an unwritten one is refused even where the widths happen to agree
+on the machine in front of you:
+
+```sysl
+@include("<stddef.h>")
+
+c type
+    Size = "size_t"
+
+take(n: Size) -> Size = n
+
+var n: usize = 3
+
+print(take(n))
+```
+
+```error
+'n' of 'take' is Size, but usize was given
+```
+
+A silent narrowing is exactly what breaks on the target where the typedef is sixteen bits, so it is
+refused here where it can be seen. The [contracts](/tour/contracts/) page has the general rule, of
+which this is one case.
 
 **What comes back is a width and a signedness.** Three things follow, and each was measured against
 the C compiler rather than assumed:

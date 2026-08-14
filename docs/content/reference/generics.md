@@ -122,7 +122,7 @@ where nothing else reached it:
 ```sysl
 pick[T: Add](a: T, b: T, c: T) -> T = a + b + c
 
-print(pick(1, 2, 250))
+print(pick(1, 2, 250u8))
 ```
 
 ```output
@@ -132,6 +132,36 @@ print(pick(1, 2, 250))
 That is a `u8` because one argument knew and two did not, while `id(7)` is still an `int` because none
 did. Once the parameter is a type the literals are read against it — the same order the operand rule
 uses inside an expression.
+
+**`null` is not consulted at all — it waits**, and what separates it from a literal is that it has no
+default to be consulted *for*. The argument that cannot contribute is set aside, the rest solve the
+parameter, and it is then read against what they said:
+
+```sysl
+two[T](a: *T, b: *T) -> bool = a == b
+
+var x: int = 3
+
+print(two(&x, null), two(null, &x))
+```
+
+```output
+false false
+```
+
+Either order answers alike, since waiting is not queueing — and setting it aside cannot lose the
+solution, because an argument with no type of its own has nothing to unify. Where nothing else
+reached the parameter it is refused rather than defaulted: inference does not invent a pointee.
+
+```sysl
+one[T](a: *T) -> bool = true
+
+print(one(null))
+```
+
+```error
+'null' takes its type from its context, and there is none here
+```
 
 **A parameter that names no type parameter is not part of the question**, and its argument is checked
 against it exactly as a plain callee's is:
