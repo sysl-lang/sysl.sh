@@ -12,7 +12,7 @@ executable condition does not supply on its own, and the backend that discharges
 no proof-only build, no specification subset the compiler declines to execute, and a check the prover
 proves redundant is still compiled — a program whose emitted code depended on whether a prover was
 available, and on how long it was given, is one nobody could reason about. The single exception is
-[ghost code](#ghost--what-costs-nothing-to-say), and it is legible in the source rather than in a
+[ghost code](#ghost-what-costs-nothing-to-say), and it is legible in the source rather than in a
 flag.
 
 ## `for all` and `for some`

@@ -21,7 +21,7 @@ Zm9vYmFy
 
 ## The two directions are shaped differently, on purpose
 
-**Encoding writes to a [`Writer`](/library/core/#writer).** That means hex straight to a file or to
+**Encoding writes to a [`Writer`](/library/core/#rendering-to-a-sink).** That means hex straight to a file or to
 standard output with no intermediate string — which is the case that actually matters for a codec.
 
 ```sysl

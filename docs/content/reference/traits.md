@@ -127,7 +127,7 @@ came from.
 ### Replacing a default says `override`
 
 An implementation may write the member itself instead of taking the trait's body, and when it does it
-says so — replacing a default is the same act as [replacing an implementation](#override--when-the-overlap-is-deliberate),
+says so — replacing a default is the same act as [replacing an implementation](#override-when-the-overlap-is-deliberate),
 and takes the same keyword:
 
 ```sysl
@@ -435,7 +435,7 @@ This is Rust's orphan rule, and it costs nothing:
   []Point` is licensed by `Point`, while a block for `[]int` names nothing outside the library and
   has no home. (It says `override` because the library implements `Display` for every slice; the two
   rules are separate, and a slice of your own struct needs both — coherence to have a home, and
-  [`override`](#override--when-the-overlap-is-deliberate) to outrank the block already covering it);
+  [`override`](#override-when-the-overlap-is-deliberate) to outrank the block already covering it);
 - **a type parameter is not a local type**, so `impl[T: Display] Display for []T` is refused however
   its bound is written. Making every printable slice printable is the library's job.
 

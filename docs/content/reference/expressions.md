@@ -504,9 +504,9 @@ print(offsetof(Header, tag), offsetof(Header, length), offsetof(Header, flags), 
 
 The padding after `tag` is what puts `length` at 4 — `@packed` lays the same fields end to end and
 makes them 0, 1 and 5. Its use is
-[checking a mirrored C struct](/reference/attributes/#checking-a-c-structs-layout), where a size
+[checking a mirrored C struct](/reference/attributes/#checking-a-c-struct-s-layout), where a size
 alone cannot see two same-width fields transposed. A field the struct does not have is refused by
-name, and so is a [bitfield](/reference/attributes/#bitfields--an-in-field-in-exactly-n-bits) — the
+name, and so is a [bitfield](/reference/attributes/#bitfields-an-in-field-in-exactly-n-bits) — the
 answer is in bytes, and a field starting at bit twelve is not at byte one.
 
 ## Closures

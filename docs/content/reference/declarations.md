@@ -242,7 +242,7 @@ exhaustiveness to discharge.
 The **positional** spelling `Point(a, b)` stands here too, and takes the fields in declaration order.
 It differs in the one way it differs in a `match`: it names every field, so a struct that grows one
 turns each positional binding into a checked to-do rather than one that goes on binding the same
-names. See [Patterns](../patterns/#only-an-irrefutable-pattern-may-stand-there).
+names. See [Patterns](/reference/patterns/#only-an-irrefutable-pattern-may-stand-there).
 
 **Only a pattern that cannot fail may stand at a binding** — a tuple pattern, a struct pattern, a
 name, a wildcard, and those nested inside one another. A struct qualifies because it has exactly one

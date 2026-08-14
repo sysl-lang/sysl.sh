@@ -1078,7 +1078,7 @@ print(sizeof(Head), alignof(Head))
 ```
 
 **Sub-byte fields are a separate axis and `@align(n)` does not touch them.** Inside `@packed` an `iN`
-field occupies exactly N bits ([bitfields](#bitfields--an-in-field-in-exactly-n-bits) above); the
+field occupies exactly N bits ([bitfields](#bitfields-an-in-field-in-exactly-n-bits) above); the
 boundary the aggregate *begins* on is this attribute, and a bitfield struct takes one like any other.
 
 ### `@align(n)` on a binding

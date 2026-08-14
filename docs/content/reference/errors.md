@@ -634,7 +634,7 @@ So the answer to "I want my own `+`" is that you do not want a derivation, you w
 ### Except rendering, which a derivation may take back
 
 The second refusal above is the *unmarked* one, and that is the whole of what it refuses. Say
-[`override`](/reference/traits/#override--when-the-overlap-is-deliberate) and the block is yours:
+[`override`](/reference/traits/#override-when-the-overlap-is-deliberate) and the block is yours:
 
 ```sysl
 type Stamp = new int

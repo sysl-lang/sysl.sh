@@ -1089,7 +1089,7 @@ at the limit other
 ```
 
 The rest of what a module-level `val` may hold — read-only at every depth, and the `[]const T` a
-slice of one yields — is on [declarations](/reference/declarations/#val).
+slice of one yields — is on [declarations](/reference/declarations/#a-module-member-states-its-type).
 
 ## Separate compilation
 
