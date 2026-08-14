@@ -281,8 +281,8 @@ add(a: i32, b: i32) -> i32 = a + b
 ```
 
 A sysl definition ordinarily carries its module path into its symbol, so two modules may each declare
-an `init` without colliding. `@export` is the one thing that suppresses that: the definition is
-emitted under a bare, unmangled name a C declaration can spell and a C linker can resolve.
+an `init` without colliding. `@export` publishes a bare, unmangled name beside it — one a C
+declaration can spell and a C linker can resolve.
 
 ### Naming the symbol
 
@@ -300,11 +300,30 @@ add(a: i32, b: i32) -> i32 = a + b
 prefix so that linking two of them is not a coin toss, and the sysl side has a module path doing that
 job already. `add` is the name to write inside sysl and `mylib_add` is the name to publish; requiring
 the function to be *called* `mylib_add` everywhere inside would be spelling the module path twice.
-**A sysl caller is unaffected** — it goes on naming `mylib.add` and simply arrives at a different
-label.
+**A sysl caller is unaffected** — it goes on naming `mylib.add`, and reaches the definition rather
+than the published symbol.
 
 `@export` implies C's convention and says nothing about any other, which is `extern`'s rule read the
 other way.
+
+### The published symbol is an entry, not a renamed definition
+
+**A rename is not a convention**, and the difference is the whole of what `@export` is for. The
+exported symbol is a function of its own: its signature is what the machine's C convention says, and
+it reassembles each argument into the shape sysl's own lowering expects before calling the
+definition. The definition keeps its mangled name and its own lowering.
+
+None of that is anything to write, and it is worth knowing for three reasons:
+
+- **an aggregate may cross**, which is the type rule below;
+- **`&f` on an exported function is that entry's address**, so a C library may be handed the callback
+  it asks for — which is what *A function's address* below turns on;
+- **a sysl caller pays nothing for it**, since the conversion is only on the path C takes.
+
+It is the foreign *call* path read backwards: a call out to C classifies each argument by the
+convention and puts it in the registers named, and an entry in classifies the same way and reads it
+back. One classifier answers both directions, so what a binding calls and what it exports cannot
+disagree about the same struct.
 
 ### What an exported function may be
 
@@ -323,11 +342,17 @@ surprise.
 | a **variadic** | what a C caller promotes into the tail is decided by the prototype it compiled against, not by this declaration. Take a `va_list` parameter, which says the same thing and is what C's own `v` variants do |
 | a symbol that is not a **C identifier** | there would be nothing a C declaration could spell |
 
-**The types are the interesting rule, and it is the section above stated as a restriction.** A
-scalar, a `*T` and a function pointer cross as themselves. Everything else does not: an aggregate by
-value is handed over in whichever registers the machine's convention names, which is not what a
-sysl-to-sysl call does — so passing one would be a **corrupt call rather than a link error**, and it
-is refused instead of lowered hopefully.
+**The types are the interesting rule, and it asks what C can *declare*.** A scalar, a `*T` and a
+function pointer cross as themselves. So does a **struct** built out of those, and a **simple enum**,
+which is its underlying integer and nothing else — the exported symbol is an entry lowered under the
+machine's C convention, so an aggregate is handed over where C looks for it.
+
+What is refused is what C has no declaration for whatever convention is applied: a slice or a
+`string`, which is two words with a length in the second; a `&T` or a `weak`, which is a counted box
+whose header C would have to know the layout of; a trait object, which is a value and a method table
+together; a data enum, which is a tag beside a union sysl laid out rather than the shape a C union
+has; and a bare array as a parameter or result, which C decays to a pointer and has no by-value
+prototype for.
 
 ```sysl
 module mylib
@@ -337,12 +362,37 @@ sum(xs: []i32) -> i32 = 0
 ```
 
 ```error
-'xs' of the exported 'mylib.sum' is []int, which C has no way to spell — an exported function takes an integer, a float, a 'bool', a 'char', a pointer or a function pointer. A slice is an address and a length, so C takes them as two parameters — a pointer and a 'usize' — which is the shape its own string and buffer functions already have
+'xs' of the exported 'mylib.sum' is []int, which C has no way to spell — an exported function takes an integer, a float, a 'bool', a 'char', a pointer, a function pointer, a simple enum, or a struct built out of those. A slice is an address and a length, so C takes them as two parameters — a pointer and a 'usize' — which is the shape its own string and buffer functions already have
 ```
 
+**An aggregate is asked about its fields**, which is what keeps those two lists apart: a struct of
+scalars is a struct C declares, and a struct with a `&T` in it is a counted box with a coat on. The
+refusal names the *field*, since the declaration being read does not mention it:
+
+```sysl
+module mylib
+
+struct Node
+    x: i32
+
+struct P
+    x: i32
+    n: &Node
+
+@export
+f(p: P) -> i32 = p.x
+```
+
+```error
+'n' of mylib.P is &mylib.Node, which is what C has no declaration for — the aggregate around it is fine
+```
+
+Recurring is also why nothing here says who owns what: every type reaching the boundary is plain
+data, so no count crosses it in either direction.
+
 Every refusal names the shape to write instead, because there always is one — a slice becomes the
-pointer and length C's own buffer functions already take, an aggregate becomes a pointer to itself.
-That is what makes the boundary writable rather than merely restricted.
+pointer and length C's own buffer functions already take, an array becomes a struct holding it. That
+is what makes the boundary writable rather than merely restricted.
 
 ### Module storage a C caller cannot fill
 
@@ -827,7 +877,8 @@ print(1)
 'root' is an intrinsic, which the back end lowers to an instruction rather than a function anything calls — there is no body for an address to name. A sysl function that calls it is what has one
 ```
 
-**Any signature carrying an aggregate** — a struct, a tuple, a data enum, a view, a `string`:
+**A plain sysl function whose signature carries an aggregate** — a struct, a tuple, a data enum, a
+view, a `string`:
 
 ```sysl
 struct Pair
@@ -842,17 +893,49 @@ print(1)
 ```
 
 ```error
-the 1st parameter of 'agg' is Pair, an aggregate, and an aggregate crosses to C in whichever registers that machine's convention names rather than the ones a sysl call uses — so this address would be of a function C cannot call correctly. A wrapper taking the parts behind a '*T' is what has an address
+the 1st parameter of 'agg' is Pair, an aggregate, and an aggregate crosses to C in whichever registers that machine's convention names rather than the ones a sysl call uses
 ```
-
-That last one is **a restriction rather than a consequence**, and the only one on the list that is.
-What would close it is an adapter emitted beside such a function, entered under the C classification
-and calling the sysl one; until there is one, the refusal names the parameter, because an address
-that is quietly wrong is worse than no address. A callback taking the parts behind a `*T` is the
-shape that works today, and it is what C interfaces overwhelmingly use anyway.
 
 The test is made by **shape** rather than by asking the target's classification, so a program
 accepted for one machine is accepted for every machine.
+
+### Two kinds of function are past the aggregate question
+
+They were once refused by it, and that cost a binding every callback a C library asks it to register
+— those signatures are written in aggregates almost without exception.
+
+**An `extern` is C.** sysl neither compiled it nor chose its convention, and its type is what the
+declaration transcribed from the header, so there is no lowering here to be wrong about:
+
+```sysl
+struct Pair
+    a: int
+    b: int
+
+extern "c_sum" c_sum(p: Pair) -> int
+extern "c_take" c_take(f: *extern(Pair) -> int) -> int
+
+print(c_take(&c_sum))
+```
+
+**A function carrying `@export` has a C-convention entry**, and its address is that entry's. So the
+answer to the refusal above is to mark the function rather than to hand-write a wrapper around it:
+
+```sysl
+struct Pair
+    a: int
+    b: int
+
+@export("c_sum")
+sum(p: Pair) -> int = p.a + p.b
+
+extern "c_take" c_take(f: *extern(Pair) -> int) -> int
+
+print(c_take(&sum))
+```
+
+A plain sysl function is what is left, and there the refusal stands: it has no C-convention entry to
+point at, and an address that is quietly wrong is worse than no address.
 
 ### What it costs today
 

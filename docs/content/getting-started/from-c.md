@@ -293,8 +293,9 @@ write the declarations you use and no more, and one nothing calls costs the outp
 file dropped in any module of the tree is compiled with it, which is how the parts a header hides — a
 macro, a `sizeof` only the header knows, an untagged union — get reached at all.
 
-**Your C on top, sysl underneath.** `@export` publishes a definition under a plain, unmangled symbol,
-and `sysl build-c` writes a static archive and a C header for your existing build to consume:
+**Your C on top, sysl underneath.** `@export` publishes a plain, unmangled symbol, entered under your
+machine's C convention — so a struct crosses it by value exactly as it does one of your own functions
+— and `sysl build-c` writes a static archive and a C header for your existing build to consume:
 
 ```sysl
 module mylib
