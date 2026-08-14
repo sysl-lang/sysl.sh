@@ -422,6 +422,12 @@ apply to only half of a build. An `@export` in a `@tests` file names a symbol **
 to discard, so it can collide with nothing — and a check that read the tree before the drop would
 refuse a program over a name that was never going to be emitted.
 
+**Read the other way, `sysl test` is the build where such an export *is* a definition**, and it is
+held to every rule on the [FFI page](/reference/ffi/) accordingly — private, variadic, generic, a
+parameter C has no declaration for, two exports claiming one symbol, and an export reaching computed
+module storage. Each of those asks about the symbol table the build in hand emits, so which tree is
+read is the whole of the difference between the two commands.
+
 ### `@tests` — a file of scaffolding
 
 Pruning answers for a **program**. It does not answer for a **library**, which has no `main` to lower
