@@ -48,7 +48,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/errors.md"                     -> (8, 2, 2),
     "docs/content/tour/traits.md"                     -> (9, 2, 0),
     "docs/content/tour/modules.md"                    -> (4, 0, 7),
-    "docs/content/tour/contracts.md"                  -> (7, 2, 0),
+    "docs/content/tour/contracts.md"                  -> (8, 2, 0),
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (7, 1, 2),
@@ -73,7 +73,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
     // the range refusal that comes with a constrained one.
-    "docs/content/reference/ffi.md"                    -> (17, 24, 9),
+    "docs/content/reference/ffi.md"                    -> (18, 25, 9),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back.
