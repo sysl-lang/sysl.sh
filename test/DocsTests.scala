@@ -57,11 +57,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     "docs/content/reference/declarations.md"          -> (21, 6, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
-    "docs/content/reference/memory.md"                -> (23, 17, 0),
+    "docs/content/reference/memory.md"                -> (24, 18, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
-    "docs/content/reference/generics.md"              -> (21, 13, 0),
+    "docs/content/reference/generics.md"              -> (22, 14, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (16, 12, 10),
@@ -111,7 +111,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // is the operator now, so the block that asserted it was refused runs instead.
     "docs/content/library/time.md"                       -> (15, 3, 4),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
-    "docs/content/library/threads.md"                     -> (6, 7, 2),
+    // One refusal became a runnable program when `null` learned to wait for the argument that
+    // settles the parameter: a thread body with nothing of its own is now passed one.
+    "docs/content/library/threads.md"                     -> (7, 6, 2),
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),

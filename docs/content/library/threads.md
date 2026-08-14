@@ -121,30 +121,29 @@ its **captures** would be values crossing a domain boundary through a box whose 
 about what is in it. The address of a named function has neither problem, and what travels beside it
 is an ordinary parameter — which is what lets the crossing rule be asked at all.
 
-### `null` is the one argument that cannot be passed
+### A body with nothing to read is passed `null`
 
 `spawn` is generic in what the body reads, so `T` is inferred from the body and the `ptr_cast` to
-C's shape happens once, inside. That inference is what rules `null` out — it takes its type from its
-context, and the context here is the type being inferred:
+C's shape happens once, inside. A body with nothing of its own writes `null`, and the type it would
+otherwise have had to invent is one the *body's* own signature already gave:
 
 ```sysl
-import sysl.sync.*
 import sysl.posix.threads.*
 
-bump(a: *Atomic[i32])
-    a.add(1)
+quiet(state: *int)
+    print("nothing to read")
 
-var t = spawn(&bump, null)
-
-print(t.is_some())
+spawn(&quiet, null).unwrap().join()
 ```
 
-```error
-'null' takes its type from its context, and there is none here
+```output
+nothing to read
 ```
 
-A body with nothing of its own to read is handed the address of whatever it reads instead, which
-every body has.
+`null` has no type of its own, so at a parameter still being solved it is set aside until the
+arguments that have one are read — here the `&quiet`, whose `*extern(*int) -> unit` says `T` is
+`int`. It is refused only where *nothing* says: a call with no other argument to read is an error
+asking for the type rather than a guess.
 
 ### `join` does not carry the result back
 
