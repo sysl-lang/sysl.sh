@@ -630,6 +630,13 @@ every other address. A bare `f` keeps its ordinary meaning — the capture-free 
 spelling that meant a sysl callable in one slot and a C address in another would be choosing
 silently between two representations that share nothing.
 
+**The function may be named through its module**, and `&f[T]` may be qualified too. Under
+`import shapes`, `&shapes.less` is the same address `&less` gives under `import shapes.less` — a name
+means the *declaration* rather than a spelling of it, which is the rule a
+[constant](/reference/declarations/) follows as well. A **local binding shadows a module name**, so
+where the head of the path is bound to a value the chain is an ordinary field read and the `&`
+addresses that field.
+
 **It is its own type rather than a mode over the call trait.** `*Fn(A) -> R` was already taken, and
 by the right thing: an unowned trait object over a callable, two words, a method table beside the
 value. Spelling both the same would put a fat pointer where C reads one word, and the mistake would
