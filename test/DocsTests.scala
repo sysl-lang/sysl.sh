@@ -62,14 +62,18 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
     "docs/content/reference/generics.md"              -> (21, 13, 0),
-    "docs/content/reference/modules.md"                -> (15, 11, 10),
+    // One more of each: a constant may be declared at a transparent subtype now, so the `const`
+    // section shows one in range and refuses one outside it.
+    "docs/content/reference/modules.md"                -> (16, 12, 10),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     "docs/content/reference/errors.md"                 -> (20, 27, 1),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
-    // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for.
-    "docs/content/reference/ffi.md"                    -> (16, 23, 9),
+    // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
+    // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
+    // the range refusal that comes with a constrained one.
+    "docs/content/reference/ffi.md"                    -> (17, 24, 9),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back.

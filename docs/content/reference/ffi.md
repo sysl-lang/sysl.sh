@@ -1442,6 +1442,62 @@ reads straight off; a string constant is a block of storage and a different job,
 be written `"\"foo\""` — two quotings for one value, which is a form nobody would guess. The refusal
 says so rather than leaving it to be found.
 
+**The declared type may be a transparent subtype of an integer**, which is what makes this block and
+`c type` below a pair rather than two features. Without `new` such a type *is* its base, so a
+constant declared at one is a constant declared at an integer — and a measured type is exactly that
+shape:
+
+```sysl
+@include("<stdint.h>")
+
+c type
+    Tick = "uint32_t"
+
+c const
+    forever: Tick = "0xFFFFFFFFul"
+
+wait(ticks: Tick) -> Tick
+    ticks
+
+print(str(wait(forever)))
+```
+
+```output
+4294967295
+```
+
+That is the case the two blocks exist for: a typedef whose width the configuration decides, and the
+constants that have to be that width. Spelling the constant `usize` beside a `Tick` parameter is a
+package that stops compiling on a port where the two disagree, which is the version of this mistake
+that used to ship.
+
+**The name is followed against the file's own declarations** — a `c type` measured beside it, or a
+`type` whose base reaches an integer — and a name from anywhere else is refused. A block is one
+question put to one file's headers, and a type measured against another file's is not an answer this
+one can use.
+
+**A `within` range is checked while compiling**, against the number that came back:
+
+```sysl
+type Small = u32 within 0..10
+
+c const
+    N: Small = "sizeof(long long) * 100"
+```
+
+```error
+does not admit
+```
+
+which is the `@assert` a program would otherwise write underneath. A **`where` predicate** is refused
+rather than checked — a predicate is a function, checked where a value is *made*, and a constant is
+folded into its uses rather than made anywhere — and so is a **`new` type**, since reaching one from
+its base is a written conversion and there is nowhere on the line to write it.
+
+**The value does not travel through the C type.** C narrows, so `(uint8_t)800` is `32`; carrying it
+that way would let a constant that should have been refused arrive looking like one that fits, and
+the range check is the whole point of having written the type down.
+
 **A library ships the measured number, not the expression.** The lowering happens before the artifact
 is written, so a program linking a package needs neither the package's headers nor a C compiler of
 its own — and could not honestly be handed the expression anyway, since an artifact is built for one
@@ -1538,6 +1594,9 @@ question rather than a price per line.
 **A line carries no sysl type**, which is the whole difference from a `c const` line — the type is the
 answer rather than the question. A program that wants to *state* a width writes `@assert` over a
 `c const` holding the `sizeof`, which says the same thing where it can be checked.
+
+A `c const` **declared at** a measured type is the other half of the pair, and is written out above.
+Two blocks in one file are one question, and a binding usually writes both.
 
 **What comes back is a width and a signedness.** Three things follow, and each was measured against
 the C compiler rather than assumed:

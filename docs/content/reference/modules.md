@@ -136,14 +136,16 @@ all is visible there.
 **"Signature" is the shorter word for it, and the rule is not about signatures.** It is about
 everything a declaration says about itself, so it reaches the forms that have no signature at all: a
 field, an enum variant's payload, a type parameter's bound and its default, and the declarations that
-are a **name and one type** — a module-level `val` and an `extern` variable. It reaches everything a
+are a **name and one type** — a `const`, a module-level `val` and an `extern` variable. It reaches everything a
 caller has to be able to write: a struct's fields and a variant's payload, since neither has a
 visibility of its own; a **type argument**, since `Box[Point]` names `Point` as much as a bare `Point`
 does; a trait behind a memory mode; a member of a type or a trait; and a **bound**, since a trait a
 caller cannot name leaves it unable to say what is being asked of it.
 
-A `const` is spared only because it cannot reach the question — a constant is held to being a scalar,
-and every scalar is a builtin nobody may restrict.
+The `const` was not always among them: a constant was held to being a scalar, and every scalar is a
+builtin nobody may restrict, so there was nothing to reach the question with. A **transparent
+subtype** of a scalar is a constant's type now, and that is a declared type somebody may make private
+— so the rule stated in advance for a hole that did not yet exist is the rule that closes it.
 
 **An `impl` block is outside the rule, in both directions.** Implementing a private trait for a public
 type adds a member nobody outside can ask for by trait; implementing a public trait for a private
@@ -867,6 +869,44 @@ to a `capacity()` function and a comment asking the reader to keep the two in st
 because the rule that anything visible outside its file states its types is what keeps interface
 extraction parse-only. Writing it is also what fixes the literal's type, so `const capacity: usize =
 512` needs no suffix on the `512`.
+
+**And the type is a scalar, or a transparent subtype of one.** The first half is the shape of what a
+constant expression can produce rather than a restriction anybody chose — there is no aggregate
+literal to fold to, and a table would be storage rather than a value. The second half follows from a
+transparent subtype *being* its base, so a constant declared at one is a literal at an integer, a
+float or a `char` — and its range is checked while compiling:
+
+```sysl
+type Age = int within 0..150
+
+const oldest: Age = 122
+
+print(oldest)
+```
+
+```output
+122
+```
+
+```sysl
+type Age = int within 0..150
+
+const oldest: Age = 200
+```
+
+```error
+which Age does not admit — it holds 0 to 150
+```
+
+That check is the one thing a constant gets that a `val` of the same type gets only at run time, and
+it is what a [`c const`](/reference/ffi/) is really for: a number nobody chose — a `sizeof`, a config
+macro out of somebody else's header — held to what this program can actually do with it.
+
+A **`new` type** is refused, because reaching one from its base is a written conversion and a constant
+is the value it was written as, so there is nowhere on the line to write one. A **`where` predicate**
+is refused too, because a predicate is checked where a value is *made* and a constant is folded into
+its uses rather than made anywhere — admitting one would be a check the declaration claims and the
+program never gets.
 
 **A constant expression** is a literal; a `const`; a conversion; a unary `-`, `!` or `~`; or a binary
 arithmetic, bitwise, shift, or comparison operator applied to constant expressions. Integers, floats,
