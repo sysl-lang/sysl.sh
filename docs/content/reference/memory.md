@@ -509,6 +509,37 @@ print(total)
 That program is also the answer to "how does a type reach itself" — see [recursive
 types](#recursive-types) below.
 
+**A generic parameter is a context like any other, and it answers late.** A callee still being
+solved has no type at that position yet, so an argument with none of its own is set aside until the
+ones that have have been read, and is then taken against the parameter it turned out to stand at:
+
+```sysl
+two[T](a: *T, b: *T) -> bool = a == b
+
+var x: int = 3
+
+print(two(&x, null), two(null, &x))
+```
+
+```output
+false false
+```
+
+Either order answers alike, because waiting is not queueing. Setting an argument aside cannot lose
+the solution — one with no type of its own has nothing to contribute to it — so the parameter is
+settled by the other arguments or by nothing at all. **Nothing at all is refused rather than
+defaulted**: a call with no other argument to read is asked what the pointer points at.
+
+```sysl
+one[T](a: *T) -> bool = true
+
+print(one(null))
+```
+
+```error
+'null' takes its type from its context, and there is none here
+```
+
 ### Arithmetic: two directions, one spelling each
 
 ```sysl
