@@ -34,6 +34,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
 | [`sysl.time`](/library/time/) | `Instant` and `Duration` — with `5.ms` and `5.hours` on any integer — the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, and the ISO 8601 renderers and parsers | — |
+| [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring | `posix` |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
@@ -52,15 +53,19 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 — and files exist on operating systems that are not POSIX, which is why it is the one gated module
 that does *not* sit under `sysl.posix`. **Everything under `sysl.posix` is `requires posix` and
 nothing else**: threads because pthreads is what they are, `tty` because `isatty` and `termios` are,
-`rand` because entropy comes from the kernel. So a module a target cannot support is not one that
+`rand` because entropy comes from the kernel, `time` because `clock_gettime` is a call into
+it. So a module a target cannot support is not one that
 fails to link — it is one a [capability clause](/reference/modules/) will not let that program import
 in the first place, and now one you can spot by its name.
 
-It is also why `sysl.posix.tty` and `sysl.posix.rand` are modules of their own rather than functions in
-`sysl.term` and `sysl.rand`. **A requirement is module-wide**, so one function asking for `posix`
+It is also why `sysl.posix.tty`, `sysl.posix.rand` and `sysl.posix.time` are modules of their own
+rather than functions in `sysl.term`, `sysl.rand` and `sysl.time`. **A requirement is module-wide**,
+so one function asking for `posix`
 beside the escape sequences would have taken all forty constants away from the allocator-free programs
-that most want to colour a line — and one asking for it beside the generator would have taken PCG32
-away from every target that has no operating system to seed it from. Two instances of one shape, and
+that most want to colour a line; one asking for it beside the generator would have taken PCG32
+away from every target that has no operating system to seed it from; and one asking for it beside
+`Instant` would have taken the whole civil calendar away from a program that only wanted to add two
+durations. Three instances of one shape, and
 the shape is worth naming: where a module is portable except for how it gets started, the *getting
 started* goes in a submodule.
 

@@ -614,6 +614,78 @@ A date and a time with no offset name a **wall clock reading**, not an instant, 
 the fact the format exists to carry, and it is the single most common way a timestamp ends up hours
 wrong in a system that never notices.
 
+## Reading a clock — `sysl.posix.time`
+
+Everything above is arithmetic, and arithmetic needs a value to start from. Obtaining one is asking
+the environment what time it is, so it is a **module of its own** — the same split
+[`sysl.rand`](/library/rand/) and `sysl.posix.rand` make, and for the same mechanical reason: a
+capability requirement is module-wide, so a `now()` written beside `Instant` would take the whole
+calendar away from every freestanding program that only wanted to add two durations.
+
+There are two clocks, and the return types are the distinction rather than a detail.
+
+```sysl
+import sysl.posix.time.{now, monotonic}
+
+// The wall clock: a point on the timeline, comparable with one taken on another machine.
+print(now().us > 1577836800000000)
+
+// The monotonic clock: a length of time from an origin nobody specifies.
+var t0 = monotonic()
+var n: long = 1
+
+for i in 0..<200000
+    n = n * 31 + long(i)
+
+var took = monotonic() - t0
+
+print(took.us > 0)
+print(n != 0)
+```
+
+```output
+true
+true
+true
+```
+
+`now` answers an **`Instant`** — a point counted from 1970, which is the one to stamp something with.
+It is also the clock a person and an `ntpd` are both allowed to *set*, so two readings of it can
+differ by anything at all, including a negative amount.
+
+`monotonic` answers a **`Duration`**, not an `Instant`, and that is the whole of the design. It is
+counted from an origin the module deliberately does not name — boot, usually — so a single reading
+means nothing and only the difference of two does. It cannot be set and never goes backwards, which
+is what makes it the one to measure with. Giving it a type that no calendar function accepts is what
+stops a measurement being mistaken for a timestamp:
+
+```sysl
+import sysl.posix.time.monotonic
+import sysl.time.instant_text
+
+print(instant_text(monotonic()))
+```
+
+```error
+error: 't' of 'sysl.time.instant_text' is sysl.time.Instant, but sysl.time.Duration was given
+```
+
+Both require `posix`.
+
+### What a freestanding target does instead
+
+**Nothing in the library, and deliberately nothing shared with it.** A board's clock is a board's
+decision: two boards carrying the same chip — so the same *target* — can count time from a different
+RTC, which is precisely the case a compile-time switch on the target cannot express. So an embedded
+environment supplies a module of its own with these two function names, in its own package, and a
+program picks its clock by which one it imports.
+
+What that gives up, for now, is a program that compiles unchanged against both a host clock and a
+board's. The shape that would buy it is a symbol declared in capability-free `sysl.time` that a host
+module and a board package alike link an implementation of — [`sysl.harness`](/library/harness/)'s
+`attach` one layer down — and it is not built, for want of a second thing that needs it. The names
+above are chosen so that adding it later moves no caller.
+
 ## What is not here
 
 **The zone**, as distinct from the offset above. A wall clock reading becomes an instant only once
@@ -628,9 +700,11 @@ module and shows what the real thing would take.
 single count measured from the same origin as an `Instant`, which is what the count would be if the
 offset happened to be zero.
 
-**The clock.** There is no `now()`, because reading one is a capability rather than arithmetic —
-`clock_gettime` is a call into the environment, and this module has no `requires` line. An `Instant`
-is a value a freestanding target can compute with; where it comes from is the caller's to say.
+**The clock**, in *this* module. There is no `sysl.time.now()`, because reading one is a capability
+rather than arithmetic — `clock_gettime` is a call into the environment, and this module has no
+`requires` line. An `Instant` is a value a freestanding target can compute with; where it comes from
+is the caller's to say, and on a host the answer is [`sysl.posix.time`](#reading-a-clock-sysl-posix-time)
+above.
 
 ---
 

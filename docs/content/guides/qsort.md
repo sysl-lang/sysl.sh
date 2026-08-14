@@ -59,12 +59,21 @@ language rather than chosen, and one every C callback would have copied, since e
 fixes its signature and leaves the payload type to its caller. The
 [FFI reference](/reference/ffi/) has the form and what its brackets can hold.
 
-**There is no clock.** [`sysl.time`](/library/time/) has `Instant`, `Duration` and the calendar
-between them, and nothing in the library reads one — no monotonic counter and no wall clock. So this
-program compares the two sorts for *correctness* and cannot compare them for *cost*, which was half
-of why it was written. Binding `clock_gettime` here would have answered the question and put a
+**There was no clock, and now there is.** [`sysl.time`](/library/time/) had `Instant`, `Duration` and
+the calendar between them, and nothing in the library read one — no monotonic counter and no wall
+clock. So this program could compare the two sorts for *correctness* and not for *cost*, which was
+half of why it was written. Binding `clock_gettime` here would have answered the question and put a
 hand-rolled clock into the reading material, which is the thing a guide program is least allowed to
-teach.
+teach, so it was reported instead and the answer is
+[`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time).
+
+The program's last section uses `monotonic`, and the type is the part worth noticing: it answers a
+`Duration` rather than an `Instant`, so one reading means nothing and only the difference of two
+does. That is the clock a measurement wants — the wall clock is the one somebody can set, and a sort
+timed across an `ntpd` adjustment would come out negative. On a hundred thousand pseudo-random `int`s
+the library's `sort` runs in roughly **seventy per cent** of C `qsort`'s time, which is the comparison
+this program was written to make: sysl's is monomorphized against the element type, and `qsort`'s
+comparison is reached through a pointer it cannot see through.
 
 ## Why this is not in the standard library
 
