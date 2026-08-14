@@ -1458,6 +1458,48 @@ A conversion would put an ordinary retain beside an atomic one, so the count is 
 from the moment the object exists. **`&sync T` makes the *reference* safe to share, not the object
 safe to mutate** — that still wants a `Mutex`.
 
+### `@crossing` — where the rule is asked
+
+The rule above says *what* may cross. **`@crossing` says where**: it is the annotation a facility
+writes above the function that hands a value to another domain, naming the parameters it hands it
+through. `sysl.posix.threads.spawn` is declared with one, and so is any package binding a scheduler
+of its own:
+
+```sysl
+struct Cell
+    n: int
+end Cell
+
+struct State
+    cell: &Cell
+end State
+
+@crossing(s)
+start(s: *State) -> int = s.cell.n
+
+var c: &Cell = Cell(1)
+var st = State(c)
+
+print(start(&st))
+```
+
+```error
+what 's' of 'start' points at reaches another concurrency domain, so every count inside it has to be atomic
+```
+
+A **`*T` parameter is looked through**, and that is the whole of what the annotation buys. A raw
+pointer carries no refcount *of its own*, which says nothing about the object at the far end — and
+the object at the far end is what crossed. Everything else is asked about the parameter's own type.
+Hold the cell as a `&sync Cell` and the same program compiles.
+
+It costs nothing at run time: no code is emitted, no signature moves, and a program that satisfies it
+is the program it would have been without the line. What it adds is the refusal, made at each call —
+so a generic facility is asked afresh for every set of type arguments, exactly as a `&sync Box[T]` is.
+
+**A boundary nobody marks is not examined.** The annotation is how a library author says a domain
+begins here, and there is no way for the compiler to guess: a scheduler in a package looks like any
+other function until somebody writes the line.
+
 ## Hazard summary
 
 | segfault source | prevented in the safe subset by |
@@ -1466,7 +1508,7 @@ safe to mutate** — that still wants a `Mutex`.
 | null dereference | non-null references; nullable is `Option` |
 | out-of-bounds | length-carrying arrays and slices, checked everywhere |
 | slice outliving its buffer | the slice's `owner` word retains it; escaping locals are promoted |
-| refcount race across threads | `&sync T` is atomic; a `&T` may not cross a domain |
+| refcount race across threads | `&sync T` is atomic; a `&T` may not cross a domain, checked at a `@crossing` parameter |
 | dangling or wild pointer | impossible without `*T` |
 
 Only `*T` opts out, and it opts out visibly.

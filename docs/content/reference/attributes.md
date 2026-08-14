@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the seven annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the eight annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes` | an **annotation** — a fact about the declaration under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the declaration under it | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
@@ -29,11 +29,13 @@ with. That is a rule about directives, not the thing that distinguishes them.
 
 Annotations come in three groups, by what they attach to.
 
-**On a function** there are seven, each written on its own line above the declaration. More than one
+**On a function** there are eight, each written on its own line above the declaration. More than one
 may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
 `@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
-the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of.
+the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of; `@crossing(...)` says
+a parameter hands a value to another concurrency domain and is on the
+[memory](/reference/memory/) page, beside the crossing rule it asks.
 
 **On a type, or on storage** there are three, and they are about *where* rather than about what the
 declaration does. `@packed` and `@align(n)` lay out a struct — no interior padding, and the boundary

@@ -117,8 +117,9 @@ print(c.is_some())
 
 Two reasons, and neither is a limitation waiting to be lifted. A closure would have to be **boxed**
 for the new thread to reach it, which needs an allocator this module could otherwise do without; and
-its **captures** would be values crossing a domain boundary with nothing yet checking that they may.
-The address of a named function has neither problem.
+its **captures** would be values crossing a domain boundary through a box whose shape says nothing
+about what is in it. The address of a named function has neither problem, and what travels beside it
+is an ordinary parameter — which is what lets the crossing rule be asked at all.
 
 ### `null` is the one argument that cannot be passed
 
@@ -164,6 +165,45 @@ alternative is a wrapper per call.
 The pointer *is* the sharing. Two threads reading and writing what is at that address is a data race
 unless something orders them, and the two things that order them are on the
 [`sysl.sync`](/library/sync/) page.
+
+### What may be at that address
+
+`spawn` is declared `@crossing(arg)`, which is how a facility says a parameter hands a value to
+another concurrency domain ([memory](/reference/memory/)). It is why the state a thread is given is
+**checked** rather than taken on trust: a raw pointer carries no refcount of its own, and the
+annotation is what asks the compiler to look through it at the object that actually crossed.
+
+```sysl
+import sysl.posix.threads.*
+
+struct Cell
+    n: int
+end Cell
+
+struct State
+    cell: &Cell
+end State
+
+look(s: *State)
+    print(s.cell.n)
+
+var c: &Cell = Cell(1)
+var st = State(c)
+
+print(spawn(&look, &st).is_some())
+```
+
+```error
+what 'arg' of 'sysl.posix.threads.spawn' points at reaches another concurrency domain, so every count inside it has to be atomic
+```
+
+A plain `&Cell` has a **non-atomic** count, so two threads retaining it is exactly the race the model
+exists to prevent — and until the annotation existed, this program compiled and ran. Writing
+`&sync Cell` in the field and at the allocation is the whole fix: the count becomes atomic, and the
+same program is accepted.
+
+Nothing here is special to this module. A package binding FreeRTOS or Zephyr writes the same line
+above the wrapper it already has, and gets the same refusal at its own callers' calls.
 
 ```sysl
 import sysl.sync.*
@@ -448,22 +488,24 @@ language cannot keep.
 
 | | checked | not checked |
 |---|---|---|
-| crossing a domain | — | **which values may cross** — specified structurally; the check arrives with the channel |
+| crossing a domain | what a `@crossing` parameter is handed, structurally | a boundary **nobody marked** — no annotation, no question |
 | refcount races | what a `&sync T` may hold, structurally | — |
 | mutating shared state | — | **use a `Mutex`; nothing enforces it** |
 | the kernel tier | — | `*T`, spinlocks, orderings — as in C |
 
-**This module is where the first row stops being theoretical.** `spawn` hands the new thread a
-`*T`, and a raw pointer is on the crossable list on purpose — it carries no refcount to make atomic.
-What it points *at* is not examined, so a plain `&T` reaches another thread through one with nothing
-said. That is the rule as written rather than an escape from it, and it is why this API takes an
-address rather than a value: **a `spawn` taking a `T` would be claiming a check that does not
-exist.**
+**This module is where the first row stops being theoretical.** `spawn` is declared
+`@crossing(arg)`, so the pointer it takes is looked *through* and a state whose counts are not all
+atomic is refused where the call is written. That is also why this API takes an address rather than a
+value: **a `spawn` taking a `T` would be claiming the *copying* half of the crossing rule**, which
+belongs to a channel and is not written.
+
+The unchecked half of that row is where the annotation is **absent**. A facility with no
+`@crossing` on it is a boundary the compiler was never told about, and there is no way to guess one:
+a scheduler in a package looks like any other function until somebody writes the line.
 
 So a data race requires you to have shared something on purpose. Sharing takes `&sync` or `*T`, both
-of which are greppable and neither of which is what an ordinary value is. What you cannot yet be
-*stopped* from doing is pointing one of them at something whose count is not atomic — and the race
-you can write by putting a mutable field in a `&sync T` is permanent, because it is the cost of not
+of which are greppable and neither of which is what an ordinary value is. What remains permanent is
+the race you can write by putting a mutable field in a `&sync T`, because it is the cost of not
 having a borrow checker.
 
 ---
