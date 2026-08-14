@@ -59,7 +59,7 @@ something that would build a differently-named executable without saying so.
 
 ## Capabilities
 
-**Whether the machine has a heap, an operating system, POSIX or threads is a project engineering
+**Whether the machine has a heap, an operating system or POSIX is a project engineering
 decision, and this is where it is stated.** The compiler's registry of targets deliberately carries no
 capabilities: a target's ABI is measured and its capabilities are policy, so the ABI is the registry's
 and the policy is yours.

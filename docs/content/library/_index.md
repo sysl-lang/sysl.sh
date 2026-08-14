@@ -35,26 +35,28 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
 | [`sysl.time`](/library/time/) | `Instant` and `Duration` — with `5.ms` and `5.hours` on any integer — the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, and the ISO 8601 renderers and parsers | — |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
-| [`sysl.thread`](/library/thread/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `threads`, `posix` |
+| [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
-| [`sysl.term.tty`](/library/term/#whether-to-write-escapes-at-all--sysltermtty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` — and taking the terminal over: `raw`, `cooked`, `flush`, `tty_writer` | `posix` |
-| [`sysl.term.edit`](/library/term/#reading-a-line--syslterm-edit) | a line editor for a terminal with no line discipline — echo, editing, history, over a `Reader` and a `Writer` | — |
+| [`sysl.posix.tty`](/library/term/#whether-to-write-escapes-at-all-sysl-posix-tty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` — and taking the terminal over: `raw`, `cooked`, `flush`, `tty_writer` | `posix` |
+| [`sysl.term.edit`](/library/term/#reading-a-line-sysl-term-edit) | a line editor for a terminal with no line discipline — echo, editing, history, over a `Reader` and a `Writer` | — |
 | [`sysl.slices`](/library/slices/) | what a program does *to* a `[]T` — searching, comparing, `reverse`, two sorts that neither allocate, `binary_search`, and `as_ptr` for a C binding | — |
 | [`sysl.encoding`](/library/encoding/) | hexadecimal and base64 both ways, fixed-width integers to and from bytes at either byte order, and `DecodeError` | — |
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
-| [`sysl.rand.sys`](/library/rand/#taking-a-seed-from-the-host--syslrandsys) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
+| [`sysl.posix.rand`](/library/rand/#taking-a-seed-from-the-host-sysl-posix-rand) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
 | [`sysl.harness`](/library/harness/) | a test framework that runs **on the target** — `run`, `check`, `check_eq`, `check_slice_eq`, `skip`, and a tally | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 
-**The split is by capability, not by taste.** `sysl.fs` is `requires os`, because a filesystem is
-something the environment either has or does not; `sysl.thread` is `requires threads` and `posix`,
-because pthreads is what it is built on; `sysl.term.tty` is `requires posix`, because `isatty` is; and
-`sysl.rand.sys` is `requires posix`, because entropy comes from the kernel. Those four are the whole
-of the column, and a module a target cannot support is therefore not one that fails to link — it is
-one a [capability clause](/reference/modules/) will not let that program import in the first place.
+**The split is by capability, not by taste**, and the namespace is the column written into the path.
+`sysl.fs` is `requires os`, because a filesystem is something the environment either has or does not
+— and files exist on operating systems that are not POSIX, which is why it is the one gated module
+that does *not* sit under `sysl.posix`. **Everything under `sysl.posix` is `requires posix` and
+nothing else**: threads because pthreads is what they are, `tty` because `isatty` and `termios` are,
+`rand` because entropy comes from the kernel. So a module a target cannot support is not one that
+fails to link — it is one a [capability clause](/reference/modules/) will not let that program import
+in the first place, and now one you can spot by its name.
 
-It is also why `sysl.term.tty` and `sysl.rand.sys` are modules of their own rather than functions in
+It is also why `sysl.posix.tty` and `sysl.posix.rand` are modules of their own rather than functions in
 `sysl.term` and `sysl.rand`. **A requirement is module-wide**, so one function asking for `posix`
 beside the escape sequences would have taken all forty constants away from the allocator-free programs
 that most want to colour a line — and one asking for it beside the generator would have taken PCG32

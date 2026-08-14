@@ -221,9 +221,10 @@ Because the module is the directory, the clause is a property of the directory �
 is the point: you can never open a file in a `no alloc` module and fail to see that it is.
 
 The other direction is `requires`, and the standard library uses it: `sysl.fs` is `requires os`,
-because a filesystem is something the environment either has or does not, and `sysl.thread` is
-`requires threads` and `requires posix`, because creating a thread needs a scheduler underneath it. A
-freestanding target importing either is told so at the import.
+because a filesystem is something the environment either has or does not, and everything under
+`sysl.posix` — threads, `tty`, `rand` — is `requires posix`, because pthreads, `termios` and
+`getentropy` are what those modules are made of. A freestanding target importing either is told so at
+the import, and the namespace is that same fact put where a reader meets it first.
 
 That is also why the atomics live apart from the threads. `sysl.sync` requires **nothing**, so a
 module that has given up both its allocator and its operating system can still import it — which is
@@ -279,7 +280,7 @@ offer rather than part of the language.
 | `sysl.math` | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` |
 | `sysl.regex` | POSIX Extended Regular Expressions — `regex`, `Regex`, `Match` |
 | `sysl.sync` | `Atomic[T]`, `SpinLock`, and the five memory orderings — requires nothing |
-| `sysl.thread` | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` |
+| `sysl.posix.threads` | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` |
 | `sysl.args` | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` |
 | `sysl.sys` | the platform seam — what a freestanding target replaces |
 

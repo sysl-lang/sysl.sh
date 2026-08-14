@@ -105,7 +105,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // is the operator now, so the block that asserted it was refused runs instead.
     "docs/content/library/time.md"                       -> (15, 3, 4),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
-    "docs/content/library/thread.md"                     -> (6, 6, 2),
+    "docs/content/library/threads.md"                     -> (6, 6, 2),
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),

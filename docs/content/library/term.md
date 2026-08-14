@@ -109,14 +109,19 @@ afterwards.
 
 `clear_screen` is nearly always written with `home` after it, since clearing does not move anything.
 
-## Whether to write escapes at all — `sysl.term.tty`
+## Whether to write escapes at all — `sysl.posix.tty`
 
 Naming a colour and deciding to use one are different questions, and they live in different modules.
 Everything above asks for no capability at all, so an allocator-free, OS-free program can reach it.
 Asking whether output is a terminal needs `isatty`, which needs `posix` — and a capability
 requirement is **module-wide**, so one function here would have taken all forty constants away from
-the programs this module is arranged for. The answer sits one directory down instead, and the split
+the programs this module is arranged for. The answer sits in `sysl.posix` instead, and the split
 shows up in the import, which is honest about what the second one costs.
+
+**It is `sysl.posix.tty` rather than `sysl.term.tty`, and the namespace is the point.** Everything
+under `sysl.posix` requires that one capability, so a freestanding target reaches none of it — which
+is now visible in the import line rather than only in the module's own header. What this needs is
+`isatty(3)` and `termios`, so that is where it belongs, however much it reads as terminal handling.
 
 | name | answers |
 |---|---|
@@ -130,7 +135,7 @@ a running program does changes what they say.
 
 ```sysl
 import sysl.term.{red, reset}
-import sysl.term.tty.color
+import sysl.posix.tty.color
 
 main()
     val paint = color()
@@ -156,7 +161,7 @@ overrides the descriptor without overriding the user's `NO_COLOR`, and that is e
 turns colour off whatever it contains, so `NO_COLOR=0` means no colour, while set-and-empty does not.
 A program reading it as a boolean and looking for `"1"` has misread the convention.
 
-## Taking the terminal over — `sysl.term.tty.raw`
+## Taking the terminal over — `sysl.posix.tty.raw`
 
 A terminal at a shell is in **cooked** mode: the kernel's line discipline echoes what is typed,
 honours backspace, and hands the program a whole line at Enter. That is why `sysl.io.console_lines`
@@ -178,7 +183,7 @@ is being typed and nothing should be echoed. So a program picks its reader from 
 
 ```sysl
 import sysl.io.{stdin, console_lines}
-import sysl.term.tty.{raw, cooked}
+import sysl.posix.tty.{raw, cooked}
 
 main()
     var input = stdin()

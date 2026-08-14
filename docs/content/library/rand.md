@@ -69,15 +69,19 @@ false
 Nothing in `sysl.rand` reads a clock or asks the operating system for anything, so it compiles and
 runs on a freestanding target.
 
-## Taking a seed from the host — `sysl.rand.sys`
+## Taking a seed from the host — `sysl.posix.rand`
 
 A program that wants a different sequence each run needs entropy, and that needs an operating system.
 It is a **module of its own** so that importing the generator cannot drag one in behind it — the same
-split [`sysl.term`](/library/term/) and `sysl.term.tty` already make.
+split [`sysl.term`](/library/term/) and `sysl.posix.tty` already make.
+
+It sits under `sysl.posix` rather than under `sysl.rand` because `getentropy(2)` is what it is, and
+that is the rule the whole namespace follows: a module there is one a freestanding target does not
+get, and the path says so without the file having to be opened.
 
 ```sysl
 import sysl.rand.rng
-import sysl.rand.sys.seed_from_os
+import sysl.posix.rand.seed_from_os
 
 var g = rng(seed_from_os().unwrap_or(0), 1)
 

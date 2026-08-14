@@ -362,13 +362,14 @@ see that it is one. A file that declares no module may still carry one, since th
 module is a module like any other.
 
 The other direction is `@requires(...)`, which takes a **list** because a module often needs more
-than one capability at once — `sysl.thread` is `@requires(threads, posix)`.
+than one capability at once — the POSIX regex binding is `@requires(heap, posix)`, since a `regex_t`
+is caller-allocated and `regcomp` is POSIX.
 
 **The heap has two names, and they say different things.** The capability is `heap` and the clause
 that gives it up is `@no_alloc`:
 
-- **`heap` names a facility** — whether the machine being built for *has* one. It sits beside `os`,
-  `posix` and `threads`, and it is what a project states in
+- **`heap` names a facility** — whether the machine being built for *has* one. It sits beside `os`
+  and `posix`, and it is what a project states in
   [`package.hocon`](/reference/packages/#capabilities), because whether there is a heap is a project
   engineering decision.
 - **`@no_alloc` names conduct** — a promise this module's code does not *allocate*, and so does not

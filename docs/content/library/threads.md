@@ -1,18 +1,18 @@
 ---
-title: sysl.thread
+title: sysl.posix.threads
 summary: Starting a thread, waiting for one, and the mutex above the spinlock — the half of concurrency that needs a scheduler.
 weight: 80
 ---
 
-`sysl.thread` is where the capability lands. Everything on the [`sysl.sync`](/library/sync/) page is
+`sysl.posix.threads` is where the capability lands. Everything on the [`sysl.sync`](/library/sync/) page is
 reachable from a module that has given up its allocator and its operating system; nothing here is,
 because creating a thread needs a scheduler underneath it.
 
 ```sysl
-@no_threads
+@no_posix
 
 import sysl.sync.*
-import sysl.thread.spawn
+import sysl.posix.threads.spawn
 
 var a = Atomic(0)
 
@@ -20,7 +20,7 @@ print(a.load())
 ```
 
 ```error
-this reaches 'sysl.thread', which requires 'threads', and this module declared 'no threads' — an environment capability gates which modules exist, so a module that gave one up may not reach one that needs it
+this reaches 'sysl.posix.threads', which requires 'posix', and this module declared 'no posix' — an environment capability gates which modules exist, so a module that gave one up may not reach one that needs it
 ```
 
 Note where that lands: **at the import**, not at the call. A capability a module has given up decides
@@ -28,17 +28,24 @@ which modules exist for it, so a program that cannot spawn is a program whose au
 name — and the `sysl.sync` import on the line above is untouched, which is the split working exactly
 as it is meant to.
 
-The module declares **two** requirements, and both are written because neither implies the other:
+The module declares **one** requirement, and the namespace it sits in says the same thing twice over:
 
 ```
-module sysl.thread
-@requires(threads)
+module sysl.posix.threads
 @requires(posix)
 ```
 
-`threads` because a scheduler is an environment capability. `posix` because **pthreads is what this
-is built on** — and a bare-metal target with a scheduler of its own has threads and no POSIX, so the
-implication list deliberately does not connect them.
+**What is here is pthreads**, which is the whole claim and the reason the module lives under
+`sysl.posix` beside [`sysl.posix.tty`](/library/term/#taking-the-terminal-over-sysl-posix-tty-raw) and
+[`sysl.posix.rand`](/library/rand/). A module in that namespace is one a freestanding target does not
+get, and the path is enough to know it without opening the file.
+
+There was a fourth capability, `threads`, and it was **removed rather than renamed**. It gated this
+one module, and it read as a claim that the compiler tracks whether a scheduler exists — which it
+does not, and which nothing in the library was gated on. **A board running FreeRTOS or Zephyr has
+threads and no POSIX**: it does not reach this module, and it binds its own kernel as a package,
+because no capability could have made `pthread_create` appear on it. So `@no_threads` is now an
+unknown capability, and the three that remain are `heap`, `os` and `posix`.
 
 | name | what it is |
 |---|---|
@@ -51,7 +58,7 @@ implication list deliberately does not connect them.
 ## `spawn` takes an address, not a callable
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 struct Job
     input: i32
@@ -80,7 +87,7 @@ infer its parameter type from, because `T` is what is being inferred:
 
 ```sysl
 import sysl.sync.*
-import sysl.thread.*
+import sysl.posix.threads.*
 
 var counter = Atomic(0)
 var c = spawn(a -> a.add(1), &counter)
@@ -96,7 +103,7 @@ Write the type in and the real mismatch surfaces:
 
 ```sysl
 import sysl.sync.*
-import sysl.thread.*
+import sysl.posix.threads.*
 
 var counter = Atomic(0)
 var c = spawn((a: *Atomic[i32]) -> a.add(1), &counter)
@@ -105,7 +112,7 @@ print(c.is_some())
 ```
 
 ```error
-'body' of 'sysl.thread.spawn' is *extern(*sysl.sync.Atomic[int]) -> unit, but a closure was given
+'body' of 'sysl.posix.threads.spawn' is *extern(*sysl.sync.Atomic[int]) -> unit, but a closure was given
 ```
 
 Two reasons, and neither is a limitation waiting to be lifted. A closure would have to be **boxed**
@@ -121,7 +128,7 @@ context, and the context here is the type being inferred:
 
 ```sysl
 import sysl.sync.*
-import sysl.thread.*
+import sysl.posix.threads.*
 
 bump(a: *Atomic[i32])
     a.add(1)
@@ -160,7 +167,7 @@ unless something orders them, and the two things that order them are on the
 
 ```sysl
 import sysl.sync.*
-import sysl.thread.*
+import sysl.posix.threads.*
 
 bump(a: *Atomic[i32])
     for i in 0..<10000
@@ -187,7 +194,7 @@ field beside the data, and remembering that `total` is what `guard` guards is th
 
 ```sysl
 import sysl.sync.*
-import sysl.thread.*
+import sysl.posix.threads.*
 
 struct Shared
     guard: SpinLock
@@ -217,7 +224,7 @@ print(sh.total)
 ### Take the atomic away and it is a race
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 racy(p: *i32)
     for i in 0..<100000
@@ -247,7 +254,7 @@ fields are private, so there is no way to reach the value that does not go throu
 `try_lock`:
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 var m = Mutex.new(7)
 
@@ -255,7 +262,7 @@ print(m.value)
 ```
 
 ```error
-field 'value' of 'sysl.thread.Mutex' is private to 'library/sysl/thread/mutex.sysl', the file that declares it
+field 'value' of 'sysl.posix.threads.Mutex' is private to 'library/sysl/thread/mutex.sysl', the file that declares it
 ```
 
 Private is the entirety of what "owns" means here. With `value` public, reading it would be an
@@ -266,7 +273,7 @@ The private field does a second job: it puts the **positional constructor** out 
 `Mutex.new` is the only way in and there is no way to build one that starts out held.
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 var built = Mutex(0, 5)
 var p = built.lock()
@@ -275,7 +282,7 @@ print(*p)
 ```
 
 ```error
-the constructor names every field of 'sysl.thread.Mutex' in order, and 'held' is private to 'library/sysl/thread/mutex.sysl', the file that declares it — build it through an associated function of its own
+the constructor names every field of 'sysl.posix.threads.Mutex' in order, and 'held' is private to 'library/sysl/thread/mutex.sysl', the file that declares it — build it through an associated function of its own
 ```
 
 ### `lock` answers an address, and releasing is written
@@ -287,7 +294,7 @@ the whole point is to hold a lock for as few instructions as possible. `defer m.
 idiom, the same one [`sysl.fs`](/library/fs/) uses for `close`, and for the same reason.
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 inc(m: *Mutex[i32])
     for i in 0..<10000
@@ -325,7 +332,7 @@ takes it away from you, and nothing will tell you.
 have worked":
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 var q = Mutex.new(5)
 var g = q.try_lock()
@@ -398,7 +405,7 @@ the hold may be as long as it likes. What it does not do is *sleep*: there is no
 ## `yield_now` and `current`
 
 ```sysl
-import sysl.thread.*
+import sysl.posix.threads.*
 
 print(yield_now())
 
@@ -426,8 +433,8 @@ No `async`, no `await`, and no task runtime — in the language or in this modul
 
 Swift's version needs executors, continuations, and heap-allocated task state; Go's goroutines need
 a scheduler and growable stacks. **Neither can exist under `no alloc`**, and the kernel is exactly
-where threads are most real. Concurrency machinery of that kind belongs in a library that requires
-`alloc` and `threads`, not in a language that has to compile a page-fault handler.
+where threads are most real. Concurrency machinery of that kind belongs in a library that requires a
+heap and a scheduler, not in a language that has to compile a page-fault handler.
 
 Two things fall out of that, and both are good. sysl has no **actor reentrancy** hazard — the trap
 where an actor's state changes across an `await` — because there is no await-based interleaving. And

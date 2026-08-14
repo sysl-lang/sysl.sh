@@ -28,10 +28,10 @@ print(hits.load(), guard.held)
 1 0
 ```
 
-That is the whole reason this module exists apart from [`sysl.thread`](/library/thread/). A word the
+That is the whole reason this module exists apart from [`sysl.posix.threads`](/library/threads/). A word the
 processor can touch indivisibly is something a bare machine has; a *thread* is not, because creating
 one needs a scheduler underneath. A module's capability requirement is module-wide, so putting one
-type that needed `threads` in here would have taken `Atomic[T]` out of reach of the allocator, the
+type that needed `posix` in here would have taken `Atomic[T]` out of reach of the allocator, the
 scheduler, and the interrupt handler — the three pieces of code that need a lock before there is
 anything to schedule.
 
@@ -43,7 +43,7 @@ anything to schedule.
 
 This is the `*T` tier of concurrency in the same sense `*T` is the unsafe tier of memory: nothing
 here is checked, everything is greppable, and it is how a kernel is written. What sits above it —
-`Mutex[T]`, `spawn`, and the crossing rule — is on the [`sysl.thread`](/library/thread/) page.
+`Mutex[T]`, `spawn`, and the crossing rule — is on the [`sysl.posix.threads`](/library/threads/) page.
 
 ## `Ordering`
 
@@ -481,7 +481,7 @@ and that pairing is the whole of what makes the guarded data safe to touch.
 
 **It guards nothing by construction.** A spinlock is a flag beside the data, and what the data is
 stays the programmer's to remember. That is the difference against
-[`Mutex[T]`](/library/thread/#mutext), which owns what it protects — and it is deliberate, because
+[`Mutex[T]`](/library/threads/#mutex-t), which owns what it protects — and it is deliberate, because
 the code that needs a spinlock is code that is also reaching through raw pointers, where a type that
 owned its contents would have nothing coherent to own.
 
@@ -535,9 +535,9 @@ reached.
 
 **There is no channel yet.** The message-passing half of the model — where the rule about which
 values may cross a domain boundary is meant to be enforced — is not written. Until it is, that rule
-is specification with nothing asking the question, which the [`sysl.thread`](/library/thread/) page
+is specification with nothing asking the question, which the [`sysl.posix.threads`](/library/threads/) page
 says more about, since that is where it becomes visible rather than theoretical.
 
 ---
 
-Next: [`sysl.thread`](/library/thread/) — spawning, joining, and the mutex above the spinlock.
+Next: [`sysl.posix.threads`](/library/threads/) — spawning, joining, and the mutex above the spinlock.
