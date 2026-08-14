@@ -278,9 +278,10 @@ do not all need the same thing from it.
 | given as a `--lib` source root | its manifest is read for this, and the requirement is asked |
 
 **The artifact needs no header at all**, which is worth knowing before going to look for a flag to
-pass. `build-lib` evaluates a `c const` while it builds and stores the **measured value** rather than
-the C expression that produced it, so a consumer of a `.syslib` needs neither a clang nor the
-library's headers — there is nothing left to require.
+pass. `build-lib` measures a `c const` and a `c type` while it builds and stores the **answer** —
+the value, and the integer a typedef turned out to be — rather than the C that produced it, so a
+consumer of a `.syslib` needs neither a clang nor the library's headers. There is nothing left to
+require.
 
 **The header requirements, the allocator and the `dependencies` are read from a `--lib` root.** That
 flag names a *source root*, which need not be a package at all, and one that is not has nothing to

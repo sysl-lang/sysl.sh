@@ -42,8 +42,10 @@ and the two ways to narrow an aggregate are the struct invariant below and, for 
 variants.
 
 One combination is rejected: `type Alias = int`, with no `new` and no constraint. It neither narrows
-the values nor makes a new type, so it declares nothing at all — sysl has no `typedef`, and the
-diagnostic says so at the declaration.
+the values nor makes a new type, so it declares nothing at all — there is no `typedef` to write by
+hand, and the diagnostic says so at the declaration. The one declaration of that shape is the one the
+compiler writes for you, when a [`c type`](/reference/ffi/) asks the C compiler what a typedef in a
+header actually is.
 
 ## `new` is what makes it a type
 

@@ -393,7 +393,7 @@ Each of the three parts may be left out, with one exception:
 
 The last row is the exception. A transparent alias with no constraint declares nothing — it neither
 narrows the values nor makes a new type — so writing it can only be a mistake or an attempt at a
-`typedef`, which sysl does not have:
+`typedef` of one's own, which is not a thing to write here:
 
 ```sysl
 type Alias = int

@@ -43,7 +43,7 @@ a binding **or** a function, and says which linker section it lands in. All thre
 **On the file** there are five, in its header directly below `module` and before everything else:
 `@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, `@include("...")`, and `@tests`. The
 first two say what the whole module may do; `@link` says what its `extern`s need at the linker and
-`@include` what its `c const` block needs at the C compiler; the last says the file is scaffolding
+`@include` what its `c const` and `c type` blocks need at the C compiler; the last says it is scaffolding
 for the module's tests. All five attach to the file rather than to any declaration in it — and
 writing one further down is refused with a message saying where it belongs. The first four are
 covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where what they *mean* is;
