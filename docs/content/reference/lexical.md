@@ -103,11 +103,12 @@ lexer having heard of them, and no list of widths has to be maintained anywhere.
 
 A few words are **contextual** — special only where the grammar expects one, and ordinary identifiers
 everywhere else: `is`, `not`, `invariant`, `new`, `within`, `where`, and the `c` of a
-[`c const`](/reference/ffi/) block. You may name a variable `where`; you may not name one `while`.
+[`c const` or `c type`](/reference/ffi/) block. You may name a variable `where`; you may not name one
+`while`.
 
 The last of those is the clearest case for why the language spends so few words. `c` is the most
-common one-letter name in code that handles characters, and what keeps it available is that `const`
-follows it: nothing else in sysl puts a keyword after a name, so the pair can only be the one thing,
+common one-letter name in code that handles characters, and what keeps it available is the keyword
+that follows it: nothing else in sysl puts one after a name, so each pair can only be the one thing,
 and the word costs nobody anything.
 
 ## Reserved identifiers

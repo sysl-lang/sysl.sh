@@ -1449,6 +1449,83 @@ target and re-measuring it elsewhere would answer a different question under the
 
 **A file that writes no block costs nothing** and never causes a C compiler to be looked for.
 
+## `c type` — a width only the C compiler can work out
+
+**A `c const` can measure `sizeof(TickType_t)` and cannot use the answer.** Nothing turns a constant
+into the type of a parameter, so a typedef whose width the target or a `#define` decides could be
+measured and not *spelled* — and a binding had to pick one integer and be right by luck.
+
+That is the version of the transcription problem with no symptom. `TickType_t` is eight bytes for
+FreeRTOS's POSIX port, four on a Cortex-M and two under `configUSE_16_BIT_TICKS`, and every one of
+them appears in a signature. An `extern` declaring the wrong one is not a size mismatch anything can
+see: it links, and then passes garbage in the high half.
+
+**A `c type` block is the type the C compiler says a name is**, for the target being built for:
+
+```sysl
+@include("<stddef.h>")
+
+c type
+    Size = "size_t"
+
+val n: Size = 41
+
+print(str(n + 1))
+```
+
+```output
+42
+```
+
+A measured type **is** the integer it was measured as — a second name for it, interchangeable with
+it, checking nothing of its own — so arithmetic on one needs no cast and an `extern` written against
+one is an ordinary declaration:
+
+```sysl
+@include("FreeRTOS.h")
+
+c type
+    Tick  = "TickType_t"
+    Stack = "configSTACK_DEPTH_TYPE"
+
+extern "vTaskDelay" c_task_delay(ticks: Tick)
+```
+
+Everything `c const` says holds here: the same contextual `c`, the same quoting, the same `@include`
+headers, the same probe compiled and never run, and the same rule that a library ships the answer
+rather than the C name. **A file writing both blocks asks the C compiler once**, since the two are one
+question rather than a price per line.
+
+**A line carries no sysl type**, which is the whole difference from a `c const` line — the type is the
+answer rather than the question. A program that wants to *state* a width writes `@assert` over a
+`c const` holding the `sizeof`, which says the same thing where it can be checked.
+
+**What comes back is a width and a signedness.** Three things follow, and each was measured against
+the C compiler rather than assumed:
+
+- an **enum** is measurable and carries the signedness the C compiler chose for it;
+- a **qualifier** needs no special case, so `const unsigned short` measures as `unsigned short`;
+- plain **`char`** is asked about rather than assumed, since C leaves its signedness to the
+  implementation — it is signed on an Apple arm64 machine and unsigned on many others.
+
+**A `_Bool` arrives as `bool`**, the one answer that is not an integer and is still given: C means by
+`_Bool` what sysl means by `bool`, and the two already cross as a single unsigned byte.
+
+**A type C does not describe as an integer is refused by name:**
+
+```sysl
+c type
+    Handle = "void *"
+```
+
+```error
+is not an integer type
+```
+
+A float, a pointer, a struct and an array each already have an answer here — a float by name, an
+address as `*T`, a struct as an `opaque struct` — and each is better than a same-width integer
+standing in for it and losing what it was.
+
 ## What is deliberately absent
 
 | absent | instead |

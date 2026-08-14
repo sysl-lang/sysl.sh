@@ -22,7 +22,7 @@ confirming what you already expected.
 | `char *` | `string` | validated UTF-8, with a length, and no terminator |
 | `struct` | `struct` | the same thing |
 | a `union` and a tag beside it | `enum` | one construct, and the arms are checked |
-| `typedef` | `type` | |
+| `typedef` | `type`, or [`c type`](/reference/ffi/) | `type` narrows or renames a scalar; a bare alias is refused. `c type` is for a typedef in a *header*, whose width the C compiler answers for |
 | `#define MAX 512` | `const MAX: usize = 512` | folded into every use, no storage, usable as an array bound |
 | `static` at file scope | `private` | |
 | a header | a module | no `#include`, no include guard, no forward declaration |
