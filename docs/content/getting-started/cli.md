@@ -340,10 +340,11 @@ than a setting, and it is worth knowing before a `f64` goes into an inner loop.
 `soft`: `-mfloat-abi=soft` means no FPU instructions whatever, while `softfp` uses the `fpv5-sp-d16`
 this core has and changes only the calling convention. That distinction is not something a triple can
 carry — both rows are `thumbv8m.main-none-eabi` — so sysl says which it is on every clang command
-line: `-mfpu=none` for the `soft` row, and `-mfpu=fpv5-sp-d16` for the other two. Neither answer is
-left to the compiler's default, because that default is not the same one twice: the same triple
-defines `__ARM_FP` under some clangs and not others, and a row that said nothing would mean a
-different machine depending on which was installed. **Reach for it when your board's headers say the FPU is off**, which is
+line, with the convention beside it: `-mfloat-abi=soft -mfpu=none` for the `soft` row,
+`-mfloat-abi=softfp -mfpu=fpv5-sp-d16` for `softfp`, and `-mfloat-abi=hard -mfpu=fpv5-sp-d16` for the
+first. None of that is left to the compiler's default, because the default is not the same one twice:
+the same triple reports a floating-point unit under some clangs and none under others, so a row that
+said nothing would mean a different machine depending on which was installed. **Reach for it when your board's headers say the FPU is off**, which is
 where the difference announces itself: CMSIS refuses the build with *"Compiler generates FPU
 instructions for a device without an FPU (check `__FPU_PRESENT`)"*, and every Zephyr MPS2 board is
 configured that way. Getting it wrong the other way is worse than a refusal — the image links, boots,
