@@ -412,6 +412,35 @@ Two of the capabilities are checked differently, and the difference is worth kno
   the import graph, which is load-bearing: a qualified path reaches another module with no import at
   all, so a rule about imports would have missed the shorter of the two ways to write the mistake.
 
+### The target's half needs no clause at all
+
+A module's effective set is the target's intersected with its own narrowing, so a capability is out of
+reach whichever of the two removed it — and both are answered at the same edge. `@no_os` is the half
+you can see in the file. The other half is the machine: on a target whose
+[`package.hocon`](/reference/packages/#capabilities) says `os = false`, **every** module of the
+program is one that may not reach `sysl.fs`, with nothing written anywhere. A `print(exists("/tmp"))`
+in a program with no clause at all is refused:
+
+```text
+error: this reaches 'sysl.fs', which requires 'os', and 'aarch64-none-elf' does not provide it — a
+target's capabilities are what 'package.hocon' declares, so either this reference cannot be made on
+this machine or the config is understating it
+```
+
+The message names the config rather than a clause, because that is where the answer is. Where the
+module *did* write `@no_os`, that is what it hears about instead — a reader sent to the config over
+something they said in their own header would go and change the wrong file.
+
+**A library's own modules are exempt, and that is what makes the rule usable.** The modules this
+question is asked of are the ones the compilation is *producing*: your program's own. The standard
+module's are not, and neither are a `--lib` source root's or a
+[fetched package's](/reference/packages/#dependencies). A library holding one POSIX module is not a
+library a POSIX-less target cannot use — it is a library one module of which your program cannot
+reach, and refusing at that module's own
+`@requires` would refuse your build over a file you did not write and cannot change. So the refusal
+lands at the reference, which is a line somebody chose to write, and a program that never names the
+module hears nothing.
+
 ### A generic answers for what it wrote, not for what its caller chose
 
 A generic has no execution until a type is chosen, and whoever chose it is usually somebody else. So
