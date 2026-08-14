@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the declaration under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
@@ -27,7 +27,8 @@ A directive is still written at column 1, and for its own reason: it is gone bef
 column, so an indented one would look like it takes part in a block structure it has nothing to do
 with. That is a rule about directives, not the thing that distinguishes them.
 
-Annotations come in three groups, by what they attach to.
+Annotations come in groups, by what they attach to — and the last of them is the empty one, which is
+as much a rule as the others.
 
 **On a function** there are eight, each written on its own line above the declaration. More than one
 may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
@@ -54,6 +55,35 @@ covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where w
 **On nothing at all** there is one: `@assert`, which stands where a declaration stands and describes
 only itself. It attaches to nothing, declares no name, and nothing can refer to one — two saying the
 same thing are two checks rather than a duplicate. It is below.
+
+**On a member, none of them.** "A function" above means a *free* function: a method, a property, an
+associated function, a field and a variant take no annotation at all, and the refusal says so rather
+than complaining about the indentation of the line:
+
+```sysl
+struct Counter
+    n: int
+
+    @test
+    is_zero(self) -> bool = self.n == 0
+```
+
+```error
+an annotation marks a function, and a member is not one
+```
+
+So what `sysl test` runs is a free function that calls the member, and `@crossing(...)` is written on
+the wrapper a caller already goes through rather than on the method behind it — which is where the
+call a program makes goes, and so where the complaint belongs. `@packed` and `@align(n)` are not the
+exception they look like: they mark the **struct**, written above `struct` and not above a field.
+`@assert` inside a type's body is refused too, and gets its own sentence, because it is not a claim
+about the member under it — it goes beside the type, where `sizeof` and `offsetof` still name what it
+is about.
+
+**`#test` above a member is answered by the same sentence**, with the sigil named at the end of it. A
+directive is gone before the lexer counts a column, so an *indented* `#` never reaches the directive
+pass at all and arrives at the member grammar instead — and being told only that an annotation is
+written `@` would send a reader to write `@test`, which a member is refused just the same.
 
 **An annotation's name is an ordinary identifier**, which is the point of writing these as
 annotations at all: nothing here is reserved, so a program may still call something `test`, `link`,
@@ -1434,7 +1464,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost` and `@export` on a declaration, `@packed` and `@align(n)` on a struct, `@no_<capability>`, `@requires`, `@link` and `@tests` on a file. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)` and `@crossing(...)` on a free function, `@packed` and `@align(n)` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |

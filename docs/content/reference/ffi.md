@@ -316,7 +316,7 @@ surprise.
 | refused | because |
 |---|---|
 | a **generic** | an exported symbol is one function at one signature, so there is no way to say which instantiation the linker holds |
-| a **member** | C has no receiver to hand it. The grammar refuses this before any rule does: an annotation is read above a top-level declaration only, so `@test` and `@pure` are as unavailable on a method |
+| a **member** | C has no receiver to hand it. The grammar refuses this before any rule here is reached, and says so in as many words: a member takes no annotation at all ([attributes](/reference/attributes/)), so `@test` and `@pure` are as unavailable on a method |
 | a **`private`** definition | `private` gives the symbol internal linkage, which promises every caller is inside the module; an export promises the opposite |
 | a **`@ghost`** | it is erased before there is a symbol at all |
 | a **`@test`** | only `sysl test` builds one, and an export has to be in the artifact a C project links |
