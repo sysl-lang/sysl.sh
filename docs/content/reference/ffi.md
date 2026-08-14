@@ -1441,17 +1441,80 @@ the C compiler refused this file's 'c const' block
 ```
 
 Four more refusals go with it: a header that is not there, a value the declared type cannot hold
-(naming the value and both ends of the range), a type that is not an integer, and a block written
+(naming the value and both ends of the range), a type that is not a number, and a block written
 inside a body, which has no file's headers to be compiled against.
 
-**A `string` from C is not written this way.** An integer is a number in the compiler's output and
+**A `string` from C is not written this way.** A number is a number in the compiler's output and
 reads straight off; a string constant is a block of storage and a different job, and it would have to
 be written `"\"foo\""` — two quotings for one value, which is a form nobody would guess. The refusal
 says so rather than leaving it to be found.
 
-**The declared type may be a transparent subtype of an integer**, which is what makes this block and
+### A float is measured too, and it is the value hand-copying gets wrong
+
+**The declared type may be `f32` or `f64`.** That a float can be spelled by name is no answer here:
+a name gives you the *width*, and what nothing was checking is the **value**. The case that makes it
+worth a feature rather than a convenience is the macro written as an expression over other macros —
+a graphics or physics header is full of them — because copying one of those means doing the arithmetic
+by hand and writing the answer down.
+
+```sysl
+@include("<float.h>")
+
+c const
+    pi:      f32 = "3.14159265359f"
+    quarter: f32 = "0.25f * 3.14159265359f"
+    eps:     f32 = "FLT_EPSILON"
+
+var one: f32 = 1.0
+
+print(quarter * 4.0 == pi, one + eps > one, one + eps / 2.0 == one)
+```
+
+```output
+true true true
+```
+
+`FLT_EPSILON` is the second reason: it is the definition of the width rather than a number about it,
+and a transcription with one digit wrong still looks plausible while being the wrong tolerance for
+every convergence loop that uses it.
+
+**Rounding is allowed and silent.** Asking for `f32` is asking for the nearest `f32`, which is what C
+does for `float x = M_PI;` — refusing it would leave the narrow width unable to read the
+`double`-typed macros that are most of them. What is refused is the value going *missing*: a
+measurement that is not finite, because the C overflowed while settling it or the macro names an
+infinity or a NaN, and a finite one the declared width turns into an infinity or into a zero it was
+not.
+
+```sysl
+c const
+    huge: f32 = "1e300"
+```
+
+```error
+which 'f32' cannot hold
+```
+
+**The widths are `f32` and `f64`, and `f16` is refused by name.** C writes a constant expression as a
+`float`, a `double` or a `long double`, so those two are the widths a measurement reads back at
+without anyone having to guess which was meant.
+
+```sysl
+c const
+    h: f16 = "0.5"
+```
+
+```error
+'f16' is not a width a 'c const' is measured at
+```
+
+**`c type` below still refuses a float, and that is a different question.** A typedef is measured
+because its *width* is the configuration's to decide, and `float` and `double` are IEEE binary32 and
+binary64 on every machine sysl targets — so `f32` and `f64` by name really are the whole answer
+there. It is the value that varies, never the width.
+
+**The declared type may be a transparent subtype of a number**, which is what makes this block and
 `c type` below a pair rather than two features. Without `new` such a type *is* its base, so a
-constant declared at one is a constant declared at an integer — and a measured type is exactly that
+constant declared at one is a constant declared at that base — and a measured type is exactly that
 shape:
 
 ```sysl
