@@ -1449,6 +1449,45 @@ target and re-measuring it elsewhere would answer a different question under the
 
 **A file that writes no block costs nothing** and never causes a C compiler to be looked for.
 
+### A file that says what it needs is not probed where it could not be
+
+A probe is a C compilation, so a file carrying one **asks for headers** — and a library is built for
+every target it might be used on. Without a rule here a library could hold no block at all: one module
+measuring `sizeof(regex_t)` would fail every freestanding build of every program, including programs
+that never name it, because there is no `<regex.h>` for a bare Cortex-M and no reason there should be.
+
+So a file's blocks are **skipped** when the file declares
+[`@requires`](/reference/modules/#capabilities-are-a-module-property) on a capability the machine
+cannot have:
+
+```
+module sysl.posix.regex
+@requires(posix)
+@include("regex.h")
+
+c const
+    REGEX_SIZE: usize = "sizeof(regex_t)"
+```
+
+Built for a freestanding target, no C compiler is asked anything. The module's **header stays** and
+its declarations go, so a program that *does* reach it is told what it needs rather than being
+answered with an undefined name:
+
+```
+this reaches 'sysl.posix.regex', which requires 'posix', and this module declared 'no posix'
+```
+
+**What is asked is whether the machine can have the capability, not whether the project provides
+it.** [`package.hocon`](/reference/packages/#capabilities) treats a capability it does not mention as
+provided, so a freestanding target nominally offers `posix` — a gate reading that would gate nothing
+at all. The question here is physical and has one answer per target: an operating system, and POSIX.
+Whether there is a **heap** is not asked, because that is an engineering decision about a machine
+that could have one either way.
+
+**A file that requires nothing is measured wherever it is built.** Such a file claims to build
+anywhere, so a header missing there is the file having mis-stated itself — the skip is a rule about
+files that said what they need, not about which machine is in front of you.
+
 ## `c type` — a width only the C compiler can work out
 
 **A `c const` can measure `sizeof(TickType_t)` and cannot use the answer.** Nothing turns a constant
