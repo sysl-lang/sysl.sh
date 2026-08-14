@@ -324,19 +324,26 @@ that cannot run it.
 
 **The Cortex-M33 has three rows, because neither the float ABI nor the FPU's presence is sysl's to
 pick.** `thumb-freestanding` passes floating-point arguments in VFP registers, which is what `eabihf`
-selects and what clang does with `thumbv8m.main` unasked; `thumb-freestanding-softfp` passes them in
-core registers, which is what `-mfloat-abi=softfp` means and what pico-sdk builds by default. The two
+selects; `thumb-freestanding-softfp` passes them in core registers, which is what
+`-mfloat-abi=softfp` means and what pico-sdk builds by default. The two
 cannot be mixed — GNU ld refuses the link outright, saying one object *"uses VFP register arguments"*
 and the other *"does not"* — so a sysl archive joining a C build has to agree with that build, and
 offering only the first row meant the C had to be rebuilt to follow sysl. Pick the one your project
 already uses; if you do not know, `softfp` is the pico-sdk default.
 
+**Both of those rows use the M33's own unit, which is single precision.** `f32` arithmetic is
+instructions and `f64` arithmetic is a call into the board's runtime — `__aeabi_dmul` and its family
+— because an `fpv5-sp-d16` has no double-precision instructions to select. That is the part rather
+than a setting, and it is worth knowing before a `f64` goes into an inner loop.
+
 **`thumb-freestanding-soft` is the third, and it is for a board with no unit at all.** `softfp` is not
-`soft`: `-mfloat-abi=soft` means no FPU instructions whatever, while `softfp` uses the `fpv5-d16` this
-core has and changes only the calling convention. That distinction is not something a triple can
-carry — both rows are `thumbv8m.main-none-eabi`, and clang compiles `a * b` on an `f32` to `vmla.f32`
-under either suffix — so sysl adds `-mfpu=none` for the `soft` row and the two are told apart by that
-rather than by their names. **Reach for it when your board's headers say the FPU is off**, which is
+`soft`: `-mfloat-abi=soft` means no FPU instructions whatever, while `softfp` uses the `fpv5-sp-d16`
+this core has and changes only the calling convention. That distinction is not something a triple can
+carry — both rows are `thumbv8m.main-none-eabi` — so sysl says which it is on every clang command
+line: `-mfpu=none` for the `soft` row, and `-mfpu=fpv5-sp-d16` for the other two. Neither answer is
+left to the compiler's default, because that default is not the same one twice: the same triple
+defines `__ARM_FP` under some clangs and not others, and a row that said nothing would mean a
+different machine depending on which was installed. **Reach for it when your board's headers say the FPU is off**, which is
 where the difference announces itself: CMSIS refuses the build with *"Compiler generates FPU
 instructions for a device without an FPU (check `__FPU_PRESENT`)"*, and every Zephyr MPS2 board is
 configured that way. Getting it wrong the other way is worse than a refusal — the image links, boots,
