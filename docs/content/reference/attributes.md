@@ -12,6 +12,7 @@ has a name and a spelling of its own:
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
+| `@export("...")` on a `struct` | an **annotation** — the name the type carries in a generated C header | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |
 | `@assert` | an **annotation** that describes nothing but itself — a condition settled while compiling | the analyzer, once |
 | `#if` | a **directive** — a gate on lines | a pass before the lexer |
@@ -38,10 +39,12 @@ the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of; 
 a parameter hands a value to another concurrency domain and is on the
 [memory](/reference/memory/) page, beside the crossing rule it asks.
 
-**On a type, or on storage** there are three, and they are about *where* rather than about what the
-declaration does. `@packed` and `@align(n)` lay out a struct — no interior padding, and the boundary
-the aggregate begins on — and `@align(n)` marks one binding's storage as well. `@section("...")` marks
-a binding **or** a function, and says which linker section it lands in. All three are below.
+**On a type, or on storage** there are four, and three of them are about *where* rather than about
+what the declaration does. `@packed` and `@align(n)` lay out a struct — no interior padding, and the
+boundary the aggregate begins on — and `@align(n)` marks one binding's storage as well.
+`@section("...")` marks a binding **or** a function, and says which linker section it lands in. All
+three are below. The fourth is `@export`, which on a struct names the type in a generated C header
+rather than placing it, and is on the [FFI](/reference/ffi/) page with the other half of itself.
 
 **On the file** there are five, in its header directly below `module` and before everything else:
 `@no_alloc` and its siblings, `@requires(...)`, `@link("...")`, `@include("...")`, and `@tests`. The
@@ -1470,7 +1473,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)` and `@crossing(...)` on a free function, `@packed` and `@align(n)` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)` and `@crossing(...)` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |

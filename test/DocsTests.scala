@@ -76,7 +76,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // An `@export` publishes a C-convention entry rather than renaming the definition, so an
     // aggregate crosses: one more refusal, for the struct field that still does not, and two more
     // fragments — the `extern` and the `@export` whose addresses a C library may now be handed.
-    "docs/content/reference/ffi.md"                    -> (19, 28, 11),
+    // A struct now names itself in the header: one more runnable, showing that the sysl side is
+    // unaffected by the name it chose, and three more refusals — the namespace C shares between a
+    // typedef and a function, a generic struct, and a private one.
+    "docs/content/reference/ffi.md"                    -> (20, 31, 11),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:

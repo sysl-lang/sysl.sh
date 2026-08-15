@@ -487,6 +487,106 @@ valid C++; an older compiler gets the empty definition, which is a weaker declar
 it refuses. The block appears only in a header that has something diverging in it. What it buys the
 caller is real: code after the call is dead, and a path ending in it needs no return value.
 
+### Naming a struct in the header
+
+A struct an exported signature reaches is **defined** in the header as well as named, since a
+prototype mentioning an `Id` is useless to a consumer that has not been told what one is. Left alone
+its name is derived from the module path — `mylib_Id` here, and `sh_sysl_box2d_c_Id` in a package —
+which makes it the one name in the file nobody chose. `@export` above the struct chooses it, exactly
+as it names a function's symbol:
+
+```sysl
+module mylib
+
+@export("mylib_vec2")
+struct Vec2
+    x: i32
+    y: i32
+
+@export("mylib_add_vec")
+add(a: Vec2, b: Vec2) -> Vec2 = Vec2(a.x + b.x, a.y + b.y)
+
+val v = add(Vec2(1, 2), Vec2(10, 20))
+
+print(v.x, v.y)
+```
+
+```output
+11 22
+```
+
+A sysl caller is unaffected by either name, exactly as it is by a function's symbol — it goes on
+writing `Vec2` and `add`. What the two attributes decide is what the header says:
+
+```c
+typedef struct {
+	int32_t x;
+	int32_t y;
+} mylib_vec2;
+
+mylib_vec2 mylib_add_vec(mylib_vec2 a, mylib_vec2 b);
+```
+
+Written bare, `@export` gives the `typedef` the **declared** name — `Vec2` — which is the reading it
+already has on a function. It composes with [`@packed` and `@align(n)`](/reference/attributes/),
+which are three facts about one struct, and it is what a binding mirroring a C library wants: that
+library's own type names rather than tidier derived ones.
+
+**The derived name was buying uniqueness and a chosen one is a claim**, so the claim is checked. Two
+things in one header answering to one name are refused — and **a function's symbol counts**, because
+at file scope C puts a `typedef` name and a function name in one namespace where sysl has two:
+
+```sysl
+module mylib
+
+@export("handle")
+struct H
+    x: i32
+
+@export("handle")
+make(n: i32) -> H = H(n)
+```
+
+```error
+'handle' is the C name of the function 'mylib.make' and the type 'mylib.H' — a header declares both in one namespace
+```
+
+A **generic** struct is refused for the reason a generic function is, one step shorter: every
+instantiation is a struct of its own, so one written name would be claimed by all of them at once.
+
+```sysl
+module mylib
+
+@export("Box")
+struct Box[T]
+    v: T
+```
+
+```error
+a header names one type at one shape, so 'mylib.Box' cannot be generic
+```
+
+A **`private`** struct is refused too, and not for the reason a private *definition* is — a `typedef`
+has no linkage to contradict. The visibility rule gets there first: a public declaration may not name
+a type less visible than itself and an export is public, so a private struct appears in no signature
+a header carries and there is no name in one for it to take.
+
+```sysl
+module mylib
+
+@export("mylib_id")
+private struct Id
+    index1: i32
+```
+
+```error
+'mylib.Id' is private, so no exported function may name it — an export is public
+```
+
+**The chosen name reaches the header and nothing else.** The emitted aggregate keeps its mangled
+name, and C links nothing on a type name — which is what makes this a spelling an author may decide
+rather than a fact anything else depends on.
+
 From there it is an ordinary C build:
 
 ```text
