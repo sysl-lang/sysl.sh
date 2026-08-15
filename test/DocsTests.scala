@@ -55,7 +55,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/types.md"                 -> (12, 1, 0),
     "docs/content/reference/expressions.md"           -> (18, 5, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
-    "docs/content/reference/declarations.md"          -> (21, 6, 1),
+    "docs/content/reference/declarations.md"          -> (23, 7, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (24, 18, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),

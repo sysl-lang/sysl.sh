@@ -386,8 +386,10 @@ print(total, ok)
 
 What is *excluded* follows from the same rule rather than from taste:
 
-- **`=` and `->`** are binary but already open an indented block — a function body, a match arm — and
-  one token cannot mean both "the block starts here" and "the line goes on".
+- **`=` and `->`** are binary but already open an indented block — a function body, a match arm, a
+  [binding's value](/reference/declarations/#the-value-may-be-an-indented-block) — and one token cannot mean
+  both "the block starts here" and "the line goes on". A value too long for its line therefore goes
+  *under* the `=` as a block rather than after it as a continuation.
 - **`++`, `--` and `?`** are postfix, so a line ending in one is already complete.
 - **`..`, `..<` and `...`** can be complete too: `s[..]` is the whole range, and `int...` is a
   variadic tail.

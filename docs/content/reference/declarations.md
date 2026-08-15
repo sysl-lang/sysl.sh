@@ -24,6 +24,77 @@ both directions. A `const` states an interface — its value is substituted wher
 that value *is* matters less than what it is a value **of**. A `val` has its type readable off the
 value it was given, and a `val` with no value is not a declaration of anything.
 
+### The value may be an indented block
+
+A binding's `=` takes one expression, or an **indented block** whose trailing expression is the
+value — the same arrangement a function body has, and the same one an `if` branch has. What the block
+binds is the block's own, and goes out of scope with it:
+
+```sysl
+val limits =
+    val raw = 7
+    val capped = raw * 2
+
+    capped
+
+print(limits)
+```
+
+```output
+14
+```
+
+Reach for it when the value takes more than one step to work out. The alternative is a name in the
+enclosing scope that exists only to be read once on the next line, which says the value is available
+to everything below when it is not.
+
+It composes with the branching forms rather than competing with them — an `if` too long for its line
+goes on the line under the `=`, which is the shape the form was built for:
+
+```sysl
+pick(c: bool) -> int
+    val n =
+        if c then
+            val a = 3
+
+            a + 1
+        else
+            0
+
+    n * 10
+
+print(pick(true), pick(false))
+```
+
+```output
+40 0
+```
+
+**A block of one expression is that expression.** Moving a value to the next line to fit the margin
+changes nothing else about the declaration: a module `val` written that way is still laid into the
+object file, rather than becoming something the program computes before it starts.
+
+**A block that ends in something other than an expression yields `unit`**, exactly as an `if` with no
+`else` does, and the complaint arrives where the value is used rather than where it was bound.
+
+**A `const` does not take one.** A constant is folded into every use of it rather than run, so there
+is nowhere for the statements to happen. Its value may still sit on the next line — that is one
+expression rather than a block, by the rule above — and what is refused is a block that binds
+something:
+
+```sysl
+const Limit: int =
+    val base = 3
+
+    base * 2
+
+print(Limit)
+```
+
+```error
+'Limit' is a 'const', so its value is folded into every use of it
+```
+
 ### A module member states its type
 
 Where a binding is a **member of a module** rather than a local, the annotation stops being optional
