@@ -234,6 +234,70 @@ not carry the smallest value. The two questions coincide on an integer and only 
 Only integers have them: `f64::Max` and `bool::Max` are refused, the float because its extremes are
 `sysl.math`'s business and the boolean because it is not that kind of type.
 
+**A type parameter answers them too**, from whatever the instantiation bound it to — which is what
+makes the bounds usable by a *library* rather than only by a program. Bounded narrowing, integer
+parsing, saturating arithmetic and a min/max reduction's identity all want `T`'s extreme, and none of
+them can name it any other way:
+
+```sysl
+widest[T]() -> T = T::Max
+
+val a: u8 = widest()
+val b: u16 = widest()
+
+print(a, b)
+print(widest[i8]())
+```
+
+```output
+255 65535
+127
+```
+
+One body serves every width it is instantiated at, and the argument may be written at the call or
+inferred from what the result is used as.
+
+**`Min` and `Max` are the only two a parameter answers.** The rest stay on a written type name:
+
+```sysl
+first[T]() -> T = T::First
+
+val a: u8 = first()
+
+print(a)
+```
+
+```error
+'T' is a type parameter, and the only attributes one answers are 'T::Min' and 'T::Max'
+```
+
+The reason is the walk that checks a generic body **once**, with `T` standing for itself rather than
+for any particular type. That walk has to hand back a typed value, and `Min` and `Max` both answer
+*in `T`* — so one stand-in is right for both. `Valid` answers a `bool`, `Pos` a `usize` and `Image` a
+`string`, so admitting those would mean restating each attribute's result type a second time, in a
+second place, where the two copies could drift apart.
+
+**Nothing is asked of `T` in the signature.** A parameter given a type with no extremes is reported
+at the instantiation that gave it one, and the message names both:
+
+```sysl
+struct P
+    x: int
+
+widest[T]() -> T = T::Max
+
+val a: P = widest()
+
+print(1)
+```
+
+```error
+'T::Max' needs an integer type, and 'T' is P here
+```
+
+That is the same deferral `sizeof(T)` takes, and it is what keeps a bound from being something a
+generic has to declare in order to measure.
+
 ### What has no attributes
 
 **A data enum**, because its value is a variant plus a payload, so a position, a name and a

@@ -85,7 +85,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
     // that a member takes no annotation is a sentence now, so the page can show it being said.
-    "docs/content/reference/attributes.md"             -> (22, 29, 6),
+    "docs/content/reference/attributes.md"             -> (23, 31, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
