@@ -408,6 +408,7 @@ import sysl.fs.{entries, make_dir, write_text, remove_file, remove_dir}
 
 var dir = "/tmp/sysl-fs-doc-entries"
 
+remove_dir(dir)          // in case an earlier run of this page left it behind
 make_dir(dir).unwrap()
 write_text(dir + "/one.txt", "a").unwrap()
 write_text(dir + "/two.txt", "b").unwrap()
