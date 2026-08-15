@@ -78,7 +78,9 @@ object file, rather than becoming something the program computes before it start
 `else` does, and the complaint arrives where the value is used rather than where it was bound.
 
 **A `const` does not take one.** A constant is folded into every use of it rather than run, so there
-is nowhere for the statements to happen:
+is nowhere for the statements to happen. Its value may still sit on the next line — that is one
+expression rather than a block, by the rule above — and what is refused is a block that binds
+something:
 
 ```sysl
 const Limit: int =
