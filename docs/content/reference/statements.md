@@ -45,6 +45,11 @@ Without that rule, `full = true` (a `bool`) and `len += 1` (an `int`) would be t
 nothing to meet at. Statement position starts at a statement, at a loop body, and at the body of a
 function that returns nothing.
 
+**A block stands wherever a construct puts one, and a binding's `=` is one of those places** — see
+[the value may be an indented block](/reference/declarations/#the-value-may-be-an-indented-block).
+The rules there are the ones above, unchanged: the trailing expression is the value, and what the
+block binds goes out of scope with it.
+
 ### The statement forms
 
 Everything that can stand as a statement:
