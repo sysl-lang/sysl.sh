@@ -312,6 +312,79 @@ What is still not read is the rest of the manifest. A root's capabilities are th
 and they have none of the one-answer-per-program character that makes the allocator settle for
 everybody.
 
+## A library the machine already has, found by asking it
+
+A `headers` requirement puts the path in your hands, which is right when the headers belong to your
+build — lwIP's live in your pico-sdk clone and nothing else could know where that is. **It is more
+than is needed for an ordinary installed library**, because most of them answer the question
+themselves. `pkg-config` is how: a `.pc` file installed beside the library says where its headers are
+and what its link line is, on this machine.
+
+```hocon
+requires {
+  pkg_config { sdl3 = "SDL3 — brew install sdl3, or Debian's libsdl3-dev" }
+}
+```
+
+```
+sysl run .
+```
+
+That is the whole command. Before this, the same program wanted the layout of your machine typed out —
+and typed out correctly, which for the box2d demo meant knowing that cairo's headers are in
+`include/cairo` while SDL3's want the directory *above* `SDL3`:
+
+```
+sysl run . --link-path /opt/homebrew/lib \
+           --include-path cairo=/opt/homebrew/include/cairo \
+           --include-path sdl3=/opt/homebrew/include
+```
+
+**The split is the same one as before: the package names the requirement and something else supplies
+the path.** What changed is who that something else is — the machine, rather than a person copying its
+layout onto a command line. Nothing the package wrote is a path, and no code the package supplied is
+run; the compiler asks a well-known tool a question, exactly as it already asks clang what a
+[`c const`](/reference/ffi/) measures to.
+
+**One declaration answers both halves.** A package binding an installed library needs its headers to
+compile *and* its library to link, and having one of those is not a build. `--cflags` feeds every C
+compilation in the tree and `--libs` feeds the link line — including the `-Wl,-rpath` that decides
+whether a dynamically-linked program finds its library at **run** time, which is the part a
+hand-written `--link-path` quietly leaves out.
+
+### The name is the one pkg-config files it under
+
+It cannot be derived, and the two things it might have been derived from are both wrong. The `@link`
+directive is one: the sdl3 package writes `@link("SDL3")` and the module is `sdl3`, because `-lSDL3`
+and `sdl3.pc` are two naming conventions that happen to share a word. A `headers` requirement's name is
+the other, and worse: a name that happened to match some `.pc` file on your machine would satisfy a
+requirement nobody answered — met by accident on the machine that built it and nowhere else.
+
+### What happens when it cannot be answered
+
+**Your own flags win and stop the probe.** `--include-path <name>=<dir>` answers this exactly as it
+answers a header requirement, so a hermetic build, a hand-built prefix or a machine with a broken `.pc`
+is never at the mercy of what happens to be installed.
+
+**A build for another machine is not asked at all.** `pkg-config` answers for the machine it runs on,
+and a cross build's headers and library are the target's. A freestanding program compiled against your
+laptop's `/opt/homebrew` would link and be wrong somewhere you cannot see it, so a target that is not
+this machine is refused rather than answered:
+
+```
+this project needs the 'sdl3' library and this is a build for 'thumbv7m-freestanding' rather than
+for this machine, so there is nothing to ask where it is — SDL3 — brew install sdl3. Say where it
+is with '--include-path sdl3=<dir>' and '--link-path <dir>'
+```
+
+**A machine without `pkg-config` is exactly where it was before**, with the refusal the previous
+section describes plus a sentence naming what was looked for. The two failures are told apart, because
+they send you to different places: `pkg-config` missing is one install away and says nothing about the
+library, where a `pkg-config` that does not know the module means the library itself is not there.
+
+macOS ships no `pkg-config` and the libraries do not bring one — `brew deps cairo` lists fifteen
+packages and it is not among them — so `brew install sysl` installs it as a dependency of the compiler.
+
 ## Dependencies
 
 A dependency is **a git repository and a version**. There is no registry, no account to create, and
