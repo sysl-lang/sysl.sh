@@ -468,17 +468,20 @@ system took the offer.
 
 ## There is no `async`
 
-No `async`, no `await`, and no task runtime — in the language or in this module.
+No `async`, no `await`, and no task runtime — in the language or in this module. Threads are what
+sysl offers for doing two things at once, and this page is all of it.
 
-Swift's version needs executors, continuations, and heap-allocated task state; Go's goroutines need
-a scheduler and growable stacks. **Neither can exist under `no alloc`**, and the kernel is exactly
-where threads are most real. Concurrency machinery of that kind belongs in a library that requires a
-heap and a scheduler, not in a language that has to compile a page-fault handler.
+**It is deferred rather than refused**, and the difference is worth knowing if you are deciding
+whether to build on threads something you would rather have written as tasks. The shape it would take
+here is settled: futures compiled to state machines, sized at compile time, with no allocation
+inherent in a future and the executor an ordinary library. What stands between that and being built
+is a schedule. Nothing on this page changes when it arrives — a thread will still be a thread.
 
-Two things fall out of that, and both are good. sysl has no **actor reentrancy** hazard — the trap
-where an actor's state changes across an `await` — because there is no await-based interleaving. And
-blocking is honest: a thread that waits is a thread that waits, with no cooperative-scheduling model
-to reason about on top of it.
+What you get in the meantime is worth having, and both halves of it are things an `await` costs a
+language that has one. sysl has no **actor reentrancy** hazard — the trap where an actor's state
+changes across an `await` — because there is no await-based interleaving. And blocking is honest: a
+thread that waits is a thread that waits, with no cooperative-scheduling model to reason about on top
+of it, and no way for one stalled task to stall nine others you never looked at.
 
 ## How strong this is
 
