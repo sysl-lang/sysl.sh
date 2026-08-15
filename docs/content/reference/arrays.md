@@ -50,6 +50,13 @@ guaranteed well-formed UTF-8, and nothing may write through it. Everything here 
 slicing, length and ownership is therefore true of a string as well, and
 [strings](/reference/strings/) is where the two differences are.
 
+A third shape sits beside these and is deliberately not on that table: `<N>T`, a
+[vector](/reference/vectors/), holds the same values an `[N]T` holds and is not storage at all. It
+lives in a register and its operators work on every lane at once, so `a + b` on two `<4>f32` is one
+instruction doing four additions. Everything on *this* page — indexing checked while the program
+runs, slicing, ownership — is about things with an address, and a vector has none.
+
+
 ## Writing one down
 
 **A literal** lists its elements, and the count becomes part of the type:

@@ -134,6 +134,25 @@ false
 The first line calls `bump` **once** although its value is compared twice. The second stops at the
 first comparison that fails, so the `bump(6)` on its right never runs at all.
 
+### A vector comparison is not a chain
+
+Comparing two [vectors](/reference/vectors/) yields a mask rather than a `bool`, and a chain of them
+is **refused**. The reason is the short-circuiting above: `a < b < c` joins its links with `&&`, and
+there is no such thing as short-circuiting one lane of a register and not another. Reading the chain
+as a lane-wise `&` would give the same spelling a different meaning, so the reader is asked to write
+the `&` and see it.
+
+```sysl
+val a: <4>int = [1, 2, 3, 4]
+
+f() -> unit
+    val m = 1 < a < 4
+```
+
+```error
+compare two vectors at a time and combine the masks with '&'
+```
+
 ### Floats compare by IEEE 754, `NaN` and all
 
 A `NaN` is equal to nothing, itself included. So `==`, `<`, `>`, `<=` and `>=` are **all false** at

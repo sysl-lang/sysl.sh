@@ -230,6 +230,25 @@ convention asks for, and the call converts each value into and out of them. The 
 wrote is unchanged, nothing about it is visible in a program, and nothing about it applies to a
 struct handed over behind a `*T`.
 
+**A [vector](/reference/vectors/) is the one shape that does not cross, in either direction.** Which
+register a `<4>f32` arrives in differs by target *and* by which instruction-set extensions the other
+side was compiled with — the same C source built with and without `-mavx2` does not agree — so there
+is no convention to emit against and sysl declines to guess at one. Guessing would not fail to link:
+it would produce a call that resolves and corrupts its arguments, which is the failure a boundary
+check exists to prevent.
+
+```sysl
+extern "process_lanes" process(v: <4>f32) -> unit
+```
+
+```error
+how a vector reaches a C function differs by target
+```
+
+Pass the lanes through memory instead — a `*f32` and a count, which is what C's own SIMD-taking
+functions take and what has one meaning on both sides.
+
+
 **A scalar narrower than a register is not quite free either.** A `u8` is a byte to both languages, so
 there is nothing to coerce — but it travels in a register a whole word wide, and most conventions
 require whoever hands it over to widen it to fill one first. Sysl writes that widening where the

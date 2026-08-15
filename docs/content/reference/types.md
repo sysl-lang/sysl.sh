@@ -227,6 +227,37 @@ Both carry a length, so **every index is checked**. [Arrays and slices](/referen
 full account — writing one down, storage sized while running, the indexing and slicing rules, and
 what a view keeps alive.
 
+## Vectors
+
+A fourth sequence shape, and the one that is not storage at all.
+
+| type | what it is |
+|---|---|
+| `<N>T` | a **vector**: N lanes of `T` in a register, whose operators work on every lane at once |
+
+It holds the same values an `[N]T` holds, in the same order — the two type constructors differ by one
+bracket pair because a vector *is* an array that computes lane-wise:
+
+```sysl
+val a: <4>f32 = [1.0, 2.0, 3.0, 4.0]
+val b: <4>f32 = [10.0, 20.0, 30.0, 40.0]
+
+print((a + b)[3], (a * 2.0)[0], (a * b).sum())
+```
+
+```output
+44 2 300
+```
+
+That `+` is one instruction doing four additions, and the `2.0` broadcasts into every lane. A lane is
+read by a **constant** index, which is the one subscript in the language not checked while the program
+runs — a register has no address to check against.
+
+A machine with no vector unit is not a special case: the back end turns a vector into as many
+registers as it needs, or into ordinary scalar operations, so `<4>f32` compiles everywhere sysl
+compiles. [Vectors](/reference/vectors/) is the full account — masks and `select`, the reductions, and
+writing one kernel that is compiled for more than one register width.
+
 ## Structs
 
 A named product type. Fields are declared one per line, and a struct is a **value** — assigning one

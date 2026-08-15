@@ -52,13 +52,14 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (7, 1, 2),
-    "docs/content/reference/types.md"                 -> (12, 1, 0),
-    "docs/content/reference/expressions.md"           -> (18, 5, 0),
+    "docs/content/reference/types.md"                 -> (13, 1, 0),
+    "docs/content/reference/expressions.md"           -> (18, 6, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     "docs/content/reference/declarations.md"          -> (23, 7, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (24, 18, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
+    "docs/content/reference/vectors.md"               -> (10, 6, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
     "docs/content/reference/generics.md"              -> (22, 14, 0),
@@ -79,7 +80,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A struct now names itself in the header: one more runnable, showing that the sysl side is
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
     // typedef and a function, a generic struct, and a private one.
-    "docs/content/reference/ffi.md"                    -> (20, 31, 11),
+    "docs/content/reference/ffi.md"                    -> (20, 32, 11),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
