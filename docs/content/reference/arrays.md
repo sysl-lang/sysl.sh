@@ -56,6 +56,11 @@ lives in a register and its operators work on every lane at once, so `a + b` on 
 instruction doing four additions. Everything on *this* page — indexing checked while the program
 runs, slicing, ownership — is about things with an address, and a vector has none.
 
+An array and a slice are how a vector reaches memory, though, and the two methods that move a run of
+elements between them are *theirs*: `xs.load(i)` reads the run starting at element `i` into a
+vector, and `xs.store(i, v)` writes one back. Both are bounds-checked like a subscript, and checked
+as a whole run — see [vectors](/reference/vectors/).
+
 
 ## Writing one down
 

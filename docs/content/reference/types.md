@@ -251,7 +251,8 @@ print((a + b)[3], (a * 2.0)[0], (a * b).sum())
 
 That `+` is one instruction doing four additions, and the `2.0` broadcasts into every lane. A lane is
 read by a **constant** index, which is the one subscript in the language not checked while the program
-runs — a register has no address to check against.
+runs — a register has no address to check against. A run of an array or a slice moves into a vector
+and back with `xs.load(i)` and `xs.store(i, v)`, which *are* checked, because those have addresses.
 
 A machine with no vector unit is not a special case: the back end turns a vector into as many
 registers as it needs, or into ordinary scalar operations, so `<4>f32` compiles everywhere sysl

@@ -215,6 +215,109 @@ A float sum is computed as a **tree** rather than left to right, which is what m
 instruction instead of a loop — so it may differ in the last bit from adding the lanes yourself in
 order. An integer sum wraps at the lane width, exactly as scalar integer arithmetic does.
 
+## Reaching memory
+
+A vector holds the lanes a kernel computes with; an [array or a slice](/reference/arrays/) holds the
+data a program has. Two methods move a run between them, and they belong to the array or the slice
+rather than to the vector — what the move needs is an address and a length, and a vector has neither.
+
+```sysl
+var xs: [8]f32 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+var out: [8]f32
+
+val v: <4>f32 = xs.load(2)
+
+out.store(0, v * 10.0)
+
+print(v[0], v[3], out[0], out[3])
+```
+
+```output
+3 6 30 60
+```
+
+`xs.load(i)` reads the run of lanes starting at element `i`; `out.store(i, v)` writes one back. The
+store needs a slice or an array it may write, so a `[]const T` is refused exactly as `xs[i] = v`
+would be.
+
+These are two ordinary words, so **a `load` or `store` you have declared yourself wins**: an `impl`
+block for a slice answers before the compiler's does, and only a receiver with no member of that
+name reaches these. `sysl.sync.Atomic` has had a `load` and a `store` of its own since long before
+vectors existed, and they still mean what they meant.
+
+### Where the width comes from
+
+**A load takes its width from whatever receives the value.** A slice has whatever length it has, so
+it cannot say — and guessing would be the one mistake that silently takes the wrong run. A binding's
+annotation says it, and so do a parameter and a declared result:
+
+```sysl
+first(v: <4>f32) -> f32 = v[0]
+
+grab[const W: usize](xs: []const f32) -> <W>f32 = xs.load(0)
+
+var xs: [8]f32 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+
+val annotated: <4>f32 = xs.load(4)
+val declared: <2>f32 = grab(xs[..])
+
+print(annotated[0], first(xs.load(1)), declared[1])
+```
+
+```output
+5 2 2
+```
+
+An operand of an arithmetic expression is **not** such a place, even where the other operand fixes
+the width — an operator does not settle its two sides in either order:
+
+```sysl
+f(xs: []const f32, by: <4>f32) -> f32
+    val r = xs.load(0) * by
+
+    r[0]
+```
+
+```error
+how many lanes it takes is the vector type's to say
+```
+
+Say it on a binding instead, which is one line and reads better in a kernel anyway.
+
+### What the run promises
+
+**It is bounds-checked, and checked as a whole run.** `xs.load(3)` on a five-element array traps
+even though element 3 exists, because elements 3 through 6 do not. This is the only vector operation
+with a run-time test: everything else is a register operation that cannot fail, and a vector is not
+a hole through which a program reaches past the end of an array.
+
+**A partial run at the end traps too, and the scalar tail is yours to write.** An array whose length
+is not a multiple of the width ends with fewer elements left than there are lanes; the kernel below
+is what that looks like.
+
+**The alignment claimed is the element's.** A `[]f32` promises four bytes and says nothing about
+where a run begins, so a vector's own alignment would be a claim the type does not support. Every
+machine sysl targets has an unaligned vector load costing what the aligned one costs on aligned
+data, so the honest number is also the free one.
+
+**`volatile` elements are refused rather than quietly widened.** One access per element is not one
+access, and a single instruction cannot promise per-lane ordering. `volatile <4>u32` is the spelling
+that means something, and it qualifies the whole register.
+
+```sysl
+f(regs: []volatile u32) -> u32
+    val v: <4>u32 = regs.load(0)
+
+    v[0]
+```
+
+```error
+the qualifier cannot be kept
+```
+
+A `*T` is refused for a different reason: it carries no length, so there is nothing to check the run
+against. Take a slice of the elements first.
+
 ## One kernel, every width
 
 This is what the feature is for, and it needs nothing of its own: a lane count is a
@@ -257,18 +360,63 @@ For comparison, the C answer to the same problem is to write the kernel once per
 behind `#ifdef` — Box2D's contact solver carries four copies of itself, and more than half of that
 file is those copies.
 
+### A kernel over an array
+
+Put the two halves together and the loop a real kernel runs is one body too — the loads, the
+arithmetic and the store all take their width from `W`, and the scalar tail picks up whatever the
+last run could not:
+
+```sysl
+scale[const W: usize](xs: []const f32, out: []f32, by: <W>f32)
+    var i: usize = 0
+
+    while i + W <= xs.len
+        val v: <W>f32 = xs.load(i)
+
+        out.store(i, v * by)
+        i += W
+
+    while i < xs.len
+        out[i] = xs[i] * by[0]
+        i += 1
+
+val src: [10]f32 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+
+var four: [10]f32
+var eight: [10]f32
+
+val by4: <4>f32 = 3.0
+val by8: <8>f32 = 3.0
+
+scale(src[..], four[..], by4)
+scale(src[..], eight[..], by8)
+
+print(four[0], four[9], eight[0], eight[9])
+```
+
+```output
+3 30 3 30
+```
+
+Ten elements is not a multiple of either width, so both instantiations take the tail — and the two
+answers agree, which is what says one body serves both registers.
+
+**`by` is a vector rather than an `f32`, and that is where `W` enters.** A written type argument at a
+call is refused, so a kernel whose every parameter is a slice has no way to be told its width. This
+is rarely felt, because a SIMD kernel's constants are broadcast across the lanes anyway — but it is
+worth knowing before a signature is designed around it.
+
 ## What a vector does not have yet
 
-**Shuffles and swizzles.** There is no way to rearrange lanes in one step. Rearranging takes a
-`select` against a mask per lane, which is correct everywhere and slower than the single instruction a
-shuffle would be. This is also the reason the section above is a stronger claim about arithmetic than
-about loading: a gather is what changes between hand-written SIMD variants, and it is the half that
-does not yet generalise over a width.
+**Shuffles and swizzles.** There is no way to rearrange lanes in one step. A gather is a loop that
+writes the elements into a scratch array and one `load` to pick the whole run up — correct
+everywhere, and still not the single instruction a shuffle would be. This is the reason the section
+above is a stronger claim about arithmetic than about loading: a gather is what changes between
+hand-written SIMD variants, and it is the half that does not generalise over a width.
 
-**A way into and out of memory.** A vector cannot be converted to or from an array, loaded from a run
-of a slice, or stored back into one. At a fixed width you can write the lanes out one at a time; in a
-kernel generic over its width you cannot, because a lane index has to be a constant. So a width-generic
-kernel can answer a vector or a reduction, and cannot yet fill an array of results.
+**A masked load or store.** A run that would reach past the end traps rather than reading the lanes
+that exist and leaving the rest alone. Write the scalar tail, which is what the kernel above does
+and what C's SIMD code does.
 
 **A place in a C signature.** A vector may not cross to a C function in either direction. Which
 register it would arrive in differs by target and by which instruction-set extensions the other side
