@@ -210,21 +210,30 @@ their input closed, so `raw()` declines and the cooked path is what runs.
 here turns it off, so leaving it out looked safe, and a terminal that arrives without it makes every
 `print` stair-step down the screen while the editor's own output looks fine.
 
-**Signals go, and that is not the obvious choice.** Leaving `isig` alone would keep Ctrl-C
-interrupting, which reads like a feature for a REPL. It cannot be had: a program interrupted in
-cbreak mode must restore the terminal from a signal handler, and restoring means allocating a command
-string and forking a shell, neither of which is async-signal-safe — so the handler deadlocks rather
-than tidying up. Ctrl-C arrives as **byte 3** for the editor instead.
+**Signals go, and that is a choice rather than a limitation.** Leaving `isig` alone would keep Ctrl-C
+interrupting, which reads like a feature for a REPL. It used not to be available at all: a program
+interrupted in cbreak mode must restore the terminal from a signal handler, and restoring meant
+allocating a command string and forking a shell, neither of which is async-signal-safe — so the
+handler deadlocked rather than tidying up. That was a fact about `stty`, and restoring is now one
+`tcsetattr` on a saved struct, which POSIX lists as async-signal-safe. The handler is still not
+written, because `-isig` means there is no signal to catch and every exit is an ordinary one.
+Ctrl-C arrives as **byte 3** for the editor instead.
 
 What that costs is worth saying plainly: a program that has stopped responding can no longer be
 interrupted from its own terminal, and the escape is `kill` from another one. What it buys is that
 the terminal is never left broken, and that a hosted program behaves exactly like one on a board —
 which never had signals to disable.
 
-**It is `stty` through `system`, not `termios`.** `struct termios` is caller-allocated and has no sysl
-spelling, and the library is written under a constraint it keeps everywhere: everything is reached by
-symbol alone, with no header included and no C structure transcribed. That is the same constraint that
-keeps `stat` out of `sysl.fs`.
+**It is `termios`, through a shim, and it used to be `stty` through `system`.** `struct termios` is
+caller-allocated and laid out differently on every platform, which is the transcription the library
+refuses — so the structure stays in C and a file descriptor is all that crosses. The shim sits in a
+per-OS directory ([modules](/reference/modules/)), which is what keeps a `#include <termios.h>` away
+from a target that has no terminal to configure.
+
+Three things follow: no shell is forked to set two flags; `cooked` restores **what was actually
+there**, from a saved struct, where naming `icanon echo isig` to put back would restore a different
+terminal from the one it found; and it works when standard input is not the shell's, since the shim
+is handed a descriptor where `stty` acted on whatever it inherited.
 
 ## Reading a line — `sysl.term.edit`
 

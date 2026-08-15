@@ -271,11 +271,17 @@ remove_file(path).unwrap()
 10
 ```
 
-**`size` is a seek to the end and back rather than a `stat`**, and that is the constraint the whole
-module is written under: `struct stat` is laid out differently by each platform's headers, and a
-program transcribing one is holding numbers nothing checks — being wrong about them reads the wrong
-bytes rather than failing. A seek is two calls whose signatures are all there is to get right. It
-leaves the position where it found it, which is why `tell` still reports 10 afterwards.
+**`size` asks the file rather than measuring it.** It was a seek to the end and back — four calls to
+answer one question — because the alternative was `fstat`, and `struct stat` is laid out differently
+by each platform's headers: a program transcribing one holds numbers nothing checks, and being wrong
+about them reads the wrong bytes rather than failing. A shim beside the module reads the header and
+one field crosses, so the refusal costs nothing here any more. It never moves the position, which is
+why `tell` still reports 10 afterwards — where the seek version moved it and put it back, leaving it
+at the end of the file if anything failed in between.
+
+**Where there is no shim, the seek is still what runs.** `sysl.fs` requires `os` rather than `posix`,
+so it reaches a Windows target that has no per-OS directory here — and `fseek`/`ftell` are ISO C, so
+that path goes on working exactly as it did.
 
 `size_of(path)` is the same question without an open file in hand; it opens, asks, and closes, so a
 missing file answers `NotFound` rather than zero — the distinction a caller sizing a buffer needs and
