@@ -401,18 +401,61 @@ path separators, and where a separator *is* is a question about paths rather tha
 filesystem — which this module does not answer. It asks for `0o777`, letting the process umask narrow
 it: asking for less would override the environment's decision rather than defer to it.
 
-## What is absent, and why
+### Listing a directory
 
-**Listing a directory.** `readdir` hands back a `struct dirent`, and finding the name in one means
-knowing an offset that differs between platforms. That is the same trade the module refuses
-everywhere else, so it is not made here either.
+```sysl
+import sysl.fs.{entries, make_dir, write_text, remove_file, remove_dir}
+
+var dir = "/tmp/sysl-fs-doc-entries"
+
+make_dir(dir).unwrap()
+write_text(dir + "/one.txt", "a").unwrap()
+write_text(dir + "/two.txt", "b").unwrap()
+
+var names = entries(dir).unwrap()
+
+print(names.len())
+print(names.at(0) == "one.txt" || names.at(0) == "two.txt")
+
+remove_file(dir + "/one.txt").unwrap()
+remove_file(dir + "/two.txt").unwrap()
+remove_dir(dir).unwrap()
+
+print(entries(dir).unwrap_err())
+```
+
+```output
+2
+true
+no such file or directory
+```
+
+**`.` and `..` are left out**, because every caller drops them: a program listing a directory is
+asking what is *in* it, and a recursive walk that forgets the filter does not terminate. **The order
+is the filesystem's** — not sorted, and not stable between two listings of one directory. A program
+that wants an order applies one.
+
+**A name that is not UTF-8 stops the program**, exactly as `read_text` does with a file's contents
+and for the same reason: answering with an error would put a case in `IoError` that no filesystem
+ever reports. POSIX names are bytes, so this is reachable rather than theoretical.
+
+**This is the one thing in the module answered by C rather than by a bare `extern`.** `readdir` hands
+back a `struct dirent` whose name field sits at an offset the two platforms disagree about, which is
+the transcription the rest of the module refuses — so a four-line shim returns the `char *` and
+nothing in sysl learns the layout. It sits in a `__<os>__` directory
+([modules](/reference/modules/)), which is what keeps it off a target with no directories to list.
+
+## What is absent, and why
 
 **Anything `stat` would answer** — timestamps, ownership, a mode — for the reason `size` is a seek.
 
 The rule the whole module is written under is one sentence: **a question that can be answered by a
 call whose signature is all there is to get right is answered here, and one that cannot is absent.**
-No header is included and no C structure is transcribed. Where that leaves a gap, an `extern` of one's
-own is the honest way across it, and [foreign functions](/reference/ffi/) is where that is written up.
+No C structure is transcribed. One header *is* included, in the shim behind `entries`, which is the
+shape the rest of this list should take as it shrinks: a question C can answer in three lines is
+answered by C, and one that would need a structure transcribed into sysl is still not answered at all.
+Where that leaves a gap, an `extern` of one's own — or a `.c` of one's own — is the honest way across
+it, and [foreign functions](/reference/ffi/) is where that is written up.
 
 ## Argument types
 

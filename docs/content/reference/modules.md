@@ -509,13 +509,64 @@ allocator-free with no clause written anywhere, so the module that chose the typ
 and the walk from its body goes straight through the instance to whatever the type argument dragged
 in. What the rule gives up is a refusal aimed at the wrong file.
 
-## Platform selection rides the same name
+## Platform selection — `__<os>__`
 
-A module's members may be **split across platform-specific files** — `cpu.aarch64.sysl` and
-`cpu.x86_64.sysl` contributing to the same `oskit.arch` — with the active target selecting which file
-contributes. **The module name is unchanged by the platform suffix**, so importers write
-`import oskit.arch` and name its members regardless of which platform's file was compiled in. The
-file axis lives *below* the module name, not beside it.
+A module's implementation may be **split across operating systems** by a directory named
+`__<os>__`. Such a directory **selects but does not name**: it is not a module, contributes no
+segment to any name, and the files inside it belong to the directory that *holds* it — exactly as if
+they had been written there.
+
+```
+sysl/fs/path.sysl              module sysl.fs, on every target
+sysl/fs/__linux__/dirent.c     that module's C on Linux, absent everywhere else
+sysl/fs/__macos__/dirent.c     that module's C on macOS
+```
+
+An importer writes `import sysl.fs` and names its members. Which files went into it is not something
+they can see or have to know — **the module name is unchanged by the selection**, and that invariant
+is the point of the feature.
+
+**The vocabulary is the operating systems a target can have**, and no more: `__macos__`, `__linux__`,
+`__windows__`, `__freestanding__`. These are the same words `#if linux` uses, because they are the
+same idea. A directory of the `__x__` shape naming anything else is an **error** — a misspelled
+`__linx__` read as an ordinary module directory would compile nothing on any target and be reported,
+much later, as a missing function.
+
+**Exactly one operating system is true of a target**, so at most one of these directories is selected
+at any one level. There is no precedence to remember and no tie to break. Files sitting directly in a
+directory are compiled for **every** target; the folders *add* to them rather than replacing them, so
+shared code stays where it is and only the part that differs moves.
+
+```
+sysl/posix/time/time.sysl              the whole API, written once
+sysl/posix/time/__linux__/clock.sysl   the one primitive that differs
+sysl/posix/time/__macos__/clock.sysl
+```
+
+That layering is how to use this: **put the smallest private primitive in the folder and build the
+public surface once, outside it.** A public API duplicated per operating system is two APIs, and they
+will drift.
+
+**A `__<os>__` directory may not be nested inside another.** Two axes — an operating system and a
+processor, an operating system and a libc — are not what this is for: the second axis is `#if` inside
+the file, or the C preprocessor inside the `.c`, which is where the world already keeps that
+knowledge.
+
+**A directory this target did not select is not read at all** — not compiled, not analyzed, not
+parsed. That is what lets it hold a `.c` including a header this machine does not have, and it is
+also the cost: a Linux implementation is checked by a build on Linux and by nothing else.
+
+### It exists for the C
+
+Everything above is true of `.sysl` files, and they are the smaller half. A module that differs by
+platform can usually say so with `#if` in one file — but **a `.c` cannot carry a sysl attribute**, and
+it will not be given a sysl-shaped name. The path is the only place its selector could go.
+
+That is what a directory buys over a filename suffix, and it is why the suffix this section used to
+describe was never built: a grammar over sysl filenames would have selected everything except the one
+kind of file the feature is for. [A library may carry C](/reference/ffi/) has the rest — and the
+standard library's own `sysl.fs.entries` is the worked example, four lines of C under each of two
+folders, reaching a `struct dirent` whose layout no sysl file could honestly transcribe.
 
 ## The module graph is acyclic
 

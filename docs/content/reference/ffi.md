@@ -1535,6 +1535,25 @@ sysl are skipped, and a link error naming the symbols is what says so. Put the `
 those `extern`s in the directory and it is a module — which is where every binding written so far has
 put it anyway.
 
+**A shim can be per-operating-system, and that is a directory rather than a condition.** A `.c`
+cannot carry a sysl attribute, so `#if` is no help to it; what selects it is where it sits. A
+directory named `__<os>__` selects source for one operating system and names nothing
+([modules](/reference/modules/)), so the file belongs to the module holding the folder and is absent
+everywhere else:
+
+```
+sysl/fs/path.sysl              module sysl.fs, on every target
+sysl/fs/__macos__/dirent.c     compiled on macOS
+sysl/fs/__linux__/dirent.c     compiled on Linux
+```
+
+**The standard library is the worked example.** `sysl.fs.entries` lists a directory, which means
+reading a `struct dirent` — a shape whose name field sits at an offset the platforms disagree about,
+and exactly the transcription the table below refuses. Four lines of C answer it. The folder is what
+keeps that file off a freestanding target, where `<dirent.h>` does not exist and `sysl.fs` is still
+compiled: **the library is compiled whole for every target**, so a shim it could not compile
+everywhere had nowhere to live until the folder existed.
+
 **It exists because a binding to a real C library cannot be written without it.** Three things are
 reachable from C and from nothing else, and each blocks an ordinary POSIX interface:
 
@@ -1572,8 +1591,10 @@ Three build rules:
 - **Cross-compiling a library that includes headers needs that target's headers.** That is not a cost
   the design imposes — it is the requirement being honest: a binding to POSIX regex cannot be built
   for a platform whose `regex_t` nobody can see. C that includes nothing cross-compiles like any
-  other object, which is why the standard module goes on building for any target the toolchain can
-  lower for.
+  other object. **A `__<os>__` directory is how a library carries both**: the standard library does
+  include a header, in a folder no freestanding build ever looks in, so it goes on building for every
+  target the toolchain can lower for — and the file that would not compile there is not skipped by a
+  rule about headers, it is simply not part of that build.
 
 ## `c const` — a value only the C compiler can work out
 

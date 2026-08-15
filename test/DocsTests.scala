@@ -118,7 +118,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.
     "docs/content/library/io.md"                        -> (6, 3, 3),
-    "docs/content/library/fs.md"                        -> (6, 5, 3),
+    "docs/content/library/fs.md"                        -> (7, 5, 3),
     "docs/content/library/math.md"                      -> (18, 9, 2),
     "docs/content/library/complex.md"                   -> (6, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
