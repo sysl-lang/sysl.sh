@@ -1144,11 +1144,11 @@ print(n.value, sizeof(Node), usize(n) == usize(&arena[0]))
 42 4 true
 ```
 
-**The target type is not written in the call.** It comes from whatever receives the result — the same
-way `va_arg`, a bare `None`, and a bare `null` all take theirs. That is not a shortcut: square
-brackets in an expression are indexing, and call-site type arguments are refused language-wide, so a
-written target would need a syntax nothing else in the language has. Where nothing says which pointer
-is wanted, the program is told to annotate what receives it:
+**The target type comes from whatever receives the result** — the same way `va_arg`, a bare `None`,
+and a bare `null` all take theirs. Where that is not where a reader wants to say it, it may be
+written on the form: `ptr_cast[*Node](&arena[0])` is
+[the written type-argument list](/reference/generics/) at a special form. Where neither says which
+pointer is wanted, the program is told to annotate what receives it:
 
 ```sysl
 var arena: [64]u8 = [0u8; 64]

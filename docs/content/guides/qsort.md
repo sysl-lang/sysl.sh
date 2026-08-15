@@ -51,9 +51,9 @@ parameter nor result. An address settles a generic function's instantiation from
 type**, and the expected type here is `*extern(*u8, *u8) -> int`, which does not mention `T` at all.
 There was nothing to read, and no annotation written anywhere else could have supplied it.
 
-So the argument is written where the address is taken: `&compare[T]`, the one position in the
-language that takes written type arguments. **This program is why it exists.** What it had to be
-written as before was a trampoline over `*T` rather than `*u8`, a second `ptr_cast` of the function
+So the argument is written where the address is taken: `&compare[T]`, which was the **first**
+position in the language to take written type arguments and the case that earned them anywhere.
+**This program is why they exist.** What it had to be written as before was a trampoline over `*T` rather than `*u8`, a second `ptr_cast` of the function
 pointer, and a `val` whose only job was to be somewhere to put the type — a shape imposed by the
 language rather than chosen, and one every C callback would have copied, since every one of them
 fixes its signature and leaves the payload type to its caller. The

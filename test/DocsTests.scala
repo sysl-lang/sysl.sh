@@ -59,10 +59,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (24, 18, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
-    "docs/content/reference/vectors.md"               -> (13, 8, 0),
+    "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
-    "docs/content/reference/generics.md"              -> (22, 14, 0),
+    "docs/content/reference/generics.md"              -> (24, 14, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (16, 12, 10),

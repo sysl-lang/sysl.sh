@@ -86,13 +86,16 @@ elements left than there are lanes, and a load of that run traps rather than rea
 masked load would answer it in one instruction and sysl has none; a scalar loop answers it in three
 lines, which is what C's SIMD code writes anyway.
 
-**`relax` is a vector rather than an `f32`, and that is where `W` comes from.** A load takes its
-width from what receives the value, so `val v: <W>f32 = xs.load(i)` says it and `xs.load(i) * by` is
-refused; and a written type argument at a call is still refused. A kernel whose every parameter is a
-slice therefore has no way to be told its width. This is not a contortion — the relaxation factor of
-a Gauss-Seidel step is a constant broadcast across the lanes, and every real SIMD solver passes its
-constants as vectors for that reason — but a kernel with *no* such constant would have nowhere to put
-its width, which is worth knowing before one is designed.
+**`relax` is a vector rather than an `f32`, and it is a choice rather than a workaround.** The
+relaxation factor of a Gauss-Seidel step is a constant broadcast across the lanes, and every real
+SIMD solver passes its constants as vectors for that reason — so the parameter says what the kernel
+does, and `W` falls out of it.
+
+It was also, when this program was written, the only way `W` could enter. Both halves of that have
+since moved: a load takes its width from what receives the value, and an **operand** is such a place
+now, so `xs.load(i) * by` reads its lane count off `by`; and a **written type argument at a call** is
+what a kernel with no vector parameter uses, so `add[8](a, b, out)` says the width where the reader
+is standing. This program's findings are what closed both.
 
 **There is still no shuffle, and the gather is where that shows.** A real solver reads its bodies
 through an index table — body 17 in lane 0, body 3 in lane 1 — and moving eight scattered velocities

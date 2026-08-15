@@ -1208,10 +1208,12 @@ an ABI primitive that no sysl body could implement, so there is nothing to put i
 is the line the "no functions built into the compiler" rule actually draws — no program could write
 `va_arg`.
 
-**`va_arg` reads its type from context.** C writes the type as a second argument, which is not a
-thing a sysl expression can hold; here it comes from the place the value is read into —
-`var v: int = va_arg(ap)`, `total += va_arg(ap)`, `take(va_arg(ap))` — the same place `None` and
-`Ok(5)` get theirs. Where the context says nothing, the form is refused rather than guessed at:
+**`va_arg` reads its type from context, or from the brackets.** C writes the type as a second
+argument, which is not a thing a sysl expression can hold; here it comes from the place the value is
+read into — `var v: int = va_arg(ap)`, `total += va_arg(ap)`, `take(va_arg(ap))` — the same place
+`None` and `Ok(5)` get theirs. Where a reader would rather say it at the form, `va_arg[int](ap)` is
+[the written type-argument list](/reference/generics/) at a special form, and it is what a bare
+`print(va_arg[int](ap))` needs. Where neither says, the form is refused rather than guessed at:
 
 ```sysl
 walk(n: int, ...) -> int

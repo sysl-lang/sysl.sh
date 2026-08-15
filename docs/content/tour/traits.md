@@ -382,9 +382,11 @@ print(celsius)
 'into' comes from 2 implementations of one trait on Reading, and the arguments do not say which was meant
 ```
 
-Rust answers that one with turbofish and inference from the expected type; sysl does not, and writing
-the conversion as `From[T]` — where the thing being converted is an argument — is the shape that
-needs no such machinery.
+Rust answers that one with turbofish and inference from the expected type. sysl's own written type
+arguments do not reach it: `x.into[Celsius]()` would name a **member's own** parameters, and what is
+ambiguous here belongs to the implementation rather than to `into`. Writing the conversion as
+`From[T]` — where the thing being converted is an argument — is the shape that needs no such
+machinery at all.
 
 This is also the mechanism the [error handling](/tour/errors/) chapter points at. A `?` that converts
 a callee's error into the caller's needs an `AppError` that is `From[IoError]` **and**

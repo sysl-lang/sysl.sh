@@ -268,21 +268,38 @@ print(annotated[0], first(xs.load(1)), declared[1])
 5 2 2
 ```
 
-An operand of an arithmetic expression is **not** such a place, even where the other operand fixes
-the width — an operator does not settle its two sides in either order:
+**An operand of an operator is such a place too**, so a load standing beside a vector reads its lane
+count off it. There are three tiers, which is `01`'s literal rule with one more step: an operand
+carrying a type of its own is read first, a load is read at what that one said, and a bare literal is
+read last at whatever the two of them settled.
 
 ```sysl
-f(xs: []const f32, by: <4>f32) -> f32
-    val r = xs.load(0) * by
+var xs: [4]f32 = [1.0, 2.0, 3.0, 4.0]
+val by: <4>f32 = 10.0
+var out: [4]f32
 
-    r[0]
+out.store(0, xs.load(0) * by + 1.0)
+
+print(out[0], out[3])
+```
+
+```output
+11 41
+```
+
+**What is not such a place is one where any width would do.** A store takes whatever it is handed, so
+every width type-checks and there is genuinely nothing to infer:
+
+```sysl
+f(xs: []const f32, out: []f32)
+    out.store(0, xs.load(0))
 ```
 
 ```error
 how many lanes it takes is the vector type's to say
 ```
 
-Say it on a binding instead, which is one line and reads better in a kernel anyway.
+Say it on a binding there, which is one line and reads better in a kernel anyway.
 
 ### What the run promises
 

@@ -38,35 +38,110 @@ Square brackets are reused for two things, disambiguated by **position**, with n
   and nesting is ordinary;
 - in an **expression**, `a[0]` *indexes*, and never reads as a type application.
 
-The reuse is unambiguous because a type and an expression never occupy the same grammatical slot. The
-cost is that **explicit type arguments at a call site collide with indexing** — `id[int](7)` in
-expression position reads as "index `id` by `int`, then call" — so they are not offered at all:
+The reuse is unambiguous because a type and an expression never occupy the same grammatical slot.
+What it looks like it costs is **explicit type arguments at a call head** — `id[int](7)` reads as
+"index `id` by `int`, then call" — but only to the parser. The compiler resolves the head first, and
+a function is not a thing that can be indexed, so there is no second reading to protect:
 
 ```sysl
 id[T](x: T) -> T = x
 
-print(id[int](7))
+print(id[int](7), id[string]("s"))
+```
+
+```output
+7 s
+```
+
+**The nearest binding wins**, which is the rule every call form follows. A local standing over a
+function's name makes the brackets an index again, and its author is never told about a feature they
+did not reach for.
+
+## Writing the type arguments
+
+Five heads take the list. A **value** argument is written exactly as a type one is, since the two
+share a list and a position:
+
+| written | what it names |
+|---|---|
+| `id[int](7)` | a function, qualified or not |
+| `chunk[8]()` | a value parameter — `[const N: usize]` |
+| `Pair[int, real](1, 2.5)` | a constructor |
+| `x.pick[int](3)` | a method — its **own** parameters, not the receiver's |
+| `Maybe[int].Just(1)` | a variant, which is a construction of its type |
+| `va_arg[int](ap)` | a special form: `va_arg` and `ptr_cast` |
+
+**Inference is still what supplies them nearly everywhere**, and a list inference would have found is
+noise. What earns the syntax is a signature neither direction of inference reaches — a kernel whose
+width is a value parameter it names in no argument and answers `unit` with:
+
+```sysl
+add[const W: usize](a: []const f32, b: []const f32, out: []f32)
+    var i: usize = 0
+
+    while i + W <= a.len
+        val l: <W>f32 = a.load(i)
+        val r: <W>f32 = b.load(i)
+
+        out.store(i, l + r)
+        i += W
+end add
+
+val xs: [8]f32 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+val ys: [8]f32 = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
+var out: [8]f32
+
+add[4](xs[..], ys[..], out[..])
+
+print(out[0], out[7])
+```
+
+```output
+11 88
+```
+
+Written without the brackets there is nothing anywhere to say what `W` is, and the message says so
+rather than naming an annotation that cannot exist:
+
+```sysl
+add[const W: usize](a: []const f32, out: []f32)
+    val v: <W>f32 = a.load(0)
+
+    out.store(0, v)
+end add
+
+var xs: [8]f32
+var out: [8]f32
+
+add(xs[..], out[..])
 ```
 
 ```error
-'id' cannot be given type arguments at a call; write the type on what receives the result
+'W' is in neither the parameters of 'add' nor its result
 ```
 
-Inference supplies them instead, and the one case inference cannot reach is answered by annotating
-what receives the result.
+**Two things stay inferred.** A **type pack** — `..A` — stands for a list of types rather than one and
+has no expression spelling, so its instantiation is always solved. And an **associated function
+selected from an applied type**, `Box[int].of(1)`, reads its type's parameters and its own from a
+single solve; the annotation on the binding reaches it, and unlike the kernel above there is always
+one, since an associated function has a result.
 
-**There is one position where they are written, and it is an address**: `&f[T]` names one
-instantiation of a generic function. Nothing is being indexed there — `&xs[i]` is the address of an
-*element* — so the collision above does not arise, and no annotation could stand in, because the
-case it exists for is a C callback whose signature mentions the type parameter nowhere. See
+There is also a **hole shared with the address form**: the brackets read the *expression* grammar, so
+a type the two grammars do not spell alike has no form there. `[]int`, `weak T`, `volatile T`,
+`<4>f32` and a callable are refused by the parser. The annotation reaches every one of them.
+
+**The address form came first**: `&f[T]` names one instantiation of a generic function, and the case
+that earned it is a C callback whose signature mentions the type parameter nowhere. See
 [the FFI reference](/reference/ffi/).
 
 ## Construction
 
 Applying a generic type names a concrete instance: `Box[int]` is the type of a box of `int`,
 `Pair[int, string]` a pair. **Constructing one is the ordinary construction**, with the type arguments
-inferred from the arguments rather than written — `Box(41)`, `Pair(1, "one")`. The memory mode is the
-usual per-declaration choice: `Box(41)` is a value unless a `&Box[int]` is expected.
+inferred from the arguments — `Box(41)`, `Pair(1, "one")` — or written on the name, which means what
+the annotation means: `Pair[int, real](1, 2.5)` fixes the instantiation and checks the fields against
+it. The memory mode is the usual per-declaration choice: `Box(41)` is a value unless a `&Box[int]` is
+expected.
 
 ## Inference is bidirectional
 
