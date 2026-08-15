@@ -231,6 +231,25 @@ not carry the smallest value. The two questions coincide on an integer and only 
 `within`-ranged subtype answers both**, since there they genuinely agree, and a reader who learned
 `Min` on `u32` should not find it renamed on a subtype of `u32`.
 
+**And a subtype that narrows nothing has its base's**, because that is what it can hold. `First` and
+`Last` still need a range, which is the same distinction one paragraph up — a declared sequence
+against what the type can hold:
+
+```sysl
+type Handle = new u16
+
+print(u16(Handle::Max))
+```
+
+```output
+65535
+```
+
+That is the case a [`c type`](/reference/ffi/) is always in: a measured typedef carries no range, so
+asking a `size_t` for its maximum is asking about the integer C said it is. A `where` predicate is
+the exception and is refused — it narrows the type without saying to what, so there is no extreme to
+read off the declaration.
+
 Only integers have them: `f64::Max` and `bool::Max` are refused, the float because its extremes are
 `sysl.math`'s business and the boolean because it is not that kind of type.
 
@@ -256,6 +275,28 @@ print(widest[i8]())
 
 One body serves every width it is instantiated at, and the argument may be written at the call or
 inferred from what the result is used as.
+
+**The parameter carries the type that was written**, so a `within`-ranged subtype answers its own
+bound rather than its base's:
+
+```sysl
+type Age = int within 0..150
+
+widest[T]() -> T = T::Max
+
+val a: Age = widest()
+
+print(int(a))
+```
+
+```output
+150
+```
+
+This is the one place a transparent subtype and its base give different answers, which is why
+[generics](/reference/generics/#inference-is-bidirectional) states the rule: everywhere a *value*
+flows the two are interchangeable, and a bound is the one thing either can produce that the other
+cannot hold.
 
 **`Min` and `Max` are the only two a parameter answers.** The rest stay on a written type name:
 

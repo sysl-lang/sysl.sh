@@ -62,7 +62,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
     "docs/content/reference/traits.md"                -> (18, 17, 0),
-    "docs/content/reference/generics.md"              -> (24, 14, 0),
+    // One more runnable: a type parameter is solved to the type that was written, so a transparent
+    // subtype reaches one and the two routes that say which type a call is at agree on the page.
+    "docs/content/reference/generics.md"              -> (25, 14, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (16, 12, 10),
@@ -85,7 +87,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
     // that a member takes no annotation is a sentence now, so the page can show it being said.
-    "docs/content/reference/attributes.md"             -> (23, 31, 6),
+    // Two more runnable again: a bound asked through a type parameter answers the subtype the
+    // parameter was solved to — the one answer a transparent subtype and its base differ on — and a
+    // subtype that narrows nothing answers its base's, which is what a measured typedef is.
+    "docs/content/reference/attributes.md"             -> (25, 31, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),

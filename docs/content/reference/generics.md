@@ -208,6 +208,35 @@ That is a `u8` because one argument knew and two did not, while `id(7)` is still
 did. Once the parameter is a type the literals are read against it — the same order the operand rule
 uses inside an expression.
 
+**A parameter is solved to the type that was *written*.** Where that is a
+[transparent subtype](/reference/declarations/#type-declarations), the parameter carries the subtype
+rather than the base it is stored as — and it does so however the call said which type it is at:
+
+```sysl
+type Age = int within 0..150
+
+widest[T]() -> T = T::Max
+
+val written = widest[Age]()
+val expected: Age = widest()
+
+print(int(written), int(expected))
+```
+
+```output
+150 150
+```
+
+The routes have to agree, because from the reader's side they are three ways of saying one thing.
+Writing `Age` at the call, handing an `Age` as an argument, and annotating the binding `Age` are each
+a way of naming the type this call is at; an answer that depended on which one was available would be
+an answer about the *call* rather than about the type.
+
+That a transparent subtype **is** its base — an `Age` stands where an `int` is asked for, and the
+reverse — is unchanged, and holds for every value that flows. A type parameter is not a value: it is
+the name a body is written about, and the body may ask it something its base would answer
+differently. `T::Max` is the only such question there is.
+
 **`null` is not consulted at all — it waits**, and what separates it from a literal is that it has no
 default to be consulted *for*. The argument that cannot contribute is set aside, the rest solve the
 parameter, and it is then read against what they said:
