@@ -100,7 +100,7 @@ halt()
 ```
 
 ```error
-this assembly has no arm for 'aarch64', 'riscv64', 'riscv32', 'thumb' or 'wasm32'
+this assembly has no arm for 'aarch64', 'riscv64', 'riscv32', 'thumb', 'wasm32' or 'craft'
 ```
 
 This is the rule `#if` follows one level up, where every condition is checked in the branches being
