@@ -1448,6 +1448,7 @@ interrupt fault(f: *Frame)      // x86-64: the ABI requires the frame
 | **RISC-V** | a function *attribute*, `"interrupt"="machine"` | nothing at all |
 | **AArch64** | it does not exist — a handler is assembly | — |
 | **Arm M-profile** (`thumb`) | it does not exist — a handler is an ordinary function | — |
+| **CRAFT** (`craft`) | it does not exist — one vector, and the kernel decodes `cause` | — |
 
 So the annotation names the **concept** and the back end decides what that becomes. A directive
 spelling `x86_intrcc` would put one machine's answer in a source file and be wrong on the other

@@ -30,17 +30,30 @@ arch_cli()
         [aarch64]          "msr daifset, #2"
         [riscv64, riscv32] "csrci mstatus, 8"
         [thumb]            "cpsid i"
+        [craft]
+            "csrr t0, status"
+            "li t1, -3"
+            "and t0, t0, t1"
+            "csrw status, t0"
+            clobbers "t0", "t1"
         [wasm32]           unavailable "a wasm module has no interrupts to disable"
 ```
 
 An arm names one processor or several, spelled as [`#if`](/reference/attributes/) spells them:
-`aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`. A name outside that set is an
-error rather than a machine nobody has heard of.
+`aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`, `craft`. A name outside that
+set is an error rather than a machine nobody has heard of.
 
 **`wasm32` is the one that is not a processor**, and it will not carry instructions at all: a wasm
 module has no registers to name and no assembler behind it. Its arm is therefore always empty or
 `unavailable` — both forms are below — which makes it the standing reminder that these arms are
 about *targets* rather than about chips.
+
+**`craft` is 16-bit, and its arms are the ones worth reading twice.** It has three-operand
+arithmetic and eight registers, so `mv` and `add` are spelled as RISC-V spells them — but it has no
+logical immediate and no bit-clear on a control register, so clearing one bit of `status` is a
+read-modify-write through two scratch registers rather than the one instruction every other machine
+here writes. That is what a deliberately small instruction set costs, stated where somebody can see
+it.
 
 **`riscv32` and `thumb` are one board's two halves**, which is why they are usually written together
 in what follows. The RP2350 boots either a pair of Cortex-M33s or a pair of RV32IMAC cores, and a
@@ -57,6 +70,7 @@ spin_hint()
         [x86_64]           "pause"
         [aarch64, thumb]   "yield"
         [riscv64, riscv32] "nop"
+        [craft]            "nop"
         [wasm32]
 
 spin_hint()
@@ -107,7 +121,7 @@ port_out(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb, craft, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
 ```
 
 The x86-64 build compiles that. A build for a processor the arm covers is refused, and the reason
@@ -118,7 +132,7 @@ since leaving it out fails *every* build instead:
 port_out()
     asm
         [x86_64] "outb %al, %dx"
-        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
+        [aarch64, riscv64, riscv32, thumb, craft, wasm32] unavailable "port I/O is x86-only; devices are reached through memory"
 
 port_out()
 ```
@@ -140,6 +154,7 @@ barrier()
         [aarch64]          "dmb ish"
         [thumb]            "dmb sy"
         [riscv64, riscv32] "fence rw, rw"
+        [craft]
         [wasm32]
 ```
 
@@ -163,7 +178,7 @@ copy(n: int) -> int
             "mov {v}, {n}"
             in n : reg
             out v : reg
-        [riscv64, riscv32]
+        [riscv64, riscv32, craft]
             "mv {v}, {n}"
             in n : reg
             out v : reg
@@ -188,7 +203,7 @@ out_byte(port: u16, value: u8)
             "outb {value}, {port}"
             in port : "dx"
             in value : "al"
-        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "port I/O is x86-only"
+        [aarch64, riscv64, riscv32, thumb, craft, wasm32] unavailable "port I/O is x86-only"
 ```
 
 **A bare word is sysl's and a quoted word is the assembler's.** That rule decides every case in the
@@ -218,7 +233,7 @@ f()
             "addl {n}, {n}"
             in n : reg
             out n : reg
-        [aarch64, thumb, riscv64, riscv32]
+        [aarch64, thumb, riscv64, riscv32, craft]
             "add {n}, {n}, {n}"
             in n : reg
             out n : reg
@@ -245,7 +260,7 @@ f()
         [x86_64]
             "nop"
             clobbers "rax", "rdx"
-        [aarch64, riscv64, riscv32, thumb, wasm32] unavailable "x86 only here"
+        [aarch64, riscv64, riscv32, thumb, craft, wasm32] unavailable "x86 only here"
 ```
 
 **Memory and the condition flags are assumed clobbered, always**, and cannot currently be given
@@ -329,6 +344,13 @@ arch_reset() -> never
             "csrci mstatus, 8"
             "1: wfi"
             "j 1b"
+        [craft]
+            "csrr t0, status"
+            "li t1, -3"
+            "and t0, t0, t1"
+            "csrw status, t0"
+            "wfi"
+            clobbers "t0", "t1"
         [wasm32] unavailable "a wasm module cannot halt its host"
 ```
 

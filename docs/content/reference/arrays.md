@@ -291,7 +291,7 @@ its size from what it is decoding returns a result, instead of asking its caller
 whose size is in a header the caller has not read.
 
 **Three things are checked**, because a computed length is where arithmetic goes wrong. The count is
-widened to 64 bits and read unsigned, so a negative one arrives as a very large one; the byte size is
+widened to the address width and read unsigned, so a negative one arrives as a very large one; the byte size is
 computed with an overflow-checked multiply and add, so a count that would wrap cannot allocate a
 small buffer that is then written past; and a failed allocation traps rather than handing back a null
 the elements are then stored through.
@@ -335,9 +335,17 @@ print(a[narrow], a[unsigned], a[sized])
 20 30 40
 ```
 
-The index is widened to 64 bits and compared **unsigned** against the length. That is one comparison
-rather than two, and it rejects a negative index as a very large one — the trick a bounds check has
-always used.
+The index is widened to **the address width** and compared **unsigned** against the length. That is
+one comparison rather than two, and it rejects a negative index as a very large one — the trick a
+bounds check has always used. (It is the address width rather than a flat sixty-four because what it
+is compared against is a length, and a length is a `usize`.)
+
+An index already *wider* than an address — a `u128` anywhere, or an ordinary `int` on a 16-bit
+machine — is asked whether it fits and then narrowed, in that order. Nothing holds more than `usize`
+elements, so a value that does not fit names no element and traps like any other index out of range;
+testing before narrowing is what stops `2^64 + 5` arriving as `5` and passing on a six-element
+array. So `for i in 0..<n do a[i] …` needs no conversion on any machine, which is the whole point of
+the index being any integer type.
 
 ### A failed check traps
 

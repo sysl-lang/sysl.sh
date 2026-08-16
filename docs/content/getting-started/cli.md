@@ -306,6 +306,7 @@ thumbv7em-freestanding       thumbv7em-none-eabihf
 thumbv7em-freestanding-soft  thumbv7em-none-eabi
 riscv32-freestanding         riscv32-unknown-elf
 wasm32-freestanding          wasm32-unknown-unknown
+craft-freestanding           craft
 x86-linux                    i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
 
@@ -385,6 +386,30 @@ print fails at the link naming `putchar`, exactly as on any other bare target.
 It needs a clang with the WebAssembly back end. Apple's has eleven back ends and this is not among
 them, so on a Mac sysl reaches for Homebrew's LLVM by itself — the same fallback it already makes for
 the RISC-V rows — and says so if it cannot find one.
+
+**`craft-freestanding` is 16-bit, and it is the one row sysl will not drive a build for.** It is
+CRAFT — a teaching ISA with eight registers, a 64 KiB virtual address space and a
+software-managed TLB — whose LLVM back end lives out of tree, so what exists is an `llc` rather than
+a compiler driver. The machine has no libc, no object format and **no linker**: its assembler reads
+one file and resolves every label inside it. So sysl writes the LLVM and stops, and the rest is two
+commands of your own:
+
+```
+sysl emit-llvm hello.sysl --target craft-freestanding > hello.ll
+llc -march=craft hello.ll -o hello.s
+craft as hello.s
+```
+
+Every other subcommand refuses this target and says that. It is not a target sysl cannot *lower*
+for — `emit-llvm` produces an ordinary module — it is one with nothing for a driver to call.
+
+**Sixteen bits is the part that shows up in your code.** `usize` is pointer-width by definition, so
+a slice's length is a `u16` and the address space is the bound on everything. An `int` is still 32
+bits and a `long` still 64, because a width is the language's answer rather than the machine's — so
+ordinary arithmetic here is multi-word, and the back end expands it, exactly as every 32-bit target
+already expands a `long`. Indexing with an `int` needs no conversion for it: an index wider than an
+address is checked against what an address can name and then narrowed, so `for i in 0..<4 do b[i] …`
+means what it means everywhere else.
 
 `x86-linux` is listed *because* it cannot be built for. The limit is the compiler's rather than the
 machine's, and **it is no longer the width** — this page said so until the 32-bit rows above arrived.
@@ -470,7 +495,7 @@ sysl: error: 'run' executes what it builds, and 'x86_64-linux' is not this machi
 A name the registry does not have is answered with the names it does:
 
 ```
-sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, x86-linux
+sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, craft-freestanding, x86-linux
 ```
 
 ### `-v`, `--verbose`

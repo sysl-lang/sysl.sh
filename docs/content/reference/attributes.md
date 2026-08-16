@@ -1471,7 +1471,7 @@ disturbs nothing.
 | kind | symbols |
 |---|---|
 | operating system | `macos`, `linux`, `windows`, `freestanding` |
-| processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32` |
+| processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`, `craft` |
 | derived | `hosted` (not `freestanding`), `posix` (`macos` or `linux`) |
 
 That is the whole vocabulary. There is **no `#define`**, nothing a project can add, and no dependence
