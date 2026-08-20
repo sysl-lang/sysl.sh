@@ -932,6 +932,12 @@ sentence at the top of this section seen from the other side — a header means 
 declares is the module's already, so there is no body for a binding to belong to instead. A library is
 the shape that tests it, being files and no beginning anywhere.
 
+**And so is "the program's":** where a build has no beginning at all, no file is a body and every
+top-level `var` is its module's. `build-c` and `build-lib` are that case — the C project supplies its
+own `main`, and a library is linked into a program that has one — so a header-less file keeping state
+is a module there, exactly as a headed one is everywhere. The two conditions are the same bound
+reached from opposite sides: one asks what the *file* says, the other what is being *built*.
+
 ## `const` — a value
 
 A **`const` is a module member**: hoisted, order-free, visible to the whole module and beyond it under
