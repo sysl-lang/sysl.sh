@@ -294,6 +294,7 @@ aarch64-linux                aarch64-unknown-linux-gnu
 x86_64-linux                 x86_64-unknown-linux-gnu
 riscv64-linux                riscv64-unknown-linux-gnu
 x86_64-windows               x86_64-pc-windows-msvc
+aarch64-android              aarch64-linux-android24
 aarch64-freestanding         aarch64-none-elf
 x86_64-freestanding          x86_64-unknown-none-elf
 riscv64-freestanding         riscv64-unknown-elf
@@ -314,6 +315,20 @@ The line for the machine you are on is marked `(this machine)`, and a last line 
 machine's own runtime called itself. That last line is there for the case the rest of the list
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
+
+**`aarch64-android` is the one row whose triple carries a version number, and the one you cannot yet
+drive a build for.** The `24` is an Android API level — which of Bionic's declarations exist — and it
+is in the triple because clang requires it there: without a level, no `__ANDROID_API__` is defined and
+the first system header that guards a declaration on it refuses to compile. Its C calling convention
+is `aarch64-linux`'s, because AAPCS64 is AAPCS64; what differs is everything above the ABI, which is
+why it is a system of its own and `#if android` is a symbol distinct from `#if linux`.
+
+What it needs, and what sysl has no way to be told, is *which clang*. Every other target here is
+served by a clang that has the right back end, and this one needs the NDK's **sysroot** as well —
+so sysl finds the host's compiler, and the build fails on a missing `dirent.h` in the standard
+library's own C. The row is registered and measured; naming a compiler is an open question rather
+than an oversight, and until it is answered `--target aarch64-android` is for reading the emitted IR
+rather than for building an app.
 
 **Eight of the freestanding rows are 32-bit microcontrollers.** The RP2350 — the Pico
 2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040, the original Pico, has
@@ -495,7 +510,7 @@ sysl: error: 'run' executes what it builds, and 'x86_64-linux' is not this machi
 A name the registry does not have is answered with the names it does:
 
 ```
-sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, craft-freestanding, x86-linux
+sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-android, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, craft-freestanding, x86-linux
 ```
 
 ### `-v`, `--verbose`

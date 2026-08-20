@@ -1470,16 +1470,20 @@ disturbs nothing.
 
 | kind | symbols |
 |---|---|
-| operating system | `macos`, `linux`, `windows`, `freestanding` |
+| operating system | `macos`, `linux`, `windows`, `freestanding`, `android` |
 | processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`, `craft` |
-| derived | `hosted` (not `freestanding`), `posix` (`macos` or `linux`) |
+| derived | `hosted` (not `freestanding`), `posix` (`macos`, `linux` or `android`) |
 
 That is the whole vocabulary. There is **no `#define`**, nothing a project can add, and no dependence
 on a project config. A condition is a symbol, `!`, `&&`, `||`, and parentheses; `&&` binds tighter
 than `||`.
 
 `posix` is a name for the commonest disjunction rather than a replacement for writing it — `#if linux
-|| macos` still says the same thing. Note that this `posix` is not the *capability* of the same name:
+|| macos` still says the same thing, and since `android` joined it is the shorter way to say all
+three. **`android` is its own symbol and is not `linux`**, though there is a Linux kernel under it:
+what a source file gating on a system is really asking about is the libc and the libraries, and
+Bionic is neither glibc's set of `-l` names nor its headers. Code that wants both writes `#if linux
+|| android`. Note that this `posix` is not the *capability* of the same name:
 this one asks **is this a POSIX system**, a fact about the machine settled by the target, where the
 capability asks **may this module use POSIX**, a permission a project grants and a `no posix` clause
 takes away. They agree today only because nothing denies anything yet.
@@ -1497,7 +1501,7 @@ print(say())
 ```
 
 ```error
-'darwin' is not something a target says about itself — sysl knows aarch64, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasm32, windows, x86, x86_64
+'darwin' is not something a target says about itself — sysl knows aarch64, android, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasm32, windows, x86, x86_64
 ```
 
 The set is closed, so a name outside it is a mistake rather than a fact this build happens not to
