@@ -316,19 +316,41 @@ machine's own runtime called itself. That last line is there for the case the re
 cannot help with: on a machine sysl has no entry for, it is the only place to read what the machine
 actually said.
 
-**`aarch64-android` is the one row whose triple carries a version number, and the one you cannot yet
-drive a build for.** The `24` is an Android API level — which of Bionic's declarations exist — and it
-is in the triple because clang requires it there: without a level, no `__ANDROID_API__` is defined and
-the first system header that guards a declaration on it refuses to compile. Its C calling convention
-is `aarch64-linux`'s, because AAPCS64 is AAPCS64; what differs is everything above the ABI, which is
-why it is a system of its own and `#if android` is a symbol distinct from `#if linux`.
+**`aarch64-android` is the one row whose triple carries a version number, and the one that needs
+something set in your environment.** The `24` is an Android API level — which of Bionic's declarations
+exist — and it is in the triple because clang requires it there: without a level, no `__ANDROID_API__`
+is defined and the first system header that guards a declaration on it refuses to compile. Its C
+calling convention is `aarch64-linux`'s, because AAPCS64 is AAPCS64; what differs is everything above
+the ABI, which is why it is a system of its own and `#if android` is a symbol distinct from
+`#if linux`.
 
-What it needs, and what sysl has no way to be told, is *which clang*. Every other target here is
-served by a clang that has the right back end, and this one needs the NDK's **sysroot** as well —
-so sysl finds the host's compiler, and the build fails on a missing `dirent.h` in the standard
-library's own C. The row is registered and measured; naming a compiler is an open question rather
-than an oversight, and until it is answered `--target aarch64-android` is for reading the emitted IR
-rather than for building an app.
+What it needs is *which clang*. Every other target here is served by a compiler that has the right
+back end, and having the back end is not the same as having the toolchain: Android's headers and
+libraries are the NDK's, and no clang outside it carries them. So sysl asks the environment.
+`ANDROID_NDK_ROOT` or `ANDROID_NDK_HOME` names an NDK outright; otherwise `ANDROID_SDK_ROOT` or
+`ANDROID_HOME` names the SDK and the newest `ndk/<version>` under it is used.
+
+```
+export ANDROID_SDK_ROOT=~/Library/Android/sdk
+sysl build --target aarch64-android hello.sysl
+```
+
+Nothing is guessed at. An NDK sits wherever you installed it, so a compiler that went looking through
+your home directory would find one on the machine it was written on and the wrong one — or none —
+anywhere else, and building against the wrong platform headers is a failure you would not see. With
+nothing set, the build stops and says what to set:
+
+```
+sysl: error: building for Android needs the NDK's own clang, and nothing here says where it is — no clang outside the NDK carries Bionic's headers, so one picked for having the back end fails at the first '#include'. Set ANDROID_SDK_ROOT to the Android SDK (the directory holding 'ndk/'), or ANDROID_NDK_ROOT to one NDK directly
+```
+
+That message exists because the alternative was worse: pick the host's clang for having `aarch64`, and
+the build dies on a missing `dirent.h` inside the standard library's own C — which reads as a broken
+library rather than as the wrong compiler.
+
+Naming the NDK is the whole of what is required. Its clang resolves a sysroot from its own location,
+so there is no `--sysroot` to pass and no include or library path to set up: the result is an ordinary
+position-independent Android executable, which is what an APK loads.
 
 **Eight of the freestanding rows are 32-bit microcontrollers.** The RP2350 — the Pico
 2 — boots either a pair of Cortex-M33s or a pair of RV32IMAC cores; the RP2040, the original Pico, has
