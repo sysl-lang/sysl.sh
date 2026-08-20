@@ -480,6 +480,28 @@ identifier: `p.x = 1` and `b[i] = v` are stores as they always were, since neith
 parameter list could have written. A store to a plain variable is still reachable in an argument by
 parenthesizing it.
 
+A default is read at **the type its parameter declares**, so a value that says nothing about its own
+type needs no annotation beside it: written where an `Option[int]` is wanted, `None` is that
+parameter's `None`. A method reads its defaults the same way, and the receiver is not one of the
+arguments a call writes.
+
+```sysl
+struct Room
+    seats: int
+
+    free(self, taken: Option[int] = None) -> int = taken match
+        Some(n) -> self.seats - n
+        None -> self.seats
+end Room
+
+var r = Room(40)
+print(r.free(), r.free(Some(12)))
+```
+
+```output
+40 28
+```
+
 A **closure's** parameter declares no default. A call reaches a closure through the `Fn` traits,
 which carry the types and not the names, so there would be nothing at the call to fill one from.
 
