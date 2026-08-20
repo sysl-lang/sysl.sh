@@ -112,6 +112,36 @@ Note the missing parentheses at the call: `r.area`, not `r.area()`. The conventi
 that spelling is that a property is *cheap* — anything that allocates or loops is a method, so that
 the parentheses warn you.
 
+A property may be **written** as well as read, by declaring a setter beside it. That is how a value
+notices its own writes — the field is the storage, and the property is what everyone else touches:
+
+```sysl
+struct Volume
+    level: int
+    changes: int
+
+    setting -> int = self.level
+
+    set setting(n)
+        self.level = if n > 10 then 10 else n
+        self.changes += 1
+end Volume
+
+var v = Volume(0, 0)
+
+v.setting = 4
+v.setting += 99
+
+print(v.setting, v.changes)
+```
+
+```output
+10 2
+```
+
+The parameter carries no type, because a setter's value is whatever the property gives back. `set`
+is a contextual word, so it is still available as a name.
+
 A member with no `self` at all is an **associated function**, called through the type name. It is
 where a named constructor goes, since the positional `Rect(w, h)` covers only one shape:
 

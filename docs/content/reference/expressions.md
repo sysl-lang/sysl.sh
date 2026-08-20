@@ -357,9 +357,14 @@ thing that could be is a tuple — allocating a product type for a form whose wh
 several places change at once. So it does not nest, does not appear in a condition, and has no value
 to discard. A binding takes the same list: `val a, b = 1, 2`.
 
-An element reached through a user type's `Index` is the one place the accepted set is *smaller* than
-a single `=`'s, because `b[i] = v` there is a call rather than a store, and there is nothing to split
-into the two halves the ordering rule is about.
+A place that is really a **call** is the one thing the accepted set is *smaller* than a single `=`'s,
+and there are two of them: an element reached through a user type's `Index`, where `b[i] = v` calls
+`index_set`, and a [settable property](/reference/declarations/), where `p.count = v` calls the
+setter. Neither has an address for the locating phase to find, and the call both reads and writes, so
+there is nothing to split into the two halves the ordering rule is about.
+
+Those two are also the exception to *"a single assignment yields the value assigned"* above: a call
+yields what the call yields, which for both of these is `unit`.
 
 ## `++` and `--`
 

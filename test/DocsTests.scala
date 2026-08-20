@@ -40,7 +40,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/values.md"                     -> (7, 1, 0),
     "docs/content/tour/control-flow.md"               -> (10, 0, 0),
     "docs/content/tour/functions.md"                  -> (11, 0, 0),
-    "docs/content/tour/structs.md"                    -> (5, 0, 0),
+    "docs/content/tour/structs.md"                    -> (6, 0, 0),
     "docs/content/tour/memory.md"                     -> (11, 4, 0),
     "docs/content/tour/arrays.md"                     -> (9, 1, 0),
     "docs/content/tour/strings.md"                    -> (10, 1, 0),
@@ -51,19 +51,19 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/contracts.md"                  -> (8, 2, 0),
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
-    "docs/content/reference/lexical.md"               -> (7, 1, 2),
+    "docs/content/reference/lexical.md"               -> (8, 1, 2),
     "docs/content/reference/types.md"                 -> (13, 1, 0),
     "docs/content/reference/expressions.md"           -> (18, 6, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     // One more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None`, so the section shows one being taken and one being written over.
-    "docs/content/reference/declarations.md"          -> (24, 7, 1),
+    "docs/content/reference/declarations.md"          -> (26, 8, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (24, 18, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
-    "docs/content/reference/traits.md"                -> (18, 17, 0),
+    "docs/content/reference/traits.md"                -> (19, 17, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     "docs/content/reference/generics.md"              -> (25, 14, 0),
