@@ -1536,17 +1536,24 @@ sysl are skipped, and a link error naming the symbols is what says so. Put the `
 those `extern`s in the directory and it is a module — which is where every binding written so far has
 put it anyway.
 
-**A shim can be per-operating-system, and that is a directory rather than a condition.** A `.c`
+**A shim can be per-machine, and that is a directory rather than a condition.** A `.c`
 cannot carry a sysl attribute, so `#if` is no help to it; what selects it is where it sits. A
-directory named `__<os>__` selects source for one operating system and names nothing
-([modules](/reference/modules/)), so the file belongs to the module holding the folder and is absent
-everywhere else:
+directory whose name is wrapped in double underscores selects source for the machines it names and
+names nothing itself ([modules](/reference/modules/)), so the file belongs to the module holding the
+folder and is absent everywhere else:
 
 ```
 sysl/fs/path.sysl              module sysl.fs, on every target
-sysl/fs/__macos__/dirent.c     compiled on macOS
-sysl/fs/__linux__/dirent.c     compiled on Linux
+sysl/fs/__posix__/dirent.c     compiled where POSIX is, absent on a bare machine
 ```
+
+**Name the family rather than the systems, which for a shim is nearly always what you mean.** A
+selector may name one operating system (`__macos__`), a comma-separated list of them
+(`__macos,linux__`), or a family (`__posix__`, `__hosted__`) — and a shim is usually in the third
+case without looking like it. `dirent.c` above is *identical* on macOS and Linux, because absorbing
+the difference between them is the shim's whole job; what it cannot do is exist where there is no
+operating system. Written as two per-system folders that says the wrong thing and costs two
+byte-identical copies to say it.
 
 **The standard library is the worked example.** `sysl.fs.entries` lists a directory, which means
 reading a `struct dirent` — a shape whose name field sits at an offset the platforms disagree about,
@@ -1592,10 +1599,10 @@ Three build rules:
 - **Cross-compiling a library that includes headers needs that target's headers.** That is not a cost
   the design imposes — it is the requirement being honest: a binding to POSIX regex cannot be built
   for a platform whose `regex_t` nobody can see. C that includes nothing cross-compiles like any
-  other object. **A `__<os>__` directory is how a library carries both**: the standard library does
-  include a header, in a folder no freestanding build ever looks in, so it goes on building for every
-  target the toolchain can lower for — and the file that would not compile there is not skipped by a
-  rule about headers, it is simply not part of that build.
+  other object. **A selector directory is how a library carries both**: the standard library does
+  include a header, in a `__posix__` folder no freestanding build ever looks in, so it goes on
+  building for every target the toolchain can lower for — and the file that would not compile there
+  is not skipped by a rule about headers, it is simply not part of that build.
 
 ## `c const` — a value only the C compiler can work out
 

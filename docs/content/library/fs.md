@@ -449,8 +449,12 @@ ever reports. POSIX names are bytes, so this is reachable rather than theoretica
 **This is the one thing in the module answered by C rather than by a bare `extern`.** `readdir` hands
 back a `struct dirent` whose name field sits at an offset the two platforms disagree about, which is
 the transcription the rest of the module refuses — so a four-line shim returns the `char *` and
-nothing in sysl learns the layout. It sits in a `__<os>__` directory
+nothing in sysl learns the layout. It sits in a `__posix__` directory
 ([modules](/reference/modules/)), which is what keeps it off a target with no directories to list.
+
+**One file rather than one per system**, and the shim's own reason for existing is why: the two
+platforms disagree about the layout, the shim is what settles that, and so the shim itself is the
+same text on both. What it needs is a POSIX system to run on, which is exactly what `__posix__` says.
 
 ## What is absent, and why
 

@@ -509,37 +509,68 @@ allocator-free with no clause written anywhere, so the module that chose the typ
 and the walk from its body goes straight through the instance to whatever the type argument dragged
 in. What the rule gives up is a refusal aimed at the wrong file.
 
-## Platform selection — `__<os>__`
+## Platform selection — `__<machines>__`
 
-A module's implementation may be **split across operating systems** by a directory named
-`__<os>__`. Such a directory **selects but does not name**: it is not a module, contributes no
+A module's implementation may be **split across machines** by a directory whose name is wrapped in
+double underscores. Such a directory **selects but does not name**: it is not a module, contributes no
 segment to any name, and the files inside it belong to the directory that *holds* it — exactly as if
 they had been written there.
 
 ```
 sysl/fs/path.sysl              module sysl.fs, on every target
-sysl/fs/__linux__/dirent.c     that module's C on Linux, absent everywhere else
-sysl/fs/__macos__/dirent.c     that module's C on macOS
+sysl/fs/__posix__/dirent.c     that module's C where POSIX is, absent on a bare machine
 ```
 
 An importer writes `import sysl.fs` and names its members. Which files went into it is not something
 they can see or have to know — **the module name is unchanged by the selection**, and that invariant
 is the point of the feature.
 
-**The vocabulary is the operating systems a target can have**, and no more: `__macos__`, `__linux__`,
-`__windows__`, `__freestanding__`. These are the same words `#if linux` uses, because they are the
-same idea. A directory of the `__x__` shape naming anything else is an **error** — a misspelled
-`__linx__` read as an ordinary module directory would compile nothing on any target and be reported,
-much later, as a missing function.
+**A selector names one or more symbols, separated by commas, and is taken when any of them holds.**
 
-**Exactly one operating system is true of a target**, so at most one of these directories is selected
-at any one level. There is no precedence to remember and no tie to break. Files sitting directly in a
-directory are compiled for **every** target; the folders *add* to them rather than replacing them, so
-shared code stays where it is and only the part that differs moves.
+```
+__macos__            one operating system
+__macos,linux__      either of two
+__posix__            whichever operating systems POSIX means
+__hosted__           any machine with an operating system under it
+```
+
+**The vocabulary is `#if`'s** — the operating systems `macos`, `linux`, `windows` and
+`freestanding`, plus the two facts that hold without naming one, `hosted` and `posix`. They are the
+same words because they are the same idea: a machine named one way in a directory and another way in
+a `#if` would be a thing to look up rather than a thing to know. A directory of the `__x__` shape
+naming anything else is an **error** — a misspelled `__linx__` read as an ordinary module directory
+would compile nothing on any target and be reported, much later, as a missing function. The message
+names the element that is wrong rather than the whole directory.
+
+**A processor is the one thing a selector may not name.** A directory is chosen by a walk that has an
+operating system and nothing else to ask. Source that varies by processor is `#if`'s, or the C
+preprocessor's inside a `.c`.
+
+### Say why, not which
+
+`__posix__` and `__macos,linux__` select the same two machines today and **are not the same claim.**
+Which operating systems are POSIX is written in exactly one place, so the first derives from it and
+the second copies it: add a third POSIX system and every `__posix__` directory covers it untouched,
+while every `__macos,linux__` directory silently does not.
+
+This is what a shim that needs an operating system should say, and it is why the form exists. A `.c`
+calling `readdir` is not *different* on macOS and Linux — absorbing the difference between them is
+the shim's whole job, so the file is identical on both. What it cannot do is exist where there is no
+operating system at all. Two per-OS directories say the wrong thing and cost two byte-identical
+copies to say it; `__posix__` says what is true, once.
+
+Reach for the list form when the set is one no capability names — macOS and Windows but not Linux,
+say. That it exists is not a reason to prefer it.
+
+### More than one may be taken
+
+Files sitting directly in a directory are compiled for **every** target; the folders *add* to them
+rather than replacing them, so shared code stays where it is and only the part that differs moves.
 
 ```
 sysl/posix/time/time.sysl              the whole API, written once
-sysl/posix/time/__linux__/clock.sysl   the one primitive that differs
+sysl/posix/time/__posix__/clock.c      the primitive that needs POSIX
+sysl/posix/time/__linux__/clock.sysl   the one primitive that differs by system
 sysl/posix/time/__macos__/clock.sysl
 ```
 
@@ -547,14 +578,23 @@ That layering is how to use this: **put the smallest private primitive in the fo
 public surface once, outside it.** A public API duplicated per operating system is two APIs, and they
 will drift.
 
-**A `__<os>__` directory may not be nested inside another.** Two axes — an operating system and a
-processor, an operating system and a libc — are not what this is for: the second axis is `#if` inside
-the file, or the C preprocessor inside the `.c`, which is where the world already keeps that
-knowledge.
+Two selectors may both answer — every POSIX machine is hosted — and both are taken. What is refused
+is the two of them holding a **file of the same name** between them, which would be two files of one
+name and a duplicate symbol reported a long way from the directories that caused it. The name is the
+fault rather than the overlap, so there is no precedence order to remember and no tie to break.
+
+**A selector directory may not be nested inside another.** A directory this target did not select is
+never read, so nothing inside one could be taken however it were named; where a family and one of its
+members both need saying, they go beside each other. Two axes — an operating system and a processor,
+an operating system and a libc — are not what this is for either: the second axis is `#if` inside the
+file, or the C preprocessor inside the `.c`, which is where the world already keeps that knowledge.
 
 **A directory this target did not select is not read at all** — not compiled, not analyzed, not
 parsed. That is what lets it hold a `.c` including a header this machine does not have, and it is
-also the cost: a Linux implementation is checked by a build on Linux and by nothing else.
+also the cost: an implementation only one machine selects is checked by a build on that machine and
+by nothing else. Naming a family is the way to have less of that: a `__posix__` shim is compiled by
+every hosted build there is, where the same file under two per-system folders is two files each
+checked half as often.
 
 ### It exists for the C
 
@@ -565,8 +605,8 @@ it will not be given a sysl-shaped name. The path is the only place its selector
 That is what a directory buys over a filename suffix, and it is why the suffix this section used to
 describe was never built: a grammar over sysl filenames would have selected everything except the one
 kind of file the feature is for. [A library may carry C](/reference/ffi/) has the rest — and the
-standard library's own `sysl.fs.entries` is the worked example, four lines of C under each of two
-folders, reaching a `struct dirent` whose layout no sysl file could honestly transcribe.
+standard library's own `sysl.fs.entries` is the worked example: four lines of C under `__posix__`,
+reaching a `struct dirent` whose layout no sysl file could honestly transcribe.
 
 ## The module graph is acyclic
 
