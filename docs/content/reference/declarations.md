@@ -502,6 +502,20 @@ print(r.free(), r.free(Some(12)))
 40 28
 ```
 
+A default may itself be a **closure**, and it is typed by the same thing that types one written at
+the call: the parameter it stands at. Neither spelling of a callable parameter needs an annotation
+inside the closure, and the placeholder form `_ * 2` needs none either.
+
+```sysl
+apply(g: int -> int = y -> y * 2) -> int = g(21)
+
+print(apply(), apply(x -> x + 1))
+```
+
+```output
+42 22
+```
+
 A **closure's** parameter declares no default. A call reaches a closure through the `Fn` traits,
 which carry the types and not the names, so there would be nothing at the call to fill one from.
 
