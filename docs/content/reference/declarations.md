@@ -713,6 +713,89 @@ field to fail as whatever the grammar happened to want there.
 **A property is a method with the parameter list left off** — `perimeter -> int`, called as
 `r.perimeter` with no parentheses. It takes the same body forms a method does.
 
+**A property may be written as well as read**, by declaring a setter beside it. `set` is a contextual
+word — an ordinary identifier everywhere else — and the parameter carries no type, because a setter's
+value is the property's result and can be nothing else:
+
+```sysl
+struct Temp
+    c: int
+
+    f -> int = self.c * 9 / 5 + 32
+
+    set f(v)
+        self.c = (v - 32) * 5 / 9
+end Temp
+
+var t = Temp(0)
+
+t.f = 212
+
+print(t.c, t.f)
+```
+
+```output
+100 212
+```
+
+The setter's receiver is an implicit `*self`, as the getter's is an implicit borrow, so it is held to
+what any `*self` member is: the receiver needs an address, and a `val` is written once. A setter
+needs a property of the same name — a set-only property would leave `t.f` meaning nothing, and would
+have nowhere to take its value's type from. Visibility is the ordinary modifier, so `private set f(v)`
+is a property the world reads and only the type writes.
+
+**A write is a call rather than a store**, which is what a property computing rather than naming
+storage amounts to. Three things follow, and they are the same three that follow for an element
+reached through [`Index`](/reference/expressions/): the expression yields `unit` rather than the
+value assigned, the write cannot be one place of a multiple assignment, and `&t.f` is refused because
+there is no address.
+
+The compound forms do work, and that is where a property differs from an element: there is no index
+to evaluate twice, and the receiver's address is taken once for the pair of calls.
+
+```sysl
+struct Cell
+    v: int
+
+    count -> int = self.v
+
+    set count(x)
+        self.v = x
+end Cell
+
+var c = Cell(1)
+
+c.count += 1
+c.count *= 5
+
+print(c.count)
+```
+
+```output
+10
+```
+
+**An accessor may not reach the member it is defining.** `count -> int = self.count` calls itself,
+and so does a setter writing `self.count`; there is no reading under which either is what was meant,
+so both are refused rather than left to run out of stack:
+
+```sysl
+struct Cell
+    v: int
+    count -> int = self.count
+
+var c = Cell(1)
+
+print(c.count)
+```
+
+```error
+'count' reads the property it is defining, so it calls itself — the value a property computes is not the property. What a body like this means to read is the field it is in front of
+```
+
+Reading `self.count` inside `set count` is left alone, and terminates: that calls the getter, which
+is a different member.
+
 **The receiver says how the method reaches its value**, and is written as the first thing in the
 parameter list:
 

@@ -44,6 +44,7 @@ the same way:
 |---|---|---|
 | method | `area(self) -> int` | `x.area()` |
 | property | `size -> int` | `x.size`, with no parentheses |
+| a property's setter | `set size(n)` | `x.size = n` |
 | associated function | `zero() -> Self` | `T.zero()`, through the type |
 
 **A property is asked for by dropping the body from its declaration form**, and supplied by an
@@ -73,6 +74,49 @@ print(b.size)
 Nothing about a property's dispatch differs from a method's: it has a receiver, it simply never
 spells one, so it takes a table slot beside the methods and a bound licenses reading it exactly as
 one licenses calling them.
+
+**A trait may ask for the write half too**, by declaring the setter beside the property
+([declarations](/reference/declarations/)). A setter is a `*self` method that mentions `Self` nowhere
+but its receiver, so it takes a slot of its own and changes nothing about object safety — a bound
+writes the property, and so does an erased object:
+
+```sysl
+trait Counter
+    count -> int
+    set count(n)
+
+struct Cell
+    v: int
+end Cell
+
+impl Counter for Cell
+    count -> int = self.v
+    set count(n)
+        self.v = n
+
+bump[C: Counter](c: *C)
+    c.count += 1
+
+var cell = Cell(41)
+
+bump(&cell)
+
+var erased: &Counter = Cell(0)
+
+erased.count = 7
+
+print(cell.count, erased.count)
+```
+
+```output
+42 7
+```
+
+An implementation supplies both halves, or inherits either as a default; a block supplying only the
+setter need not restate the property. **A property reached through a bound or a table belongs to the
+trait**, so that is where a setter for it is declared — writing one the trait does not ask for names
+the trait rather than the concrete type, because an inherent setter there would not license the
+write.
 
 **Which kind a member is has to match between the trait and the implementation**, and that is a real
 check rather than a formality — a property and an associated function both have no receiver to

@@ -102,9 +102,26 @@ lets the `iN` / `uN` / `fN` families stay open: `u12` and `i5` are types you may
 lexer having heard of them, and no list of widths has to be maintained anywhere.
 
 A few words are **contextual** — special only where the grammar expects one, and ordinary identifiers
-everywhere else: `is`, `not`, `invariant`, `new`, `within`, `where`, and the `c` of a
+everywhere else: `is`, `not`, `invariant`, `new`, `set`, `within`, `where`, and the `c` of a
 [`c const` or `c type`](/reference/ffi/) block. You may name a variable `where`; you may not name one
 `while`.
+
+`set` is read only where a member declaration begins, which is what keeps the word available for
+everything else it is wanted for — a container, a local, a method:
+
+```sysl
+struct Cell
+    set: int
+    get -> int = self.set
+
+var set = Cell(3)
+
+print(set.get)
+```
+
+```output
+3
+```
 
 The last of those is the clearest case for why the language spends so few words. `c` is the most
 common one-letter name in code that handles characters, and what keeps it available is the keyword
