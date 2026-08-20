@@ -327,13 +327,17 @@ the ABI, which is why it is a system of its own and `#if android` is a symbol di
 What it needs is *which clang*. Every other target here is served by a compiler that has the right
 back end, and having the back end is not the same as having the toolchain: Android's headers and
 libraries are the NDK's, and no clang outside it carries them. So sysl asks the environment.
-`ANDROID_NDK_ROOT` or `ANDROID_NDK_HOME` names an NDK outright; otherwise `ANDROID_SDK_ROOT` or
-`ANDROID_HOME` names the SDK and the newest `ndk/<version>` under it is used.
+`ANDROID_NDK_ROOT` or `ANDROID_NDK_HOME` names an NDK outright; otherwise `ANDROID_HOME` names the
+SDK and the newest `ndk/<version>` under it is used.
 
 ```
-export ANDROID_SDK_ROOT=~/Library/Android/sdk
+export ANDROID_HOME=~/Library/Android/sdk
 sysl build --target aarch64-android hello.sysl
 ```
+
+`ANDROID_SDK_ROOT` is read too and means the same thing, but Android's own documentation marks it
+deprecated in favour of `ANDROID_HOME` — so set that one, and if you already have both, keep them
+pointing at the same directory, which is what Android Studio and the Gradle plugin check.
 
 Nothing is guessed at. An NDK sits wherever you installed it, so a compiler that went looking through
 your home directory would find one on the machine it was written on and the wrong one — or none —
@@ -341,7 +345,7 @@ anywhere else, and building against the wrong platform headers is a failure you 
 nothing set, the build stops and says what to set:
 
 ```
-sysl: error: building for Android needs the NDK's own clang, and nothing here says where it is — no clang outside the NDK carries Bionic's headers, so one picked for having the back end fails at the first '#include'. Set ANDROID_SDK_ROOT to the Android SDK (the directory holding 'ndk/'), or ANDROID_NDK_ROOT to one NDK directly
+sysl: error: building for Android needs the NDK's own clang, and nothing here says where it is — no clang outside the NDK carries Bionic's headers, so one picked for having the back end fails at the first '#include'. Set ANDROID_HOME to the Android SDK (the directory holding 'ndk/'), or ANDROID_NDK_ROOT to one NDK directly
 ```
 
 That message exists because the alternative was worse: pick the host's clang for having `aarch64`, and
