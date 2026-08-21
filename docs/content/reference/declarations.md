@@ -326,6 +326,10 @@ test does not match, so each is refused with that as the reason. Those belong in
 Like the comma form, this is **a local form**: the parts have nowhere to carry a type, so one at the
 top of a file is refused rather than becoming a quiet local of the entry point.
 
+The same pattern stands in a
+[`for` header](/reference/statements/#the-loop-variable-may-be-a-pattern), where it takes the element
+apart as the loop hands it over.
+
 ## Functions
 
 A name, a parameter list, an optional `-> result`, and a body. There is no keyword: the shape is what

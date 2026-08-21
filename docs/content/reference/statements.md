@@ -185,6 +185,56 @@ for i in 0..<2
 1
 ```
 
+#### The loop variable may be a pattern
+
+A `for` binds what a [binding](/reference/declarations/#by-pattern-when-the-shape-matters) binds, so
+an element that is a tuple or a struct may be taken apart in the header instead of inside the body.
+The pattern grammar is the same one, whole: nested as deep as the value goes, a part skipped with
+`_`, a struct named by its fields, and the element kept beside its parts with `n @`.
+
+```sysl
+struct Point
+    x: int
+    y: int
+
+for (name, n) in [("a", 1), ("b", 2)]
+    print(name, n)
+
+for ((a, b), c) in [((1, 2), 3)]
+    print(a, b, c)
+
+for Point{x, y} in [Point(3, 4)]
+    print(x * y)
+
+for whole @ (first, _) in [(5, 6)]
+    print(first, whole.1)
+```
+
+```output
+a 1
+b 2
+1 2 3
+12
+5 6
+```
+
+The parts are bound the way the loop variable itself is, so a part may be assigned to. What the
+pattern may **not** be is a choice among an enum's variants: a loop has no other arm to take when
+the element turns out to have a different shape, which is the same rule a binding follows.
+
+The parts go in parentheses, and the comma spelling is not a second way to write it — `for a, b` is
+already the beginning of a three-clause header whose first clause assigns to two names, and the two
+would not tell themselves apart until the `in`:
+
+```sysl
+for k, v in [(1, 2)]
+    print(k, v)
+```
+
+```error
+a 'for' names one thing, and a pattern is what takes it apart — write 'for (k, v) in …'
+```
+
 ### `break` carries a value, and `else` supplies the other one
 
 `break expr` leaves the nearest loop and makes `expr` the loop's value. An optional **`else` block**,

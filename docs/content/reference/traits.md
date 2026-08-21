@@ -1060,8 +1060,8 @@ variable, an assignment, a returned value, an array element, a struct field. `&r
 a `&Rect` erases to `&Shape`; and a plain `Rect(3, 4)` where a `&Shape` is expected is boxed and then
 erased, which is the ordinary "write the construction and it is allocated" rule with one more step.
 
-**A `*Trait` will not take a bare value.** A raw pointer needs an address, and taking one of a
-temporary silently is how a program acquires a dangling pointer:
+**A `*Trait` will not take a bare value.** A raw pointer needs an address, and taking one *silently*
+is how a program acquires a dangling pointer without a line to point at:
 
 ```sysl
 trait Shape
@@ -1082,6 +1082,11 @@ print(s.area())
 ```error
 a *Shape points at a value, so it needs an address — write '&' in front of the Rect to take one
 ```
+
+**And writing it is all it asks**: `&Rect(2)` gives the value a hidden local of that scope and hands
+back its address, so the fix the diagnostic names is one character rather than a second declaration.
+What stays refused is the silent case, which is the one above — see
+[Addressing a value](/reference/memory/#addressing-a-value).
 
 Because the coercion applies **per branch**, an `if` or a `match` whose arms are different concrete
 types meets at one trait object, which is the point of having them:
