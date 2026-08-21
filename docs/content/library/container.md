@@ -93,8 +93,8 @@ count is roughly known: the table is grown at three quarters full, so the storag
 Walking hands back a pair per entry, in no particular order:
 
 ```sysl
-for pair in ages.walk()
-    val name, age = pair
+for (name, age) in ages.walk()
+    print(name, age)
 ```
 
 **Nothing hands out a reference into the table**, and that is deliberate rather than an omission: a

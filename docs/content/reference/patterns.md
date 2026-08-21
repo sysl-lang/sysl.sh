@@ -327,7 +327,9 @@ versa, and each bound sub-pattern is itself any pattern in this table.
 ## A pattern at a binding
 
 `match` is not the only place a pattern stands. A `val` or `var`
-[binding](/reference/declarations/#by-pattern-when-the-shape-matters) takes one too:
+[binding](/reference/declarations/#by-pattern-when-the-shape-matters) takes one too — and so does the
+variable of a [`for` loop](/reference/statements/#the-loop-variable-may-be-a-pattern), which binds
+whatever a binding binds and follows every rule in this section:
 
 ```sysl
 struct Counter
@@ -392,6 +394,10 @@ show()
 A binding has **no other arm to take**. So the patterns allowed at one are exactly those that cannot
 fail — a tuple pattern, **either struct form**, a name, a wildcard, and those nested inside one
 another — and everything in the table above that is a *test* is refused by name.
+
+A `for` header is a binding by this rule as much as a `val` is: a loop has nowhere to send an element
+whose shape the pattern did not expect, so it takes the same subset and refuses the same patterns
+with the same message.
 
 A struct qualifies because it has exactly one shape, which is the same property that makes a tuple
 pattern irrefutable, and both spellings of it stand here:
