@@ -154,6 +154,14 @@ Five forms, and each is an expression.
 | `for x in seq` | walk a range, an array, a slice, or an `Iterate` |
 | `for init; cond; step` | a stride, a descent, a compound test, several variables |
 
+**A fourth thing may follow `for`, and it is not a loop.** `for const i in 0..<A.len` is *unrolled*
+while the program is compiled — the compiler emits one copy of the body per value and there is no
+loop left at run time, which is why it takes no label, no `break` and no `else`. It exists to walk a
+[type pack](/reference/generics/#a-parameter-may-stand-for-a-list-of-types), where each iteration has
+a different type and so genuinely has to be a different copy. Everything on this page is about the
+five forms above; `for const` is documented with generics, where its range rule and its restrictions
+are.
+
 ### `for x in`
 
 The ordinary walk, and preferred wherever it fits: it names one thing instead of three and cannot
