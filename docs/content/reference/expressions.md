@@ -447,6 +447,98 @@ its own error type converts a callee's explicitly.
 
 `?` is an expression and composes as one, so its unwrapped value flows into whatever surrounds it.
 
+## A leading dot — the qualifier the context already knows
+
+`.Green` is `Colour.Green` with the qualifier left off, and the type the position expects is what
+supplies it. It is a **lookup rather than a second kind of inference**: the expectation names the
+type, and everything after that is the resolution the written-out spelling already gets.
+
+```sysl
+enum Colour
+    Red
+    Green
+    Blue
+
+code(c: Colour) -> int
+    c match
+        Red -> 1
+        Green -> 2
+        Blue -> 3
+
+struct Pen
+    tip: Colour
+
+pick() -> Colour = .Blue
+
+var c: Colour = .Red
+
+c = .Green
+
+val pens: [2]Pen = [Pen(.Red), Pen(.Blue)]
+
+print(code(.Green), code(c), code(pick()), code(pens[1].tip))
+print(c == .Green, .Green == c)
+```
+
+```output
+2 2 3 3
+true true
+```
+
+**Every position that already pushes an expected type down supplies one**, which is why the list is
+long and needs no rule of its own: an argument, an argument written by name, a parameter's default, an
+annotated binding and the assignment after it, a return and an expression body, a struct's field, an
+element of an array or a slice, a part of a tuple, a variant's payload, and each branch of an `if` or
+a `match` used as a value.
+
+**An operand takes it from the operand beside it, and neither side is privileged** — `c == .Green`
+and `.Green == c` are the same question. At a *generic* parameter it is held back to the second pass
+exactly as `null` is, so the argument that settles the type parameter settles this one too.
+
+**It reaches whatever the qualified form reaches**, and fails where that fails in the same words: a
+variant, a variant carrying data, an associated function of an enum, of a struct, or of a
+[constrained subtype](/reference/errors/). Visibility is untouched — what the dot leaves off is the
+*spelling*, not the check, so a private associated function is as private as it ever was.
+
+**The type it resolves against need not be nameable where the dot is written**, which is most of the
+point. A variant of another module's enum needs no import and no path: the parameter already says
+which type it is.
+
+Two things it does not do. A **type attribute** is written `::`, because it belongs to the type
+rather than to a value of it, and the dot does not reach it. A **pattern** is left alone: a bare name
+in one already resolves against the scrutinee's enum, so a dot written there is refused by name
+rather than left to a message about patterns.
+
+What it refuses is a position that expects nothing:
+
+```sysl
+enum Colour
+    Red
+    Green
+
+print(.Red)
+```
+
+```error
+'.Red' is a member of whatever type the context expects, and nothing here expects one
+```
+
+and a name the expected type does not have, which is the qualified form's own diagnostic:
+
+```sysl
+enum Colour
+    Red
+    Green
+
+val c: Colour = .Rd
+
+print(1)
+```
+
+```error
+enum 'Colour' has no variant 'Rd'
+```
+
 ## Conversions are calls
 
 Every conversion is written, with call syntax, and none is inferred — the visible-cost rule the

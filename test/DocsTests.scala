@@ -53,7 +53,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (18, 3, 0),
-    "docs/content/reference/expressions.md"           -> (18, 6, 0),
+    "docs/content/reference/expressions.md"           -> (19, 8, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
@@ -74,7 +74,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
-    "docs/content/reference/errors.md"                 -> (20, 27, 1),
+    "docs/content/reference/errors.md"                 -> (21, 28, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -114,7 +114,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/table.md"                     -> (0, 0, 1),
     "docs/content/guides/qsort.md"                     -> (0, 0, 1),
     "docs/content/guides/simd.md"                      -> (0, 0, 3),
-    "docs/content/library/core.md"                     -> (22, 4, 11),
+    "docs/content/library/core.md"                     -> (23, 4, 11),
     "docs/content/library/text.md"                      -> (17, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),

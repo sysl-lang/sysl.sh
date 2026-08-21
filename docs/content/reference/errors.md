@@ -144,6 +144,70 @@ conflict between `T` and nothing. And the departure itself is an `extern`: the l
 Nothing here costs a program that does not use it. The enums are generic, so a member exists only
 where a call asks for one, and an `extern` nothing reaches is never declared in the output.
 
+### They compare, and they render
+
+Both carry `Eq` and `Display`, and the bounds are on the **payloads** rather than on the whole:
+
+```sysl
+impl[T: Eq] Eq for Option[T]
+impl[T: Eq, E: Eq] Eq for Result[T, E]
+
+impl[T: Display] Display for Option[T]
+impl[T: Display, E: Display] Display for Result[T, E]
+```
+
+Two of them are equal when they took the same road and agree at the end of it. `Some` is never equal
+to `None`, and **`Ok` is never equal to `Err`** however the two payloads compare — the pair below
+carries a 3 on both sides. A rendering is the source spelling, and a width describes the field the
+whole value occupies rather than its payload:
+
+```sysl
+val a: Option[usize] = Some(166)
+val n: Option[usize] = None
+
+print(a == Some(166), a == n, n == None)
+
+val ok: Result[usize, usize] = Ok(3)
+val bad: Result[usize, usize] = Err(3)
+
+print(ok == bad)
+print(str(a), str(n), str(ok), str(bad))
+print(f"${a}%12s|")
+```
+
+```output
+true false true
+false
+Some(166) None Ok(3) Err(3)
+   Some(166)|
+```
+
+**A `Result[T, E]` compares exactly when both halves do**, and the two bounds are written
+separately because they are two questions: the payload being comparable says nothing about the error
+type, and a `Result` is only as comparable as the less comparable of them.
+
+The bound is reported where the comparison is written rather than where the type was declared, and
+it names the half that is missing:
+
+```sysl
+struct Opaque
+    n: int
+
+main()
+    val a: Option[Opaque] = Some(Opaque(1))
+    val b: Option[Opaque] = Some(Opaque(2))
+
+    print(a == b)
+```
+
+```error
+error: '==' between sysl.Option[Opaque] needs 'sysl.Eq' — the 'impl' that covers it asks 'sysl.Eq' of Opaque, which does not implement it
+```
+
+Both blocks are what makes [`assert_eq`](/library/core/) usable on one: it is bounded over
+`Eq + Display`, so either alone would still refuse — and the refusal would name the trait that is
+missing rather than the one a reader was thinking about.
+
 ## `?`
 
 The [expressions page](/reference/expressions/) gives `?` its place in the grammar — postfix, at
