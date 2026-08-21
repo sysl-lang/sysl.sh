@@ -1,12 +1,12 @@
 ---
 title: Guide Programs
-summary: Seventeen real programs written to force a language decision — what each one owns, and what writing it found.
+summary: Sixteen real programs written to force a language decision — what each one owns, and what writing it found.
 weight: 50
 ---
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-seventeen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
+sixteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
 to **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,
@@ -31,7 +31,7 @@ own file records what it found in the place the code that provoked it lives, whi
 somebody reading the program and useless for somebody wondering **why the language is shaped this
 way**. These pages pull each finding out and link it to the rule it produced.
 
-## The seventeen, and the axis each owns
+## The sixteen, and the axis each owns
 
 In the order they were written, which matters — a finding must be discharged before the next program
 starts, so each one is written on top of what the last one settled.
@@ -39,7 +39,6 @@ starts, so each one is written on top of what the last one settled.
 | program | the axis it owns |
 |---|---|
 | [json](/guides/json/) | recursive ownership — a value that contains itself through `&T` |
-| [hashmap](/guides/hashmap/) | the trait system under load — bounds, what they promise, and ownership at once |
 | [bytecode](/guides/bytecode/) | the module system, and the set's one end-to-end assertion |
 | [png](/guides/png/) | the byte level — endianness, bit streams, checksums, somebody else's format |
 | [fft](/guides/fft/) | an algorithm checked against its own definition |

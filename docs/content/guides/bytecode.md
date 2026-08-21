@@ -44,10 +44,11 @@ with a parser.
 **An assignment is an expression, so a two-branch `if` whose branches each end in one was checked as
 though those were its result.** The `unit`-branch rule saved the case where one side was a statement
 and saved nothing where both sides assigned: `full = true` against `len += 1` is a `bool` against a
-`usize`. That sharpened what [hashmap](/guides/hashmap/) had found about `match` — the trouble was
+`usize`. That sharpened what the chained hash map had found about `match` — the trouble was
 never that `match` lacked a rule `if` had, it was that assignment is an expression and *any*
 two-armed form inherited it. Answered by taking the **position** instead: a block whose own value is
-unused has none.
+unused has none. That program was retired when [`sysl.container.map`](/library/container/)
+shipped, and its findings went with it into the module's own header.
 
 **A line could not be continued.** There was no trailing-operator continuation, so a condition that
 outgrew its line had to become a sequence of early returns. Answered — and the rule that landed

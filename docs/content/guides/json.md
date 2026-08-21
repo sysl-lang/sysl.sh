@@ -70,4 +70,4 @@ address, and being usable where a constant is *demanded* is exactly what that bu
 ---
 
 [Source](https://github.com/sysl-lang/sysl/tree/dev/guide/json) ·
-Next: [hashmap](/guides/hashmap/) — the trait system under load.
+Next: [bytecode](/guides/bytecode/) — the module system, end to end.

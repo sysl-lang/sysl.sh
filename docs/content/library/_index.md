@@ -29,6 +29,11 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.text`](/library/text/) | the whole text surface — validation, the character cursors, `Ascii` and `Search`, splitting and joining, `StrBuilder`, the parsers, `CString` | — |
 | [`sysl.regex`](/library/regex/) | POSIX Extended Regular Expressions — `regex`, `Regex`, `Match` | — |
 | [`sysl.buf`](/library/buf/) | `Buf[T]`, the growable sequence, and `ByteSink` | — |
+| [`sysl.container.map`](/library/container/#the-map-sysl-container-map) | `Map[K: Hash + Eq, V]` — an open-addressed hash map, one flat table and one allocation | — |
+| [`sysl.container.set`](/library/container/#the-set-sysl-container-set) | `Set[K: Hash + Eq]` — membership, `set_of`, and `union` / `intersection` / `difference` / `is_subset` | — |
+| [`sysl.container.deque`](/library/container/#the-queue-at-both-ends-sysl-container-deque) | `Deque[T]` — a ring cheap to push and pop at either end, which `Buf` is not at the front | — |
+| [`sysl.container.heap`](/library/container/#the-priority-queue-sysl-container-heap) | `Heap[T: Ord]` — a min-heap priority queue, with a linear `heap_of` | — |
+| [`sysl.container.list`](/library/container/#the-immutable-list-sysl-container-list) | `List[T]` — an immutable list whose tail is shared rather than copied | — |
 | [`sysl.io`](/library/io/) | `Reader`, `stdin()`, `lines()` and `console_lines()`, and the in-memory `bytes_reader()` / `bytes_writer()` | — |
 | [`sysl.fs`](/library/fs/) | files and paths — `read_text`, `write_bytes`, `exists`, `rename`, and `IoError` | `os` |
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
