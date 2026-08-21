@@ -624,11 +624,13 @@ where it must — an MMIO window, a page table, a buffer a C function filled. Th
 
 A **place** is something with an address: a local or parameter, a dereference, an **element**, and a
 field of any of them. Everything else — a call result, an arithmetic result, a freshly built struct —
-is a value with no address to take.
+is a value with no address of its own, and `&` in front of one *makes* it a place rather than
+refusing it; [Addressing a value](#addressing-a-value) below is that rule.
 
 | operation | what it does |
 |---|---|
 | `&place` | yields a **`*T`** — C's address-of, with C's result |
+| `&value` | writes the value into a hidden local of this scope, and yields a **`*T`** to that |
 | `*p` | reads through a `*T` or a `&T`, and is itself a place |
 | `p.f` | selects, dereferencing **one** level automatically on both `*T` and `&T` |
 
@@ -695,6 +697,177 @@ temporary view is the only holder of its buffer, the buffer is released at the e
 and `&f()[i]` is a pointer to freed storage before the next line runs. That is the unsafe tier
 behaving as advertised — `&` yields a raw pointer, a raw pointer can dangle, nothing promotes it —
 and it is called out because every other dangle needs the pointer to be carried somewhere first.
+
+## Addressing a value
+
+`&` in front of something with no address of its own does not refuse — it **makes** the storage. The
+value is written into a hidden local of the scope the `&` stands in, and what comes back is that
+slot's address:
+
+```sysl
+trait Shape
+    area(self) -> int
+
+struct Rect
+    w: int
+end Rect
+
+impl Shape for Rect
+    area(self) -> int = self.w
+
+var s: *Shape = &Rect(2)
+
+print(s.area())
+```
+
+```output
+2
+```
+
+So `&Rect(2)` is `var t = Rect(2)` and `&t` with the name left out, and the name is the only thing
+it leaves out: the slot is laid down for the frame, the count a counted value carries is taken
+exactly as a `var`'s initializer takes one, and it is released where the scope ends.
+
+**Any value, not only a construction.** `Rect(2)` and `make()` are the same expression as far as the
+language is concerned — a call — so a rule that took one and refused the other could only be stated
+as "you may address a constructor call but not a function call". A literal and an arithmetic result
+are the same case again:
+
+```sysl
+mid(p: *int) -> int = *p
+
+var a = 3
+var b = 4
+
+print(mid(&1), mid(&(a + b)))
+```
+
+```output
+1 7
+```
+
+**It is storage rather than a copy handed out to be read**, so a program may write through it, and
+the write is there when the pointer is read again:
+
+```sysl
+var p: *int = &1
+
+*p = 9
+
+print(*p)
+```
+
+```output
+9
+```
+
+**The operand is evaluated once**, at the `&`, and not again per use of the pointer:
+
+```sysl
+var calls = 0
+
+next() -> int
+    calls += 1
+    7
+
+var p: *int = &next()
+
+print(*p, *p, calls)
+```
+
+```output
+7 7 1
+```
+
+**The scope is the one the `&` was written in**, so a pointer carried out of that scope is stale —
+which is the raw tier behaving as advertised rather than a hole this form opens. The same pointer can
+be had by naming the local yourself and taking its address, and neither is checked — what a `*T`
+promises is spelled out above, and it is not lifetime.
+
+**A name is answered rather than copied.** `&x`, `&t.f`, `&xs[i]` and `&*p` are asking for *that
+thing's* address, so they go on meaning what they always did — and go on being refused where what
+they name has no address. A **property** is the case that makes this a rule rather than a detail:
+`t.f` at a property and `t.f` at a field are one spelling, and handing the first a pointer into a
+copy would make a write through it go nowhere while looking exactly like a write that lands.
+
+```sysl
+struct Temp
+    c: int
+
+    f -> int = self.c * 9 / 5 + 32
+end Temp
+
+var t = Temp(0)
+var p = &t.f
+
+print(*p)
+```
+
+```error
+something with an address
+```
+
+A constant is the same shape and the same answer: `&capacity` reads as storage and there is none,
+while `&8` — the value it stands for, written out — makes a slot like any other value does.
+
+**Module storage has no such scope, and is refused.** An initializer there runs in a prologue, so the
+slot would be that prologue's frame and the pointer would be stale by the program's first statement:
+
+```sysl
+struct Rect
+    w: int
+end Rect
+
+static var p: *Rect = &Rect(2)
+
+print(p.w)
+```
+
+```error
+module storage has no such scope
+```
+
+Give the value a name that lasts the run instead, and take the address of that:
+
+```sysl
+struct Rect
+    w: int
+end Rect
+
+static var r: Rect = Rect(2)
+static var p: *Rect = &r
+
+print(p.w)
+```
+
+```output
+2
+```
+
+**The `&` in a type is a different thing, and neither is a way of writing the other.** `&T` is a
+counted box, which owns what is in it; the operator takes an address, which owns nothing. So a box
+is not made by writing the operator in front of a value — it is made by the value arriving where a
+`&T` is wanted, with no operator at all:
+
+```sysl
+trait Shape
+    area(self) -> int
+
+struct Rect
+    w: int
+end Rect
+
+impl Shape for Rect
+    area(self) -> int = self.w
+
+var s: &Shape = &Rect(2)
+
+print(s.area())
+```
+
+```error
+an address is not a way of making a box
+```
 
 ## `ref` — a name for a place
 
