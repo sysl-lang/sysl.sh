@@ -869,6 +869,28 @@ print(s.area())
 an address is not a way of making a box
 ```
 
+Which is the whole of the fix — the same program with the operator dropped:
+
+```sysl
+trait Shape
+    area(self) -> int
+
+struct Rect
+    w: int
+end Rect
+
+impl Shape for Rect
+    area(self) -> int = self.w
+
+var s: &Shape = Rect(2)
+
+print(s.area())
+```
+
+```output
+2
+```
+
 ## `ref` — a name for a place
 
 A place can be deep, and until `ref` the two ways to shorten one both cost something.
