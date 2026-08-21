@@ -92,9 +92,11 @@ Production builds and deploys from `dev` — see `.github/workflows/docs.yml`.
 
 ## What is not here
 
-The **specification** — the numbered design chapters — stays with the compiler, at
-[`design/`](https://github.com/sysl-lang/sysl/tree/dev/design). It is not the website: nothing renders
-it, and a chapter belongs in the same commit as the code that implements it.
+The **specification** is not somewhere else — it is `docs/content/reference/`, right here. It used to
+be a set of numbered design chapters in the compiler's repository, and those were removed on
+2026-08-21 once the reference had overtaken them: two documents saying the same thing is one that goes
+stale, and this one has a test suite behind it. They are in that repository's history if the argument
+for a rule is what you are after.
 
 The **guide programs** stay there too, in `guide/` and `examples/`, where they are gated against the
 compiler's dev branch rather than against a release.
