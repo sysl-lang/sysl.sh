@@ -563,6 +563,35 @@ paths, no warning flags, nothing for an installed library's headers. `--define` 
 and applies to the file it names. Where both name the same macro the package wins, since the whole
 point is that its configuration is not the consumer's to change by accident.
 
+### One key, several files
+
+A key may name its files with braces, as a shell writes them:
+
+```hocon
+defines {
+  "sh/sysl/miniz/c/{miniz,shim}.c" {
+    MINIZ_NO_MALLOC   = true
+    TDEFL_LESS_MEMORY = 1
+  }
+}
+```
+
+Several groups multiply out — `"{a,b}/{x,y}.c"` is four files — and expansion happens when the
+manifest is read, so nothing further on sees anything but one path and its macros.
+
+**The point is not brevity.** A package whose C shares a configuration would otherwise carry one copy
+of the list per file, and every macro in such a list changes a struct's size or deletes a
+declaration. Two copies that drift apart are precisely the silent skew this block exists to prevent,
+and duplication is how drift starts.
+
+**There is no `*`, and that is deliberate.** A wildcard picks up a `.c` added later without anybody
+deciding — the same failure by another road, since the new file joins a set that changes struct
+layouts. A brace still names every file it configures; it only says the shared part once.
+
+Nesting (`{a,{b,c}}`) and empty alternatives (`{a,}`) are refused, both saying nothing a flat list
+does not. So is a file configured from two blocks, which has no sensible merge — the later would
+silently win.
+
 ### The path has to name C the package actually carries
 
 A key that matches no carried file stops the build:
