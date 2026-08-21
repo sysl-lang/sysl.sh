@@ -49,9 +49,10 @@ a slab allocator, SHA-2, a Lisp — each written to force a language decision, w
 written down.
 Most of the features documented above exist because one of them could not be written without.
 
-The [specification](https://github.com/sysl-lang/sysl/tree/dev/design) is the other kind of
-document — numbered chapters that say what the language *is* and why, written for someone deciding
-the design rather than someone learning it.
+The [reference](/reference/) is the other kind of document — every construct written down once, in
+its own place, with the rules complete rather than the ones a beginner needs first. It is the
+specification, and it is where to go when the question is what the language *is* rather than how to
+start using it.
 
 ## Getting in touch
 

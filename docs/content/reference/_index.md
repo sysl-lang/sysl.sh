@@ -40,6 +40,8 @@ modules a program even has.
 [standard library](/library/) is ordinary sysl — no type in it is a language feature and a program
 could have written any of it — so it is documented apart from the rules the compiler enforces.
 
-Cross-references point at the [design chapters](https://github.com/sysl-lang/sysl/tree/dev/design)
-where a rule was argued out. Those are the specification and carry the alternatives that were
-rejected; this section is what the language *is*, without the deliberation.
+**This section is the specification.** It used to share that job with a set of numbered design
+chapters in the compiler's repository, which carried each rule's argument and the alternatives that
+were rejected; those were removed once this section had overtaken them, because two documents saying
+the same thing is one that goes stale. What is here is what the language *is*, and the reason is
+given wherever a rule would be unpredictable without it.
