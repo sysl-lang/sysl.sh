@@ -125,6 +125,27 @@ print("both held")
 both held
 ```
 
+**The bound is `Eq + Display` and not `Eq` alone**, which is what lets the report say what the two
+values were rather than only that they differed — so a type reaches `assert_eq` by rendering as well
+as by comparing. Both halves are written for an [`Option` and a `Result`](/reference/errors/), so a
+function answering with one is asserted about directly:
+
+```sysl
+first_even(xs: []const int) -> Option[int]
+    for x in xs
+        if x % 2 == 0 then return Some(x)
+
+    None
+
+assert_eq(first_even([1, 4, 6]), Some(4))
+assert_eq(first_even([1, 3]), None)
+print("both held")
+```
+
+```output
+both held
+```
+
 A failure prints the pair, in the order it is read in — what happened, then what was meant to:
 
 ```

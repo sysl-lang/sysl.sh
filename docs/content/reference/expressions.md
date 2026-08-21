@@ -408,8 +408,8 @@ positions. Note that `t.0.1` does not work, because the lexer reads `0.1` as a f
 indices — write `(t.0).1`, which is what the diagnostic says.
 
 A dot with **nothing to its left** is a different form — the member of whatever type the context
-expects, [below](#a-leading-dot-names-a-member-of-the-type-expected-here) — and it is told from a
-tail by there being no expression in front of it to select from.
+expects, [below](#a-leading-dot-the-qualifier-the-context-already-knows) — and it is told from a tail
+by there being no expression in front of it to select from.
 
 ### `?`
 
@@ -451,11 +451,11 @@ its own error type converts a callee's explicitly.
 
 `?` is an expression and composes as one, so its unwrapped value flows into whatever surrounds it.
 
-## A leading dot names a member of the type expected here
+## A leading dot — the qualifier the context already knows
 
-`.Green` is `Colour.Green` with the type's own name left off. What supplies the name is **the type
-the context expects**, so the form is written exactly where something already says which type is
-wanted, and nowhere else.
+`.Green` is `Colour.Green` with the qualifier left off, and the type the position expects is what
+supplies it. It is a **lookup rather than a second kind of inference**: the expectation names the
+type, and everything after that is the resolution the written-out spelling already gets.
 
 ```sysl
 enum Colour
@@ -463,63 +463,55 @@ enum Colour
     Green
     Blue
 
-name(c: Colour) -> string
+code(c: Colour) -> int
     c match
-        Red -> "red"
-        Green -> "green"
-        Blue -> "blue"
+        Red -> 1
+        Green -> 2
+        Blue -> 3
 
-val chosen: Colour = .Blue
+struct Pen
+    tip: Colour
 
-print(name(chosen), name(.Green), chosen == .Blue)
+pick() -> Colour = .Blue
+
+var c: Colour = .Red
+
+c = .Green
+
+val pens: [2]Pen = [Pen(.Red), Pen(.Blue)]
+
+print(code(.Green), code(c), code(pick()), code(pens[1].tip))
+print(c == .Green, .Green == c)
 ```
 
 ```output
-blue green true
+2 2 3 3
+true true
 ```
 
-It is a **lookup rather than a new kind of inference**: the expectation supplies the qualifier, and
-everything after that is the resolution the written `Colour.Green` already gets.
+**Every position that already pushes an expected type down supplies one**, which is why the list is
+long and needs no rule of its own: an argument, an argument written by name, a parameter's default, an
+annotated binding and the assignment after it, a return and an expression body, a struct's field, an
+element of an array or a slice, a part of a tuple, a variant's payload, and each branch of an `if` or
+a `match` used as a value.
 
-### Where the type comes from
+**An operand takes it from the operand beside it, and neither side is privileged** — `c == .Green`
+and `.Green == c` are the same question. At a *generic* parameter it is held back to the second pass
+exactly as `null` is, so the argument that settles the type parameter settles this one too.
 
-Every position that already says which type it wants supplies one. None of these is a special case —
-they are the positions an expected type reaches anyway.
+**It reaches whatever the qualified form reaches**, and fails where that fails in the same words: a
+variant, a variant carrying data, an associated function of an enum, of a struct, or of a
+[constrained subtype](/reference/errors/). Visibility is untouched — what the dot leaves off is the
+*spelling*, not the check, so a private associated function is as private as it ever was.
 
-| position | written |
-|---|---|
-| an argument | `paint(.Red)` |
-| an argument named rather than positioned | `paint(c = .Red)` |
-| a parameter's default | `paint(c: Colour = .Red)` |
-| an annotated binding, and an assignment to one | `val c: Colour = .Red`, `c = .Blue` |
-| a `return`, and an expression body | `pick() -> Colour = .Red` |
-| a field of a struct being built | `Pen(.Green, 3)` |
-| an element of an array or a slice | `val xs: [2]Colour = [.Red, .Blue]` |
-| a part of a tuple | `val t: (Colour, int) = (.Blue, 2)` |
-| the payload of another variant | `val o: Option[Colour] = .Some(.Red)` |
-| a branch of an `if` or `match` used as a value | `val c: Colour = if hot then .Red else .Blue` |
-| the operand beside it | `c == .Red` |
+**The type it resolves against need not be nameable where the dot is written**, which is most of the
+point. A variant of another module's enum needs no import and no path: the parameter already says
+which type it is.
 
-The last one is worth saying out loud, because an operand has no expectation of its own: it takes the
-type of the operand beside it, by the same rule that gives a bare integer literal its width.
-
-A `&T` parameter asks for the `T` it will box, so `.Red` stands at one without mentioning the
-reference. A **trait object** asks for nothing in particular — what may be erased into one is
-whatever implements the trait — so it supplies no type and the form is refused there.
-
-### What it reaches
-
-Whatever the written qualifier reaches:
-
-- a **variant**, with or without a payload — `.Red`, `.Circle(3)`
-- an **associated function** of an enum, a struct or a constrained subtype — `.origin()`
-
-A **property** and a **method** are read on a value rather than on the type, so neither is reached,
-and each says so. A **type attribute** is written `Colour::First`, with `::` because it belongs to
-the type rather than to a value of it; the leading dot does not stand in for that sigil.
-
-The expected type is read **as it was written**. A transparent constrained subtype is interchangeable
-with its base everywhere else, and here it is not: the base is not where the subtype's members live.
+**The expected type is read as it was written**, and this is the one place a transparent
+constrained subtype is *not* interchangeable with its base: the base is not where the subtype's
+members are filed. Reducing `Age` to `int` first would look for the member on `int`, which does not
+have it.
 
 ```sysl
 type Age = int within 0..150
@@ -539,10 +531,12 @@ print(int(a))
 1
 ```
 
-### Where nothing expects a type
+Two things it does not do. A **type attribute** is written `::`, because it belongs to the type
+rather than to a value of it, and the dot does not reach it. A **pattern** is left alone: a bare name
+in one already resolves against the scrutinee's enum, so a dot written there is refused by name
+rather than left to a message about patterns.
 
-The form has no meaning with no expectation, and that is a diagnostic rather than a guess — there is
-deliberately no fall-back to "the only enum with a variant of that name".
+What it refuses is a position that expects nothing:
 
 ```sysl
 enum Colour
@@ -556,28 +550,20 @@ print(.Red)
 '.Red' is a member of whatever type the context expects, and nothing here expects one
 ```
 
-The same applies to a **receiver**: in `.origin().x` what the context expects is the type of the
-whole expression, which is the field's and not the type the associated function belongs to.
-
-A **pattern** needs none of this and takes no dot. A pattern is matched against a type it already
-knows, and a bare name there is read against the scrutinee's enum — so `Red ->` already means what
-`.Red ->` would, and the dot is refused rather than accepted as a second spelling.
+and a name the expected type does not have, which is the qualified form's own diagnostic:
 
 ```sysl
 enum Colour
     Red
     Green
 
-val c: Colour = .Red
-val n = c match
-    .Red -> 1
-    else -> 2
+val c: Colour = .Rd
 
-print(n)
+print(1)
 ```
 
 ```error
-a pattern is matched against a type it already knows
+enum 'Colour' has no variant 'Rd'
 ```
 
 ## Conversions are calls
