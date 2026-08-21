@@ -531,3 +531,71 @@ Most of what other ecosystems need build scripts for is compiling vendored C, an
 compiles a library's C declaratively — the linker inputs a package needs are `@link` attributes in
 its source, not a program that computes them. What that buys is most of the supply-chain story: a
 package that cannot execute during installation cannot exfiltrate anything during installation.
+
+### What the vendored C is compiled with
+
+A C library almost always has compile-time options, and they are the **package author's** decision
+rather than the consumer's. Which of miniz's four `MINIZ_NO_*` switches are set is what makes that
+package a caller-owned codec with no allocator in it; a program that depends on it has no more
+business choosing them than choosing its warning flags.
+
+A `defines` block says so. Each sub-block is a `.c` file **the package carries**, named relative to
+the package root, and what follows is what that file is compiled with:
+
+```hocon
+defines {
+  "sh/sysl/miniz/c/miniz.c" {
+    MINIZ_NO_MALLOC       = true
+    MINIZ_NO_STDIO        = true
+    TDEFL_LESS_MEMORY     = 1
+  }
+}
+```
+
+`true` is a bare `-DNAME`, which is what an option tested with `#ifdef` wants. Any other scalar is
+`-DNAME=value`, for one tested with `#if`. **`false` is refused**, because a reader would have to
+guess between *do not define this* and `-DNAME=0` — and those differ under `#ifdef`. Whichever was
+meant can be said exactly: leave the line out, or write `0`.
+
+This is not a general flags channel. It reaches the C a package carries and nothing else: no include
+paths, no warning flags, nothing for an installed library's headers. `--define` remains what a
+*build* says and applies to every C compilation in it; a `defines` block is what a *package* says
+and applies to the file it names. Where both name the same macro the package wins, since the whole
+point is that its configuration is not the consumer's to change by accident.
+
+### A `c const` block inherits from the C beside it
+
+A `c const` block is measured by compiling a small program the compiler writes itself, so there is
+no file in the package for a `defines` key to have named. It reads the headers under **the union of
+what the carried C in its own directory is compiled with**.
+
+That is not a convenience. Every option worth setting is one that changes a struct's size or deletes
+a declaration, so a probe reading the defaults while the object beside it was built with the options
+does not fail — it answers a *different number*:
+
+```
+sizeof(tdefl_compressor)     167800   what the object file holds
+sizeof(tdefl_compressor)     319352   what a probe under the defaults measures
+```
+
+A package exporting the second while linking the first is wrong by 151,552 bytes, and nothing in the
+build says a word. Inheriting from the directory is what makes the three translation units of an
+ordinary binding — the implementation, the shim and the `c.sysl` — agree by construction.
+
+Two C files in one directory compiled with different macros give their union, which is a shape to
+avoid rather than to rely on: a probe cannot be measured under two disagreeing configurations at
+once, and nothing can tell which of them the block meant.
+
+### What it does not fix
+
+An upstream header that defines its own option **unguarded** cannot be configured from outside at
+all. miniz's does:
+
+```c
+#define TDEFL_LESS_MEMORY 0
+```
+
+Any definition made before including that header — from a `defines` block, from `--define`, from
+anything — is overridden there, with a `macro redefined` warning and no other effect. A vendored
+copy has to guard the line. That is one line of difference from upstream rather than a wrapper
+header, but it is not nothing, and no mechanism here can remove it.
