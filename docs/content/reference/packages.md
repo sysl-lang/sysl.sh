@@ -563,6 +563,30 @@ paths, no warning flags, nothing for an installed library's headers. `--define` 
 and applies to the file it names. Where both name the same macro the package wins, since the whole
 point is that its configuration is not the consumer's to change by accident.
 
+### The path has to name C the package actually carries
+
+A key that matches no carried file stops the build:
+
+```
+package.hocon: 'defines."sh/sysl/miniz/c/typo.c"' names a file this package does not carry —
+the block configures the C the package itself holds, and there is no such C file in this tree
+```
+
+This is the one mistake a `defines` block can make that reading the manifest cannot catch. Every
+other way of getting it wrong — a key that is not a `.c` file, a macro name the preprocessor would
+not take, a `false` — is refused when the file is read. A path that is merely *wrong* would compile
+perfectly, under the library's defaults, and only a `c const` measuring a configured struct would
+ever notice.
+
+It also catches a subtler case: a directory holding no sysl is not a module, so
+[the C walk](/reference/ffi/) never collects its `.c` files and nothing compiles them. A block
+configuring one is configuring nothing, and now says so.
+
+The path is matched against the files the walk found rather than joined to the package root, which
+is what makes the check possible at all — and is also what makes the block work when a package is
+built from its own tree with `sysl test .`, where the root as typed and the path as walked are two
+spellings of one directory.
+
 ### A `c const` block inherits from the C beside it
 
 A `c const` block is measured by compiling a small program the compiler writes itself, so there is
