@@ -1232,9 +1232,103 @@ would say that it also secretly offers its identity, which is what the table poi
 type deliberately stops promising. Languages that offer it need a whole parallel mechanism to do so,
 and that mechanism is the honest price rather than a small addition to this one.
 
-The cost is real and worth writing down beside the decision. A program that wants to count the circles
-in a catalogue has to be told, so it declares a `kind` property every implementation answers with a
-constant — a hand-maintained copy of exactly the fact the object's first word already is.
+### The identity is readable, and it is not a way back
+
+**`o::Id` answers which type is inside an object**, as a `usize`. It is the one fact about the
+forgotten type that an object still carries, and it carries it because the method table it points at
+begins with it:
+
+```sysl
+trait Shape
+    area(self) -> int
+
+struct Rect
+    w: int
+end Rect
+
+struct Sq
+    s: int
+end Sq
+
+impl Shape for Rect
+    area(self) -> int = self.w
+
+impl Shape for Sq
+    area(self) -> int = self.s
+
+var a: *Shape = &Rect(2)
+
+print(a::Id == Rect::Id, a::Id == Sq::Id)
+```
+
+```output
+true false
+```
+
+**This is not the downcast the section above refuses, and the difference is the whole of why it is
+here.** The id **compares** — two values with the same one hold the same type — and there is nothing
+else to do with it: no map from an id back to a type, no test that changes what an object offers, and
+no `Any`. What it makes possible is the two things a catalogue of erased values actually wants, and
+neither is a cast: **a key**, for asking whether the node here is the same *kind* as the node that was
+here before, and the first half of a **memo table's** key.
+
+So the cost the decision used to carry is paid. A program counting the circles in a catalogue
+declared a `kind` property that every implementation answered with a constant — a hand-maintained copy
+of exactly the fact the object's first word already is — and it can ask the word instead:
+
+```sysl
+trait Shape
+    area(self) -> int
+
+struct Rect
+    w: int
+end Rect
+
+struct Sq
+    s: int
+end Sq
+
+impl Shape for Rect
+    area(self) -> int = self.w
+
+impl Shape for Sq
+    area(self) -> int = self.s
+
+var xs: [3]*Shape = [&Rect(1), &Sq(2), &Rect(3)]
+var rects = 0
+
+for x in xs
+    if x::Id == Rect::Id then rects += 1
+
+print(rects)
+```
+
+```output
+2
+```
+
+**`T::Id` is how a type that is known asks**, and `::Id` on a value is admitted **only** where the
+value is erased — which is the case that says something the static type does not:
+
+```sysl
+struct Rect
+    w: int
+end Rect
+
+var r = Rect(2)
+
+print(r::Id)
+```
+
+```error
+'::Id' on a value reads the identity an erased value carries
+```
+
+**What it guarantees is that equal ids mean the same type, and nothing else.** It is not stable
+across releases — it is derived from the type's name, and the naming is free to change — it is not a
+number to write down anywhere, and two compilations of *one* program agree only because they compute
+the same thing from the same name. A generic body asks through its parameter, `T::Id`, which is
+answered once per instantiation.
 
 ## Reaching a trait's members without a value
 
