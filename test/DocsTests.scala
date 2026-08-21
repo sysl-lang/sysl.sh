@@ -56,7 +56,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (18, 3, 0),
     "docs/content/reference/expressions.md"           -> (25, 11, 0),
-    "docs/content/reference/statements.md"            -> (14, 2, 1),
+    // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
+    // binding takes, and the comma spelling is refused because a three-clause header already begins
+    // that way.
+    "docs/content/reference/statements.md"            -> (15, 3, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
