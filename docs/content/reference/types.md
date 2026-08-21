@@ -5,8 +5,8 @@ weight: 20
 ---
 
 sysl's types fall into four groups: **scalars** (numbers, `bool`, `char`), the built-in **`string`**,
-the **aggregates** you build (arrays, slices, structs, enums), and the **modes** that decide where a
-value lives (`T`, `&T`, `*T`). This page covers the first three. The modes have a
+the **aggregates** you build (arrays, slices, structs, enums, tuples), and the **modes** that decide
+where a value lives (`T`, `&T`, `*T`). This page covers the first three. The modes have a
 [page of their own](/reference/memory/), because they are about storage rather than shape.
 
 There is no implicit conversion anywhere in the language. Every width change, signedness change, and
@@ -285,6 +285,188 @@ print(p.x, q.x)
 Structs may carry methods, an `invariant`, and a visibility modifier per field. A struct may also be
 declared `opaque`, which withholds its layout from everyone outside its own module — a different axis
 from visibility, covered under [modules](/tour/modules/).
+
+## Tuples
+
+A product type with no name: a fixed-length, positional group of values, written with parentheses.
+Where a struct names its parts, a tuple numbers them.
+
+```sysl
+var p: (int, string) = (1, "one")
+var q = (3, 4)
+
+print(p.0, p.1)
+print(q.0, q.1)
+
+q.0 = 30
+q.1 += 1
+
+print(q.0, q.1)
+
+val a, b = q
+
+print(a, b)
+```
+
+```output
+1 one
+3 4
+30 5
+30 5
+```
+
+Four rules are on display there, and they are the whole of the type.
+
+**A part is reached by position, `t.0` and `t.1`.** It is written like a field because it *is* one —
+a tuple's fields are named for their positions — so a part is a **place** like any other field, which
+is what lets `q.0 = 30` and `q.1 += 1` write through one.
+
+**The type is inferred from the parts.** `(3, 4)` is a `(int, int)`, and an annotation is needed only
+where the parts alone would not settle it, exactly as anywhere else.
+
+**A tuple takes apart with the ordinary comma binding**, `val a, b = q`, and with a
+[tuple pattern](/reference/patterns/) in a `match`.
+
+**Arity starts at two.** There is no one-tuple: `(x)` is a parenthesized expression and always will
+be, since a one-element product is the element. There is no zero-tuple either — that job belongs to
+`unit`.
+
+### A nested part needs parentheses
+
+`t.0.1` does not select part 1 of part 0, because `0.1` lexes as a floating-point number before
+anything gets to decide what it meant. The tokenizer is not made to guess, so the second step is
+parenthesized:
+
+```sysl
+val t = ((1, 2), 3)
+
+print((t.0).1)
+```
+
+```output
+2
+```
+
+Writing it the other way is not a puzzle to solve — the compiler recognizes the float that landed
+after a `.` and names the form to write:
+
+```sysl
+val t = ((1, 2), 3)
+
+print(t.0.1)
+```
+
+```error
+'.0.1' reads as a number rather than as two tuple indices — write '(x.0).1' to select part 1 of part 0
+```
+
+### A tuple is a type, and that is what it is for
+
+This is the whole difference between a tuple and a
+[result list](/reference/declarations/#several-results). A result list is a property of a
+*signature*: several values travel from callee to caller and there is nothing afterwards. A tuple is
+a **type** — it can be stored in a variable, held in a field, put inside an `Option`, made the
+element of a container, and named as a generic argument.
+
+```sysl
+list(n: int) -> int, int = n / 2, n % 2
+
+pair(n: int) -> (int, int) = (n / 2, n % 2)
+
+val a, b = list(7)
+val c, d = pair(7)
+
+val held = pair(9)
+
+print(a, b, c, d, held.0, held.1)
+```
+
+```output
+3 1 3 1 4 1
+```
+
+`-> int, int` and `-> (int, int)` look alike and mean different things, and that cost is worth
+stating plainly. What blunts it is the second and third lines of that program: **the caller usually
+cannot tell and does not need to**, because `val a, b = f(x)` takes either apart. The choice is the
+callee's, and changing it breaks no call site that was not storing the pair. Only the tuple can be
+held, which is what `held` is there to show.
+
+So the question to ask is *does anything need to hold these together?* If no, the result list is
+lighter and says so. If yes, only the tuple will do.
+
+### What the library gives every tuple
+
+`Eq`, `Ord`, `Hash` and `Display` are provided structurally, at **every** arity, whenever every
+component has the row. Ordering is lexicographic, first component first, which is the only ordering a
+positional product has a claim to.
+
+```sysl
+val pair = (1, "one")
+val trip = (1, 2.5, 'x')
+
+val o: Option[(string, int)] = Some(("k", 7))
+
+o match
+    Some((k, v)) -> print(k, v)
+    None -> print("none")
+
+print(pair)
+print(trip)
+print(pair == (1, "one"), (1, 2) < (1, 3))
+print(sizeof((u8, u8, u8)))
+```
+
+```output
+k 7
+(1, one)
+(1, 2.5, x)
+true true
+3
+```
+
+None of those rows is compiler-generated. They are ordinary `impl` blocks in the standard library,
+written once over a [type pack](/reference/generics/#a-parameter-may-stand-for-a-list-of-types) — a
+`(..A)` matches a tuple of any arity, so four blocks cover every tuple there is rather than eight
+covering pairs and triples only.
+
+That last line is the layout rule: a tuple is laid out **as a struct with those fields in that
+order**, so `(u8, u8, u8)` is three bytes and a tuple holding a `&T` retains and releases exactly as
+a struct field does.
+
+### Who may implement what
+
+Each arity is its own type, so an `impl` for a pair says nothing about a triple. A trait of your own
+may be implemented for a tuple, because the trait is local and that is the half of the
+[coherence rule](/reference/traits/#any-type-may-carry-an-impl) that permits it:
+
+```sysl
+trait Tag
+    tag(self) -> string
+
+impl Tag for (int, string)
+    tag(self) -> string = "pair"
+
+print((1, "a").tag())
+```
+
+```output
+pair
+```
+
+`impl Eq for (int, string)` is the case that is refused, and no new rule is doing it: a tuple type
+has no declaration and so no module of its own, and a built-in type is the library's. Both the trait
+and the type are therefore somebody else's, which is exactly what coherence forbids:
+
+```sysl
+impl Eq for (int, string)
+    eq(self, rhs: (int, string)) -> bool = true
+
+print(1)
+```
+
+```error
+an 'impl' may be written only in the module that declares the trait or in one that declares a type named in the subject, and 'sysl.Eq' is the library's while nothing in '(int, string)' is declared outside the library — so this one has no home. A trait of your own, or a type of your own in what it is written for, gives it one
+```
 
 ## Enums
 

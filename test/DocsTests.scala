@@ -51,8 +51,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/contracts.md"                  -> (8, 2, 0),
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
-    "docs/content/reference/lexical.md"               -> (8, 1, 2),
-    "docs/content/reference/types.md"                 -> (13, 1, 0),
+    "docs/content/reference/lexical.md"               -> (9, 1, 2),
+    "docs/content/reference/types.md"                 -> (18, 3, 0),
     "docs/content/reference/expressions.md"           -> (18, 6, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a

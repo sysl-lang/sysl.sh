@@ -16,6 +16,130 @@ comment, a string literal, and a character literal; identifiers are ASCII (see b
 
 Line endings may be LF or CRLF. A file need not end in a newline.
 
+## Literate source
+
+**A file named `.lsysl` is a Markdown document, and the part of it indented four columns is the
+program.** Everything else is prose and is not compiled. Which of the two a file is, its **name**
+decides and nothing else: a `.sysl` file is never read this way whatever its indentation happens to
+look like, and a `.lsysl` file with no prose in it is a `.sysl` file with four spaces down the left.
+
+There is no other marker — no name on a block, no directive opening one, no way to say that a block
+ends.
+
+````text
+# Halving
+
+The interesting part of this program is that it explains itself. Everything at the
+margin is prose, and the compiler never sees it.
+
+    half(n: int) -> int = n / 2
+
+A paragraph between two indented blocks does not end anything, so the program can be
+explained a step at a time and picked up again where it left off.
+
+    print(half(9))
+
+What a reader should *not* run gets a fence instead of an indent:
+
+~~~
+half(n) = n / 2      // the wrong version, with no types
+~~~
+
+That block is an illustration and is not compiled.
+````
+
+The program that file holds is the two indented lines, and it is an ordinary sysl program:
+
+```sysl
+half(n: int) -> int = n / 2
+
+print(half(9))
+```
+
+```output
+4
+```
+
+This is Knuth's *WEB* with its most famous half deliberately left out. WEB let an author write the
+program in the order that explains it and had a *tangler* put it back into the order the compiler
+needs, which is the feature that made a `.web` file unreadable without its tools. Here the code
+appears in the order it runs and the tangler only removes prose, so the file is legible as it sits —
+by a reader, by a Markdown renderer, and by `grep`. What is kept is the part that pays: room for an
+argument between two functions, in a place a comment cannot hold it.
+
+### The four rules
+
+**Four columns is the threshold**, which is Markdown's own, so what a renderer shows as a code block
+is exactly what the compiler reads.
+
+**Consecutive indented blocks are one block.** A paragraph between two of them ends nothing, so a
+function body may be explained a step at a time: the prose dedents to column zero and the code
+resumes at the indentation it left off at. Without this the format would only be good for examples,
+which is the length at which it is not needed.
+
+**A fenced block is an illustration.** Both ` ``` ` and `~~~` mark code that is to be *looked at*
+rather than run — the wrong version beside the right one, a shell transcript, a fragment of C — and
+none of it is compiled however it is indented. Code that runs is indented; code that is shown is
+fenced.
+
+**What is under a bullet is prose.** An indented block inside a list item belongs to that item, so a
+list may hold examples without any of them entering the program. An executable block therefore never
+sits directly under a list; a line of prose between them is what separates the two.
+
+### Positions survive
+
+**Prose is blanked, not removed.** The text handed to the lexer has exactly as many lines as the
+file, and each line of program text is on the line it was written on — so every position the lexer
+records is already a position in the `.lsysl` file. There is no mapping table, and no pass below the
+parser knows that any of this happened.
+
+The one coordinate that does move is the **column**, by the four that made the line code, and it is
+added back where a position is *reported*. A diagnostic therefore names the line and column of the
+file the reader has open.
+
+### Two things Markdown would accept are refused
+
+Both are the same failure — a program silently missing a piece of itself — and neither could be
+diagnosed later, because what reaches the compiler afterwards is a program that is merely smaller
+than the author's.
+
+**A tab in the indentation.** A tab is as wide as whatever is displaying it, so a tab-indented line
+is program text in one editor and prose in another. It is refused *before* the four-column test
+rather than failing it, since failing it is the silent outcome — the line becomes prose, and a
+function quietly loses a statement.
+
+```text
+error: a tab in the indentation of a literate file — what makes a line program text is four columns of indent, and a tab is as wide as whatever happens to be displaying it, so this line is code in one editor and prose in another
+```
+
+**A fence that is never closed.** Markdown runs an unclosed fence to the end of the document, which
+for a document is harmless. Here it turns every declaration below it into an illustration, and the
+diagnostic the author would otherwise get is about something incomplete much further down — their
+missing half never enters the story. It is refused at the line that opened it, which is the line to
+go and look at.
+
+```text
+error: this fence is never closed, so everything below it is an illustration and none of it is compiled — close it, or indent the lines that are meant to run
+```
+
+### `tangle` and `weave`
+
+The two halves of a literate system are named for what they do to the source, and a build has been
+tangling all along — that is how a `.lsysl` file compiles at all. What the commands add is a way to
+ask for each half by name:
+
+- **`sysl tangle`** prints the program with the prose stripped. It answers the question a misbehaving
+  literate file always raises — *what did the compiler actually read* — which a block indented that
+  should not have been, or a fence that swallowed a function, otherwise leaves unanswerable.
+- **`sysl weave`** renders the document as HTML. A `.lsysl` file is already Markdown, so the one
+  thing a renderer would otherwise lose is the highlighting: an indented block carries no language,
+  so nothing can colour it and nothing scanning for the code can find it. `weave` tells the renderer
+  that an indented block is sysl and passes the source through verbatim.
+
+Both are covered under the [CLI](/getting-started/cli/). Weaving asks for no target, no standard
+module and no library, which is what makes a package's prose worth reading on a machine that could
+not build it.
+
 ## Comments
 
 ```sysl
