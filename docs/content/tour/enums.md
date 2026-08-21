@@ -220,7 +220,7 @@ green blue true
 
 This is not special to enums, and not special to variants: `.name` is `Type.name` with the type left
 off, so an associated function is reached the same way. The whole rule is on the
-[expressions](/reference/expressions/#a-leading-dot-names-a-member-of-the-type-expected-here) page.
+[expressions](/reference/expressions/#a-leading-dot-the-qualifier-the-context-already-knows) page.
 A pattern needs none of it — the arms above are already matching against a `Colour`, which is why
 they write `Red` and not `Colour.Red`.
 
