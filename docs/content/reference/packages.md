@@ -57,6 +57,52 @@ The name reaches the filesystem, so it has to be a single path segment. `.`, `..
 separator, and the empty string are refused when the file is read, rather than being sanitized into
 something that would build a differently-named executable without saying so.
 
+## The oldest compiler a package builds with
+
+**`package.sysl` states a floor**, and a build stops there rather than somewhere inside the package:
+
+```
+package {
+  name    = "sdl3"
+  version = "0.2.6"
+  sysl    = "0.0.62"
+}
+```
+
+```
+package sdl3 v0.2.6 cannot be built because it requires sysl 0.0.62 or newer,
+while the compiler in hand is 0.0.61
+```
+
+**The whole of what it buys is that sentence.** A package using something the language grew builds
+or does not depending on what the consumer happens to have installed, and when it does not, the
+diagnostic points at a line **inside somebody else's package** with nothing to say the compiler is
+what is wrong. `sdl3` is the live example: v0.2.6 writes a bare `None` as a method default, which
+needs 0.0.62, and a consumer on 0.0.61 gets a type-inference error inside `video.sysl`.
+
+It is a **version** like every other version here — three numbers, no range and no pre-release, which
+is `§ 4`'s rule and not a second one. A range would be a claim about compilers that do not exist yet,
+and the field is a floor precisely because nobody can make that claim.
+
+**Both kinds of manifest are held to it**: the project being built, and every package it depends on.
+Saying nothing is the ordinary case and is never an error.
+
+**An interim compiler satisfies the floor its numbers reach.** One is stamped `0.0.66-fcf4e33a` — the
+next patch, plus the commit it was built from — and it has everything the release before it shipped,
+so it is read as `0.0.66`. Cargo makes the same ruling for a nightly toolchain against
+`rust-version`.
+
+**An older compiler cannot report this**, and nothing can change that: it does not know the key, so
+it reads the manifest, ignores the field, and fails wherever it was going to fail. The field starts
+paying from the release that understands it — which is also why adding one to a published package is
+safe, since every compiler that came before simply passes over it.
+
+**What it deliberately does not do is feed the resolver.** A dependency whose newest version is too
+new is refused rather than resolved to an older one. Cargo added `rust-version` in 1.56 and only
+taught the resolver about it thirteen years later, behind an opt-in; and here there is no registry to
+ask — a dependency is a git coordinate plus a tag, and "the newest tag whose floor I satisfy" means
+fetching and reading several tags' manifests, which is a different algorithm and a different fetch.
+
 ## Capabilities
 
 **Whether the machine has a heap, an operating system or POSIX is a project engineering
