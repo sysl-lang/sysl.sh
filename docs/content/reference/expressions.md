@@ -391,7 +391,7 @@ Postfix binds tighter than prefix, so `*p++` is `*(p++)` and `-a.b` is `-(a.b)`,
 
 ## The postfix tail
 
-Six things attach to an expression on the right, and they compose left to right.
+Seven things attach to an expression on the right, and they compose left to right.
 
 | tail | what it does |
 |---|---|
@@ -399,6 +399,7 @@ Six things attach to an expression on the right, and they compose left to right.
 | `e.name` | select a field, or call a method |
 | `e.0` | select a tuple's part by position |
 | `e(…)` | call |
+| `e:` and an indented block | call, with the block as an argument — [below](#a-trailing-block) |
 | `T::Attr` | a type's attribute rather than a value's — a constrained type's bounds live here |
 | `e?` | try — unwrap or propagate |
 | `e++`, `e--` | post-increment, post-decrement |
@@ -714,6 +715,198 @@ boundary is not where you want it, write the arrow form: `x -> (x + 1) * 2`.
 
 An interpolation hole is a boundary too, so a placeholder cannot reach out of a string to close over
 the whole of one.
+
+## A trailing block
+
+A call may write its **last argument as an indented block**, after a colon.
+
+```sysl
+total(xs: []int) -> int
+    var t = 0
+
+    for i in 0..<xs.len
+        t += xs[i]
+
+    t
+
+val n = total:
+    1
+    2
+    3
+
+print(n)
+```
+
+```output
+6
+```
+
+The block is a sequence of expressions, one per line, and **what it becomes is decided by the
+parameter it fills**:
+
+| the parameter is | the block is |
+|---|---|
+| a collection — `[]T`, `[N]T` | an **array** whose elements are its lines |
+| a callable — `() -> T`, `&Fn() -> T`, or a by-name `-> T` | a **closure** whose body is the block |
+
+Nothing else takes one. A block at a parameter that is neither is refused, and the message names
+both readings:
+
+```sysl
+f(n: int) = n
+
+val x = f:
+    1
+
+print(x)
+```
+
+```error
+a trailing block stands at 'n', which is a 'int'
+```
+
+The callable reading is a closure's body rather than a list, so a binding in it is an ordinary
+statement and the last line is its value:
+
+```sysl
+apply(f: () -> int) -> int = f()
+
+val n = apply:
+    val a = 6
+    val b = 7
+    a * b
+
+print(n)
+```
+
+```output
+42
+```
+
+### Where the block stands
+
+**It fills the first parameter no written argument filled.** Where the call writes no names that is
+the same rule as "the block is the last argument"; where it does, the block is still the argument
+that was not written in the parentheses.
+
+```sysl
+total(xs: []int, bonus: int) -> int
+    var t = bonus
+
+    for i in 0..<xs.len
+        t += xs[i]
+
+    t
+
+val n = total(bonus = 100):
+    1
+    2
+
+print(n)
+```
+
+```output
+103
+```
+
+A parameter's default does not count as having filled it, so a block still reaches a parameter that
+has one — the block was written and the default was not.
+
+### Blocks nest, which is what the form is for
+
+A call is an expression, so a call carrying a block is a line of the block above it. That is how a
+tree gets written as indentation rather than as a nest of brackets.
+
+```sysl
+node(name: string, kids: []string) -> string
+    var s = name + "("
+
+    for i in 0..<kids.len
+        if i > 0 then s += " "
+
+        s += kids[i]
+
+    s + ")"
+
+val tree = node("a"):
+    node("b"):
+        "c"
+        "d"
+    "e"
+
+print(tree)
+```
+
+```output
+a(b(c d) e)
+```
+
+### There is no result builder
+
+Swift has one because a Swift block holds *statements*, so something has to assemble arms of
+differing shape into a single value. A sysl block holds **expressions**, and `if` is already an
+expression whose arms must agree in type — so a branch is an ordinary line and needs no machinery:
+
+```sysl
+pick(xs: []int) -> int = xs[0] + xs[1]
+
+val big = true
+
+val n = pick:
+    1
+    if big then 100 else 2
+
+print(n)
+```
+
+```output
+101
+```
+
+**What that costs is loops, and it is the one limit worth knowing before you reach it.** A loop in
+sysl *is* an expression, so one written as a line of a collection's block would contribute the
+single `unit` it evaluates to rather than an element per iteration. It is refused by name rather
+than read that way:
+
+```sysl
+total(xs: []int) -> int = 0
+
+val n = total:
+    for k in 0..<3
+        k
+
+print(n)
+```
+
+```error
+would contribute one element and not one per iteration
+```
+
+Build the elements first and pass what you built. For the same reason a **binding** is not a line of
+a collection's block either: it declares a name rather than producing an element.
+
+```sysl
+total(xs: []int) -> int = 0
+
+val n = total:
+    var k = 1
+    k
+
+print(n)
+```
+
+```error
+this one declares a name instead
+```
+
+Neither restriction applies to the callable reading, where the block is a body and every statement
+form is at home in it.
+
+### A block cannot be written inside brackets
+
+A bracket suspends the off-side rule until it closes, so there is no indentation inside one for a
+block to be made of. `print(total:` followed by an indented block is a parse error rather than a
+call with a block in it — bind the value first and print the name.
 
 ## String interpolation
 
