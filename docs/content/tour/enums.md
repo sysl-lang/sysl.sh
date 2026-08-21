@@ -191,6 +191,39 @@ That is worth knowing early, because it means everything this chapter says about
 and exhaustiveness is what you already know about `Option` — and everything you learn about `Option`
 transfers to an enum you write yourself.
 
+## Leaving the type off
+
+A variant is written with its enum's name in front of it wherever the context does not already say
+which enum is meant. Where the context *does* say — an argument, an annotated binding, a `return`,
+the operand beside a `==` — the name can be dropped and a leading dot left in its place.
+
+```sysl
+enum Colour
+    Red
+    Green
+    Blue
+
+paint(c: Colour) -> string
+    c match
+        Red   -> "red"
+        Green -> "green"
+        Blue  -> "blue"
+
+val wall: Colour = .Green
+
+print(paint(wall), paint(.Blue), wall == .Green)
+```
+
+```output
+green blue true
+```
+
+This is not special to enums, and not special to variants: `.name` is `Type.name` with the type left
+off, so an associated function is reached the same way. The whole rule is on the
+[expressions](/reference/expressions/#a-leading-dot-names-a-member-of-the-type-expected-here) page.
+A pattern needs none of it — the arms above are already matching against a `Colour`, which is why
+they write `Red` and not `Colour.Red`.
+
 ## What a pattern can be
 
 Literals, ranges, alternatives, bindings and guards, in the order the arms are tried:

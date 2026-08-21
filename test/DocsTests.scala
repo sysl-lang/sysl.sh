@@ -44,7 +44,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/memory.md"                     -> (11, 4, 0),
     "docs/content/tour/arrays.md"                     -> (9, 1, 0),
     "docs/content/tour/strings.md"                    -> (10, 1, 0),
-    "docs/content/tour/enums.md"                      -> (10, 2, 0),
+    // One more runnable: a variant may be written with the enum's name left off where the context
+    // says which enum is meant, and the tour is where a reader meets the spelling first.
+    "docs/content/tour/enums.md"                      -> (11, 2, 0),
     "docs/content/tour/errors.md"                     -> (8, 2, 2),
     "docs/content/tour/traits.md"                     -> (9, 2, 0),
     "docs/content/tour/modules.md"                    -> (4, 0, 7),
@@ -53,7 +55,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (18, 3, 0),
-    "docs/content/reference/expressions.md"           -> (18, 6, 0),
+    // Two more runnable and two more refusals: a leading dot names a member of the type the context
+    // expects, so the page shows one being read at a binding, at an argument and beside an operand,
+    // shows the constrained subtype whose base is *not* where its members are — and shows the two
+    // positions that supply no type, a statement and a pattern.
+    "docs/content/reference/expressions.md"           -> (20, 8, 0),
     "docs/content/reference/statements.md"            -> (14, 2, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows

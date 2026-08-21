@@ -407,6 +407,10 @@ A tuple index is a `Field` selection because it *is* one: a tuple's fields are n
 positions. Note that `t.0.1` does not work, because the lexer reads `0.1` as a float before it is two
 indices — write `(t.0).1`, which is what the diagnostic says.
 
+A dot with **nothing to its left** is a different form — the member of whatever type the context
+expects, [below](#a-leading-dot-names-a-member-of-the-type-expected-here) — and it is told from a
+tail by there being no expression in front of it to select from.
+
 ### `?`
 
 Postfix on an `Option` or a `Result`, and sugar for the most common `match`: **unwrap the success,
@@ -446,6 +450,135 @@ cross. And **the error types must match exactly**; there is no implicit widening
 its own error type converts a callee's explicitly.
 
 `?` is an expression and composes as one, so its unwrapped value flows into whatever surrounds it.
+
+## A leading dot names a member of the type expected here
+
+`.Green` is `Colour.Green` with the type's own name left off. What supplies the name is **the type
+the context expects**, so the form is written exactly where something already says which type is
+wanted, and nowhere else.
+
+```sysl
+enum Colour
+    Red
+    Green
+    Blue
+
+name(c: Colour) -> string
+    c match
+        Red -> "red"
+        Green -> "green"
+        Blue -> "blue"
+
+val chosen: Colour = .Blue
+
+print(name(chosen), name(.Green), chosen == .Blue)
+```
+
+```output
+blue green true
+```
+
+It is a **lookup rather than a new kind of inference**: the expectation supplies the qualifier, and
+everything after that is the resolution the written `Colour.Green` already gets.
+
+### Where the type comes from
+
+Every position that already says which type it wants supplies one. None of these is a special case —
+they are the positions an expected type reaches anyway.
+
+| position | written |
+|---|---|
+| an argument | `paint(.Red)` |
+| an argument named rather than positioned | `paint(c = .Red)` |
+| a parameter's default | `paint(c: Colour = .Red)` |
+| an annotated binding, and an assignment to one | `val c: Colour = .Red`, `c = .Blue` |
+| a `return`, and an expression body | `pick() -> Colour = .Red` |
+| a field of a struct being built | `Pen(.Green, 3)` |
+| an element of an array or a slice | `val xs: [2]Colour = [.Red, .Blue]` |
+| a part of a tuple | `val t: (Colour, int) = (.Blue, 2)` |
+| the payload of another variant | `val o: Option[Colour] = .Some(.Red)` |
+| a branch of an `if` or `match` used as a value | `val c: Colour = if hot then .Red else .Blue` |
+| the operand beside it | `c == .Red` |
+
+The last one is worth saying out loud, because an operand has no expectation of its own: it takes the
+type of the operand beside it, by the same rule that gives a bare integer literal its width.
+
+A `&T` parameter asks for the `T` it will box, so `.Red` stands at one without mentioning the
+reference. A **trait object** asks for nothing in particular — what may be erased into one is
+whatever implements the trait — so it supplies no type and the form is refused there.
+
+### What it reaches
+
+Whatever the written qualifier reaches:
+
+- a **variant**, with or without a payload — `.Red`, `.Circle(3)`
+- an **associated function** of an enum, a struct or a constrained subtype — `.origin()`
+
+A **property** and a **method** are read on a value rather than on the type, so neither is reached,
+and each says so. A **type attribute** is written `Colour::First`, with `::` because it belongs to
+the type rather than to a value of it; the leading dot does not stand in for that sigil.
+
+The expected type is read **as it was written**. A transparent constrained subtype is interchangeable
+with its base everywhere else, and here it is not: the base is not where the subtype's members live.
+
+```sysl
+type Age = int within 0..150
+
+trait Fresh
+    fresh() -> Self
+
+impl Fresh for Age
+    fresh() -> Age = Age(1)
+
+val a: Age = .fresh()
+
+print(int(a))
+```
+
+```output
+1
+```
+
+### Where nothing expects a type
+
+The form has no meaning with no expectation, and that is a diagnostic rather than a guess — there is
+deliberately no fall-back to "the only enum with a variant of that name".
+
+```sysl
+enum Colour
+    Red
+    Green
+
+print(.Red)
+```
+
+```error
+'.Red' is a member of whatever type the context expects, and nothing here expects one
+```
+
+The same applies to a **receiver**: in `.origin().x` what the context expects is the type of the
+whole expression, which is the field's and not the type the associated function belongs to.
+
+A **pattern** needs none of this and takes no dot. A pattern is matched against a type it already
+knows, and a bare name there is read against the scrutinee's enum — so `Red ->` already means what
+`.Red ->` would, and the dot is refused rather than accepted as a second spelling.
+
+```sysl
+enum Colour
+    Red
+    Green
+
+val c: Colour = .Red
+val n = c match
+    .Red -> 1
+    else -> 2
+
+print(n)
+```
+
+```error
+a pattern is matched against a type it already knows
+```
 
 ## Conversions are calls
 
