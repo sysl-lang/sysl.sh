@@ -78,7 +78,9 @@ struct Complex[F: Float]
     re: F
     im: F
 
-    // Values that need no receiver.
+    // Values that need no receiver. The first two are not declared here at all: they are the core
+    // `Zero` and `One`, implemented for every `Complex[F]`, which is what lets a body bounded by
+    // `[T: Add + Zero]` ask this type for its identities exactly as it asks a width.
     zero() -> Complex[F]
     one() -> Complex[F]
     i() -> Complex[F]
@@ -188,6 +190,11 @@ print(p.0, p.1, a.unit().abs(), a.recip() * a)
 context expects — and there is nothing to read it off in the middle of an expression. Everything else
 here is inferred from an argument: `Complex.from_real(2.0)` is a `Complex[real]` because `2.0` is a
 `real`.
+
+A **generic body** needs no annotation for the first two, and that is what `Zero` and `One` are for:
+`T.zero()` where `T` is already `Complex[real]` has the width in the parameter it was reached
+through. The annotation is owed only where the type is written out with nothing applied to it, as it
+is here.
 
 `expi(theta)` is `from_polar` at radius one, and it has a name because that is how it is reached — a
 Fourier transform's twiddle factor, a rotation, a phasor.

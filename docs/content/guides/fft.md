@@ -44,11 +44,19 @@ expresses it and the *machine* has an edge case", which no amount of language de
 **A trait written for somebody else's type has to find a name that is still free.** What survived the
 move to the library is `sum` — the generic total that starts at a value the type promised rather than
 at `xs[0]`, which is what keeps an empty sequence from needing an `Option` in the signature. The
-trait behind it wanted a `zero() -> Self`, and could not have one: a trait's members become the
-implementing type's, and `Complex` already declares a `zero`. So the member is called `identity`, for
-what it is rather than for the value it answers. The more ordinary the concept, the likelier that
-collision is — and there is no way to name the member the trait *means* apart from the name it goes
-under.
+trait behind it wanted a `zero() -> Self` and could not have one: a trait's members become the
+implementing type's, and `zero` on `Complex` is already taken — by [`Zero`](/library/math/), the core
+trait that answers this exact need. So the member is called `identity`, for what it is rather than for
+the value it answers. The more ordinary the concept, the likelier that collision is, and there is no
+way to name the member the trait *means* apart from the name it goes under.
+
+**Which raises the obvious question: why not just use `Zero`?** For a sum over the floats or over
+`Complex`, you should — `[T: Add + Zero]` is the ordinary spelling and needs no trait of your own.
+What keeps this program's four lines is the one type `Zero` cannot reach: `int`. The `iN` / `uN`
+families are open, so no finite list of `impl` blocks covers them, and every membership the compiler
+hands out is a method with a **receiver**, which a `zero()` has no value to be called on. A body that
+must serve a built-in integer *and* a library type still declares its own identity, and that is the
+only shape left that does.
 
 ---
 

@@ -312,6 +312,43 @@ print(b.v)
 `Self` in the signature is the type applied to its own parameters, so writing `-> Self` and writing
 `-> Box[T]` infer alike.
 
+**A type parameter that stands for a generic type brings that type's arguments with it**, and this is
+the one place there is nothing to infer: `T.origin()` where `T` is already `Box[int]` is asking
+`Box[int]`, not asking `Box` and hoping the call says which. So a generic body reaches an associated
+function of a generic type with no annotation, which is what makes
+[`T.zero()`](/library/math/) usable in a body that has met neither a width nor a `Complex`:
+
+```sysl
+trait Origin
+    origin() -> Self
+
+impl Origin for int
+    origin() -> int = 0
+
+struct Box[T]
+    v: T
+
+impl[T: Origin] Origin for Box[T]
+    origin() -> Box[T] = Box(T.origin())
+
+seed[T: Origin](xs: []const T) -> T
+    var s = T.origin()
+
+    s
+
+var bs: []Box[int] = [Box(7)]
+
+print(seed(bs).v)
+```
+
+```output
+0
+```
+
+`Self` inside the type's own body is the same case reached from inside, and needs no annotation
+either. What still has to be told is a **bare** type name — `Box.origin()` written out applies `Box`
+to nothing, so there the expected type is the whole of what settles it.
+
 **A member's own type parameters are inferred the same way.** The receiver says what the *type's*
 arguments are and nothing about the member's, which leaves those exactly where the rule already
 reaches:

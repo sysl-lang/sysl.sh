@@ -72,7 +72,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/traits.md"                -> (26, 22, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
-    "docs/content/reference/generics.md"              -> (25, 14, 0),
+    "docs/content/reference/generics.md"              -> (26, 14, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (16, 12, 10),

@@ -62,11 +62,11 @@ around to remember it.
 ## `Float`
 
 ```sysl
-trait Float: Eq + Ord + Neg + Add + Sub + Mul + Div
+trait Float: Zero + One + Eq + Ord + Neg + Add + Sub + Mul + Div
 
-    // The type's own values, asked without a receiver.
-    zero() -> Self
-    one() -> Self
+    // The type's own values, asked without a receiver. The two identities are *required* rather
+    // than declared: `Zero` and `One` are core traits, and a required trait's members are reached
+    // through the bound that requires it.
     max_value() -> Self
     epsilon() -> Self
     infinity() -> Self
@@ -284,6 +284,19 @@ possible at all: a `signum` needs a one to answer with and a `recip` needs a one
 neither can be written in a body shared by two widths unless there is a way to ask a type for its own
 one. `Self.one()` is that way, so a routine bounded by `[T: Float]` can build a value of a width it
 has never met.
+
+**The two identities are not `Float`'s own, and that reasoning is why.** It never stopped at floats —
+a generic sum wants a zero and a generic product wants a one, whatever the elements are — so `zero`
+and `one` are the core traits [`Zero` and `One`](/reference/traits/), which `Float` *requires*. They
+live in the standard module beside the operators whose identities they are, so nothing imports them,
+and a body bounded by `[T: Add + Zero]` reaches `T.zero()` for a `real`, an `f32` and a
+[`Complex`](/library/complex/) alike without asking for the rest of `Float`.
+
+**The integers are not among them.** An `impl` can only name types that exist and the `iN`/`uN`
+families are open — a program may write `u256` — so no list of blocks covers them, and every
+membership the compiler hands out is a method with a **receiver**, which a `zero()` has nothing to be
+called on. `[T: Add + Zero]` therefore takes a `real`, an `f32` and a `Complex`, and does not take an
+`int`.
 
 `epsilon` is what a convergence test should be written against — a loop that stops when two iterations
 agree to within a few epsilons stops at the right point at *both* widths, where a literal tolerance

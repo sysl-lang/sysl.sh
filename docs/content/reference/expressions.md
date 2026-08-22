@@ -972,6 +972,15 @@ The two prefix rows take no result parameter: negation and complement are closed
 type they are written for. `Eq` and `Ord` stay homogeneous for a different reason — what a comparison
 across two types would promise about reflexivity and transitivity is a question nothing has asked.
 
+**Two more traits sit beside these and have no operator**: [`Zero`](/library/math/) and `One`, each
+declaring a single member with no receiver — `zero() -> Self` and `one() -> Self`. They are here
+rather than in `sysl.math` because they are the identities *of these operators*, and because a trait
+outside the standard module is reachable only where a file names it: a generic body writing
+`T.zero()` should owe no import, and a `real` that answers `real.zero()` should not stop doing so
+because the caller did not think to ask for a trait. What a bound gains by them is the one thing an
+operator cannot supply — a **value** — so `[T: Add + Zero]` can start an accumulation where
+`[T: Add]` has to be handed one.
+
 ```sysl
 struct Vec2
     x: int

@@ -37,6 +37,7 @@ print(maybe.unwrap_or(0), "— and not one import above this line")
 | hashing | `Hash`, `hash_u64`, `hash_u128`, `hash_bool`, `hash_str` | below |
 | destruction | `Drop` | [the memory model](/reference/memory/) |
 | operators | `Add`, `Sub`, `Mul`, `Div`, `Rem`, `BitAnd`, `BitOr`, `BitXor`, `Shl`, `Shr`, `Neg`, `Not`, `Eq`, `Ord` | [expressions](/reference/expressions/) |
+| their identities | `Zero`, `One` | [expressions](/reference/expressions/), and [math](/library/math/) |
 | subscripting and walking | `Index`, `IndexSet`, `Iterate` | below |
 | calling | `Fn0` … `Fn4` | below |
 

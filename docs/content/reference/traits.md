@@ -1537,13 +1537,13 @@ A trait may declare a member with **no receiver** — an associated function —
 *type* rather than through a value of one:
 
 ```sysl
-trait Zero
-    zero() -> Self
+trait Origin
+    origin() -> Self
 
-impl Zero for int
-    zero() -> int = 0
+impl Origin for int
+    origin() -> int = 0
 
-start[T: Zero]() -> T = T.zero()
+start[T: Origin]() -> T = T.origin()
 
 var n: int = start()
 
@@ -1559,9 +1559,15 @@ the same member reached through three spellings of its type.
 
 **A built-in may carry one.** Through a bound the name is the *parameter*, which every type has
 whether or not it has one of its own — so `impl Word for u32` may declare `bits()`, and `impl Float
-for real` declares the zero, the one, the epsilon, and the two values no literal spells. What stays
-refused is the case the rule was really about: a **composed** type has no name at all, so an `impl` for
-`[]int` still refuses a member with no receiver.
+for real` declares the epsilon and the two values no literal spells. What stays refused is the case
+the rule was really about: a **composed** type has no name at all, so an `impl` for `[]int` still
+refuses a member with no receiver.
+
+**The library's own pair is [`Zero` and `One`](/library/math/)**, which are this feature at its
+smallest: one member each, no receiver, and nothing else a generic body could use to write down the
+value it has to start an accumulation from. They are in the standard module, so `T.zero()` under a
+`[T: Add + Zero]` needs no import — and a `T` that is itself generic brings its own arguments, so the
+answer at `T = Complex[real]` is a `Complex[real]` with nothing written at the call.
 
 **It is static dispatch only, and nothing was added to keep it that way.** Object safety already
 excludes a member with no receiver, because a table slot is selected *by* the receiver and there is

@@ -46,7 +46,7 @@ starts, so each one is written on top of what the last one settled.
 | [shapes](/guides/shapes/) | dynamic dispatch — a collection whose element types are forgotten |
 | [scheduler](/guides/scheduler/) | OS shapes — a run queue, blocking and waking, `&T` graphs mutated through references |
 | [kernel](/guides/kernel/) | the same scheduler with **no heap** — a fixed table, indices for identity |
-| [matrix](/guides/matrix/) | an operator whose result is neither operand's type |
+| [matrix](/guides/matrix/) | an operator whose result is neither operand's type, over any field |
 | [ring](/guides/ring/) | the constrained-subtype surface — ranges, `::` attributes, contracts, invariants |
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |
 | [lisp](/guides/lisp/) | the reference cycle — the shape a count cannot reclaim, and `weak T` as the instrument that measures it |
