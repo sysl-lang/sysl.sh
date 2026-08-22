@@ -649,6 +649,24 @@ offset was at a given instant. A host reading its own zone, a package talking to
 table written out by hand can all answer that one question, and none of them has to be a type this
 module knows about.
 
+A function is anything callable, so a **closure** answers as well as a declaration does — which is
+what a zone that is one fixed offset, or one read out of a table the closure captured, is written as:
+
+```sysl
+import sysl.time.{Instant, Offset, datetime_at, resolve}
+
+val mins = 0 - 300
+
+print(resolve(datetime_at(2023, 11, 5, 1, 30, 0), t -> Offset(mins)))
+```
+
+```output
+2023-11-05 06:30 Z
+```
+
+A zone whose offset never varies has no transition to fall either side of, so the reading is
+`Unique` and prints as the one instant it names.
+
 `Gap` carries the offsets either side of the transition rather than an instant, because there is no
 instant to carry. What to do about a reading that never happened is a policy question — push it
 forward by the size of the gap, clamp it to the transition, or refuse it — and `from_offset(ldt,
