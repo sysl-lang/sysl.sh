@@ -222,6 +222,34 @@ print(xs[..].flat_map(n -> [n, n * 10]))
 it implements 'sysl.Fn1[int, [2]int]'
 ```
 
+## Making a sequence out of a count
+
+Everything above takes a sequence and answers something. `generate` is the one thing here that
+**makes** one — `n` elements, each produced from its index:
+
+```sysl
+import sysl.seq.generate
+
+print(generate(5, i -> i * i))
+```
+
+```output
+[0, 1, 4, 9, 16]
+```
+
+**It is a free function rather than a member**, because a creator has no receiver: there is nothing
+for `self` to be until the call has already done the work. And it lives here rather than in
+[`sysl.buf`](/library/buf/) because the shape a caller wants is `map`'s — an index goes in and an
+element comes out.
+
+**What they would write if they could is `(0..<n).map(f)`, and they cannot**: a range is not a value
+in sysl, so there is no type for `Sequence` to be implemented for and nothing to map over. `generate`
+names the count where the range would have stood, and hands back the same `[]U` every other member of
+the module does.
+
+`f` is called exactly once per index, in order, and the buffer is given the length its answer is known
+to have — so it grows once.
+
 ## The members are on a slice, not on an array
 
 The `impl` covers `[]const E`, so an array reaches these members the way it reaches anything expecting
