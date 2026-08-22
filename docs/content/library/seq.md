@@ -249,7 +249,7 @@ elements is one allocation and not none.
 
 The spelling that would avoid it is not available to a trait. A parameter written with a bare arrow —
 `f: T -> U` — becomes a bounded type parameter instead, monomorphized and called directly with nothing
-boxed ([declarations](/reference/declarations/)), and that is what `sysl.slices`'s sorts take. The
+boxed ([types](/reference/types/#function-types)), and that is what `sysl.slices`'s sorts take. The
 desugaring that turns an arrow into a bound runs for a type's own members and for an `impl` block's,
 and not for a trait's, so a trait can only ask for the boxed form. That gap is filed, and closing it
 makes every member here allocation-free without changing a call site.
