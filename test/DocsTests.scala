@@ -76,7 +76,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more of each: a member that declares type parameters of its own is left out of the table
     // rather than out of the object, so the page shows an object forming on such a trait and
     // dispatching everything else, and refuses the one member on it.
-    "docs/content/reference/traits.md"                -> (27, 23, 0),
+    //
+    // And the associated-type section on top of that: four more running and seven more refused,
+    // since a feature whose whole point is what an implementation may leave unwritten owes its
+    // edges as programs.
+    "docs/content/reference/traits.md"                -> (31, 30, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may
@@ -140,7 +144,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
-    "docs/content/library/time.md"                       -> (19, 4, 4),
+    // One more runnable: a zone is anything callable, so a closure answers `resolve` as a declaration
+    // does — which is what a fixed offset, or one read out of a captured table, is written as.
+    "docs/content/library/time.md"                       -> (20, 4, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that

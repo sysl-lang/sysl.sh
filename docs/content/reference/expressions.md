@@ -1214,10 +1214,13 @@ readings fall out of one trait:
 | `impl Mul[V, real] for V` | as written | a dot product — `V * V -> real` |
 | `impl Mul[V, V] for M` | as written | a transform — `M * V -> V` |
 
-**No associated type is involved.** Rust's `Add` carries an associated `Output` so that `+` may
-return something other than the operands; here the result is an ordinary trait argument defaulting to
-`Self`, which is the mechanism [`Index`](#the-postfix-tail) already uses to carry the element type of
-what it reads. A vector space needs three of the four readings at once, and they are three ordinary
+**No associated type is involved, and that is a choice rather than an absence.** sysl has
+[associated types](/reference/traits/#a-trait-may-declare-an-associated-type), and the catalog
+deliberately does not use one: an associated type is **one per type**, so `Out` as an associated type
+would let a `Vec2` have exactly one multiplication. Rust's `Add` carries an associated `Output` and
+pays for it with a separate trait per operand type; here the result is an ordinary trait argument
+defaulting to `Self`, so one trait covers all four readings below — which is the mechanism
+[`Index`](#the-postfix-tail) already uses to carry the element type of what it reads. A vector space needs three of the four readings at once, and they are three ordinary
 blocks:
 
 ```sysl
