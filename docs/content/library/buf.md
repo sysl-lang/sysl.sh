@@ -244,6 +244,10 @@ for x in b
 `for x in b.view()` is how it is walked, and that is not a workaround — it names the thing being
 iterated, which is *the live prefix at the moment the loop started*.
 
+**What a buffer answers without being walked at all is [`sysl.seq`](/library/seq/)** — `map`,
+`filter`, `fold` and the seven questions beside them, implemented for a `Buf` as well as for a slice,
+so `b.map(f)` needs no `.view()` at the call site.
+
 ## `view` is the bulk read, and it is a view
 
 ```sysl
