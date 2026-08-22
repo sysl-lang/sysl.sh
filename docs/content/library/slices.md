@@ -11,7 +11,9 @@ goes through a trait, and what each function needs is written in its own bound.
 
 **Nothing here allocates and nothing here needs a capability.** That is deliberate and it is load
 bearing — this is the module a C binding reaches into, and it is reachable from a target with no
-allocator and no operating system.
+allocator and no operating system. **The questions answered by calling something the caller wrote —
+`map`, `filter`, `fold` — are [`sysl.seq`](/library/seq/) for exactly that reason**: every one of
+them allocates, so they are a module a freestanding program can leave out.
 
 ```sysl
 import sysl.slices.{sort, is_sorted, binary_search}
