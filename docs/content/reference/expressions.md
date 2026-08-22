@@ -951,22 +951,26 @@ from* — never the rule:
 
 | trait | method | operator |
 |---|---|---|
-| `Add` | `add` | `+` |
-| `Sub` | `sub` | `-` (binary) |
-| `Mul` | `mul` | `*` |
-| `Div` | `div` | `/` |
-| `Rem` | `rem` | `%` |
-| `BitAnd` | `bitand` | `&` (binary) |
-| `BitOr` | `bitor` | `\|` |
-| `BitXor` | `bitxor` | `^` |
-| `Shl` | `shl` | `<<` |
-| `Shr` | `shr` | `>>` |
-| `Neg` | `neg` | `-` (unary) |
-| `Not` | `not` | `~` |
+| `Add[Rhs = Self, Out = Self]` | `add(self, rhs: Rhs) -> Out` | `+` |
+| `Sub[Rhs = Self, Out = Self]` | `sub(self, rhs: Rhs) -> Out` | `-` (binary) |
+| `Mul[Rhs = Self, Out = Self]` | `mul(self, rhs: Rhs) -> Out` | `*` |
+| `Div[Rhs = Self, Out = Self]` | `div(self, rhs: Rhs) -> Out` | `/` |
+| `Rem[Rhs = Self, Out = Self]` | `rem(self, rhs: Rhs) -> Out` | `%` |
+| `BitAnd[Rhs = Self, Out = Self]` | `bitand(self, rhs: Rhs) -> Out` | `&` (binary) |
+| `BitOr[Rhs = Self, Out = Self]` | `bitor(self, rhs: Rhs) -> Out` | `\|` |
+| `BitXor[Rhs = Self, Out = Self]` | `bitxor(self, rhs: Rhs) -> Out` | `^` |
+| `Shl[Rhs = Self, Out = Self]` | `shl(self, rhs: Rhs) -> Out` | `<<` |
+| `Shr[Rhs = Self, Out = Self]` | `shr(self, rhs: Rhs) -> Out` | `>>` |
+| `Neg` | `neg(self) -> Self` | `-` (unary) |
+| `Not` | `not(self) -> Self` | `~` |
 | `Eq` | `eq` | `==`, `!=` |
 | `Ord` | `lt` | `<`, `>`, `<=`, `>=` |
 | `Index` | `index` | `e[i]` read |
 | `IndexSet` | `index_set` | `e[i] = v` |
+
+The two prefix rows take no result parameter: negation and complement are closed operations on the
+type they are written for. `Eq` and `Ord` stay homogeneous for a different reason — what a comparison
+across two types would promise about reflexivity and transitivity is a question nothing has asked.
 
 ```sysl
 struct Vec2
@@ -984,6 +988,168 @@ print(v.x, v.y)
 ```output
 11 22
 ```
+
+### The operand and the result are both trait arguments
+
+Both parameters default to `Self`, so the homogeneous reading is what every arithmetic trait means
+where nothing says otherwise: `impl Mul for Point` is `impl Mul[Point, Point] for Point`, and
+`[T: Mul]` asks for `Mul[T, T]`. **Writing an argument is what asks for something else**, and four
+readings fall out of one trait:
+
+| written | means | what it says |
+|---|---|---|
+| `impl Mul for V` | `Mul[V, V]` | homogeneous — `V * V -> V` |
+| `impl Mul[real] for V` | `Mul[real, V]` | scaling — `V * real -> V` |
+| `impl Mul[V, real] for V` | as written | a dot product — `V * V -> real` |
+| `impl Mul[V, V] for M` | as written | a transform — `M * V -> V` |
+
+**No associated type is involved.** Rust's `Add` carries an associated `Output` so that `+` may
+return something other than the operands; here the result is an ordinary trait argument defaulting to
+`Self`, which is the mechanism [`Index`](#the-postfix-tail) already uses to carry the element type of
+what it reads. A vector space needs three of the four readings at once, and they are three ordinary
+blocks:
+
+```sysl
+struct Vec2
+    x: real
+    y: real
+end Vec2
+
+struct Mat2
+    a: real
+    b: real
+    c: real
+    d: real
+end Mat2
+
+impl Mul[Vec2, real] for Vec2
+    mul(self, o: Vec2) -> real = self.x * o.x + self.y * o.y
+
+impl Mul[real] for Vec2
+    mul(self, k: real) -> Vec2 = Vec2(self.x * k, self.y * k)
+
+impl Mul[Vec2, Vec2] for Mat2
+    mul(self, v: Vec2) -> Vec2 = Vec2(self.a * v.x + self.b * v.y, self.c * v.x + self.d * v.y)
+
+var v = Vec2(1.0, 2.0)
+var scaled = v * 3.0
+var turned = Mat2(0.0, -1.0, 1.0, 0.0) * v
+
+print(v * v, scaled.x, turned.x, turned.y)
+```
+
+```output
+5 3 -2 1
+```
+
+**A result is not a selector.** A use writes the operands and never the result — `a * b` asks to be
+*told* what comes back — so the operands choose the implementation and the implementation supplies
+the result. Two implementations agreeing on the operands and differing only in what they give back
+are therefore refused where they are written, rather than ranked at the use:
+
+```sysl
+struct V
+    x: real
+end V
+
+impl Mul[V, real] for V
+    mul(self, o: V) -> real = self.x * o.x
+
+impl Mul[V, V] for V
+    mul(self, o: V) -> V = V(self.x * o.x)
+
+print(1)
+```
+
+```error
+differs only in what it gives back
+```
+
+**A compound assignment stays homogeneous**, and this is where a result that is not the left
+operand's type is felt: `a op= b` is `a = a op b`, so there is nothing to assign back.
+
+```sysl
+struct V
+    x: real
+end V
+
+impl Mul[V, real] for V
+    mul(self, o: V) -> real = self.x * o.x
+
+var v = V(3.0)
+
+v *= V(4.0)
+
+print(v.x)
+```
+
+```error
+'*=' updates V in place, but '*' between V and V gives real
+```
+
+One thing the result being an argument opens: an operator trait at **written** arguments has no
+`Self` left in its signature — `Mul[real, real]` declares `mul(self, rhs: real) -> real` — so it is
+object-safe, and `&Mul[real, real]` is a formable [trait object](/reference/traits/#trait-objects)
+over types with quite different multiplications. Written bare it is `Mul[Self, Self]` and still is
+not.
+
+#### At a generic subject
+
+A generic block writes its **own parameters** as trait arguments, and that is the same reading rather
+than an exception to it: the block's parameters are exactly the arguments of the type it is written
+for, so an argument built out of them says one thing per instantiation and the subject settles it.
+The vector space above is therefore written once over an element type:
+
+```sysl
+struct Vec2[T]
+    a: T
+    b: T
+end Vec2
+
+impl[T: Mul + Add] Mul[Vec2[T], T] for Vec2[T]
+    mul(self, rhs: Vec2[T]) -> T = self.a * rhs.a + self.b * rhs.b
+
+impl[T: Mul] Mul[T] for Vec2[T]
+    mul(self, rhs: T) -> Vec2[T] = Vec2(self.a * rhs, self.b * rhs)
+
+var f = Vec2(1.0, 2.0) * Vec2(3.0, 4.0)
+var n = Vec2(1, 2) * Vec2(3, 4)
+var s = Vec2(1, 2) * 3
+
+print(f, n, s.a, s.b)
+```
+
+```output
+11 11 3 6
+```
+
+The dot product is the reading with **no other spelling**: trait arguments are positional, so
+reaching `Out` means writing `Rhs`, and `Rhs` on a dot product is the subject itself. There is no
+`Mul[Out = T]`.
+
+What is refused is an argument naming **one instantiation** of the subject. That one would promise at
+that instantiation what a defaulted block promises there, and promise something different everywhere
+else — a choice between implementations rather than a lookup:
+
+```sysl
+struct Box[T]
+    v: T
+end Box
+
+impl[T] Mul[Box[int]] for Box[T]
+    mul(self, rhs: Box[int]) -> Box[T] = self
+
+print(1)
+```
+
+```error
+whose arguments default names the type it is written for
+```
+
+A genuine duplicate on a generic subject is caught by the rules above, unchanged: a second block at
+the same operands by [one implementation per argument
+list](/reference/traits/#one-implementation-per-argument-list), and one differing only in its result
+by the rule that a result is not a selector.
 
 A type becomes fully comparable by implementing **one** method, `lt`, and fully equatable by
 implementing **one**, `eq` — the compiler derives the rest: `a != b` is `!eq(a, b)`, `a > b` is

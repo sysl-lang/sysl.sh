@@ -55,7 +55,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (19, 3, 0),
-    "docs/content/reference/expressions.md"           -> (25, 11, 0),
+    "docs/content/reference/expressions.md"           -> (27, 14, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -69,7 +69,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
-    "docs/content/reference/traits.md"                -> (26, 21, 0),
+    "docs/content/reference/traits.md"                -> (26, 22, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     "docs/content/reference/generics.md"              -> (25, 14, 0),

@@ -1023,7 +1023,30 @@ Two limits fall out of "several implementations are told apart inside one namesp
 **A generic block may write its own parameter as a trait argument** — `impl[T] Index[usize, T] for
 Buf[T]` says a `Buf[int]` implements `Index[usize, int]` and nothing else. That is what lets a
 container carry the type of what it holds in the trait it implements, without an associated type to
-derive it from.
+derive it from. The block's parameters are exactly the arguments of the type it is written for, so an
+argument built out of them says one thing per instantiation and the subject settles which — including
+where the argument is the subject itself, which is how [an operator carries a result that is not its
+operands' type](/reference/expressions/#at-a-generic-subject).
+
+**What a generic block may not write is an argument fixed to one instantiation of its own subject.**
+Where the trait's default names the type being asked about, such an argument coincides with the
+defaulted block at that one instantiation and differs from it at every other — which is a choice
+between implementations rather than a lookup:
+
+```sysl
+struct Box[T]
+    v: T
+end Box
+
+impl[T] Mul[Box[int]] for Box[T]
+    mul(self, rhs: Box[int]) -> Box[T] = self
+
+print(1)
+```
+
+```error
+whose arguments default names the type it is written for
+```
 
 ## A trait may require another trait
 
