@@ -300,9 +300,10 @@ meant to be *erased* writes `&Fn(…)` deliberately, and keeps its slots.
 
 `map` returns a slice rather than a description of one, and each stage of a chain is complete before
 the next begins. **The lazy alternative** — an adapter that describes the work and is evaluated by
-whatever finally walks it — needs a type a trait can name without spelling, which sysl does not have
-yet; and a slice is not an [`Iterate`](/library/core/) to begin with, since a `for` walks one by
-address.
+whatever finally walks it — needs a type a trait can name without an implementation spelling it out,
+which is what an [associated type](/reference/traits/) is. The language has those now; the library has
+not been rebuilt on them, so [`Iterate`](/library/core/) still carries its element as a parameter, and
+a slice is not an `Iterate` in any case — a `for` walks one by address.
 
 Swift makes the same trade and opts into laziness explicitly, with the eager spelling as the default
 one. That is the shape this leaves room for: a `.lazy` view is additive, and nothing on this page
