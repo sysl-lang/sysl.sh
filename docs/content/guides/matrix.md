@@ -46,10 +46,17 @@ and the program had them as one function until it had two.
 Elimination picks the largest remaining cell in a column, and the complexes carry no `Ord` at all —
 there is no order on the plane that respects arithmetic, and the library refuses to invent one. What
 pivoting wants is a **magnitude**, an ordering on size rather than on values, and no core trait offers
-one. The program declares its own, with the result fixed to `real`, and says why that is a guide's
-decision and not a library's: sysl has no associated type, so a library `Magnitude` would have to fix
-the answer for every element type at once — committing a rational matrix to floating point. **The
-library reaches three of the four things a field needs; the fourth is waiting on associated types.**
+one. The program declares its own, with the result fixed to `real`, and said why that was a guide's
+decision and not a library's: a library `Magnitude` would have had to fix the answer for every element
+type at once, committing a rational matrix to floating point.
+
+**That reason has since gone.** A trait may now declare an
+[associated type](/reference/traits/#a-trait-may-declare-an-associated-type), so a library
+`Magnitude` can let each element type say what it measures with — `type Size: Ord`, and the pivot
+compares `T::Size` values without anybody committing to a width. What is left is a library decision
+rather than a language one: which module such a trait belongs in, and whether an ordering-on-size
+earns a name beside the operator catalogue. Until that is taken the trait stays in the program, which
+is where the guide's own comment now points.
 
 **The integers are outside, and the identities are what keep them out.** `Zero` and `One` are written
 for the floats and for `Complex` and cannot be written for `int`: the `iN`/`uN` families are open, so
