@@ -494,6 +494,13 @@ declaration — and what a body may then do with that parameter is what *its* bo
 does not run backwards through a bound: a parameter appearing only there is solved from the result type
 or annotated.
 
+**A bound also brings the trait's
+[associated types](/reference/traits/#a-trait-may-declare-an-associated-type) into reach**, written
+`T::Name`. They are the case the table above cannot serve: an argument is written by whoever names the
+trait, so a type the *implementation* chooses has nothing to be written as. `[S: Seq]` and then
+`S::Item` is how a body names one without the caller having to spell it, and `S::Item` is abstract
+there — licensed to do exactly what the trait declared for it, exactly as `S` itself is.
+
 ### A trait object satisfies a bound on the trait it dispatches through
 
 A bound asks whether the members it names can be called on the value. A `*Trait` or a `&Trait` has

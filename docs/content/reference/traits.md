@@ -1,6 +1,6 @@
 ---
 title: Traits
-summary: The one polymorphism mechanism — declaring, implementing, coherence, required traits, and trait objects.
+summary: The one polymorphism mechanism — declaring, implementing, coherence, associated types, required traits, and trait objects.
 weight: 80
 ---
 
@@ -1022,8 +1022,9 @@ Two limits fall out of "several implementations are told apart inside one namesp
 
 **A generic block may write its own parameter as a trait argument** — `impl[T] Index[usize, T] for
 Buf[T]` says a `Buf[int]` implements `Index[usize, int]` and nothing else. That is what lets a
-container carry the type of what it holds in the trait it implements, without an associated type to
-derive it from. The block's parameters are exactly the arguments of the type it is written for, so an
+container carry the type of what it holds in the trait it implements, without reaching for the
+[associated type](#a-trait-may-declare-an-associated-type) below — and it is the right tool when the
+type is one the *container's* own parameters already name. The block's parameters are exactly the arguments of the type it is written for, so an
 argument built out of them says one thing per instantiation and the subject settles which — including
 where the argument is the subject itself, which is how [an operator carries a result that is not its
 operands' type](/reference/expressions/#at-a-generic-subject).
@@ -1046,6 +1047,330 @@ print(1)
 ```error
 whose arguments default names the type it is written for
 ```
+
+## A trait may declare an associated type
+
+A trait parameter is written where the trait is **applied**. An associated type is written by the
+**implementation**, and everything else reads it back off the type:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item: Render
+    head(self) -> Self::Item
+
+struct Words
+    first: string
+
+impl Render for string
+    render(self) -> string = self
+
+impl Seq for Words
+    type Item = string
+    head(self) -> Self::Item = self.first
+
+show[S: Seq](s: S) -> string = s.head().render()
+
+print(show(Words("hi")))
+```
+
+```output
+hi
+```
+
+`type Item: Render` declares the parameter and what the type filling it must implement. `type Item =
+string` fills it. `Self::Item` is the **projection** — the same `::` that reads
+[`int::Max`](/reference/attributes/) in expression position, reaching type position — and `show`'s body may
+call `render` on what it gets because that is what the trait asked of `Item` and nothing more.
+
+That is the whole difference from `trait Sink[T]`, and it is one difference with three consequences:
+
+| | a trait parameter | an associated type |
+|---|---|---|
+| who writes the argument | whoever names the trait | the implementation |
+| how many per type | one implementation **per argument list** | **one**, and the subject settles it |
+| how a use names it | `Sink[int]`, everywhere the trait is named | `T::Item`, off the type |
+
+A trait may declare both. The parameters go in the bracketed list and the associated types among the
+members, and neither is in the other's way.
+
+### The projection normalizes as soon as its subject is concrete
+
+`Self::Item` inside a generic body is **abstract** — it stands for a type nobody has chosen yet, and
+is licensed to do exactly what the trait's bound on it promises. Off a type that is actually known it
+is the type the implementation chose, and may be written wherever a type may:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item: Render
+    head(self) -> Self::Item
+
+struct Nums
+    first: int
+
+impl Render for int
+    render(self) -> string = "an int"
+
+impl Seq for Nums
+    type Item = int
+    head(self) -> Self::Item = self.first
+
+val n: Nums::Item = 41
+
+print(n, n.render())
+```
+
+```output
+41 an int
+```
+
+**So there is no hiding, and that is deliberate.** Swift's `some View` conceals the type because
+Swift gives you no way to write it down; `Nums::Item` is a way to write it down, so concealment would
+buy a restriction rather than an abstraction. What a generic caller sees is still only the bound —
+that is where the abstraction pays, and it is delivered by the projection being abstract there.
+
+### A generic block answers with one type per instantiation
+
+The block's own parameters may stand in the associated type, exactly as they may stand in a trait
+argument. Each instantiation of the subject then settles it:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item: Render
+    head(self) -> Self::Item
+
+struct Cell[T]
+    v: T
+
+impl[T: Render] Render for Cell[T]
+    render(self) -> string = "[" + self.v.render() + "]"
+
+impl Render for int
+    render(self) -> string = "i"
+
+impl Render for string
+    render(self) -> string = self
+
+struct Box[T]
+    v: T
+
+impl[T: Render] Seq for Box[T]
+    type Item = Cell[T]
+    head(self) -> Self::Item = Cell(self.v)
+
+show[S: Seq](s: S) -> string = s.head().render()
+
+print(show(Box(3)), show(Box("x")))
+```
+
+```output
+[i] [x]
+```
+
+`Box[int]::Item` is `Cell[int]` and `Box[string]::Item` is `Cell[string]`. Monomorphization keeps the
+concrete type all the way down, so none of this costs anything at run time — there is no box per
+value and no indirect call.
+
+### `some Trait` — the result read off the body
+
+The type an implementation chooses is often one nobody wants to write. A tree of nested containers is
+the case the feature exists for: the type is enormous, it is the implementation's business, and it
+changes whenever the body does. `some Trait` in an `impl` member's result says *"the associated type
+is whatever this body produced, and it implements this"*:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait View
+    type Body: Render
+    body -> Self::Body
+
+struct Text
+    s: string
+
+impl Render for Text
+    render(self) -> string = self.s
+
+struct Counter
+    n: int
+
+impl View for Counter
+    body -> some Render = Text("count")
+
+draw[V: View](v: V) -> string = v.body.render()
+
+print(draw(Counter(7)))
+```
+
+```output
+count
+```
+
+No `type Body = …` line is written, and none is wanted: the body is the answer. `Counter::Body` is
+`Text` from that point on, so the two spellings are the same feature — one writes the type and the
+other reads it off the body.
+
+**`some` is a contextual word**, special only in front of a bound in a member's result. A program may
+still name something `some`.
+
+**Every path out of the member must produce one type.** Two branches yielding different concrete types
+are an error, not a silent widening to the bound — the bound is what a *caller* may rely on, and it is
+not what the member returns.
+
+**It stands in that one position and nowhere else.** A free function has no trait to settle anything
+for, so the reason to write one is missing and the refusal says where it belongs:
+
+```sysl
+trait Render
+    render(self) -> string
+
+f(x: int) -> some Render = x
+
+print(1)
+```
+
+```error
+'some Render' says the type is read off the body of a member that supplies a trait's associated type, so it stands only in an 'impl' block
+```
+
+The promise is checked against what the body actually produced:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    head(self) -> some Render = self.v
+
+print(1)
+```
+
+```error
+'head' promises 'some Render' and its body yields int, which does not implement 'Render'
+```
+
+### What the implementation is held to
+
+A written binding is held to the trait's bound in the same way:
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item: Render
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    type Item = int
+    head(self) -> Self::Item = self.v
+
+print(1)
+```
+
+```error
+trait 'Seq' asks that its associated type 'Item' implement 'Render', and int does not
+```
+
+And an implementation that supplies none has not implemented the trait, exactly as a missing method
+has not:
+
+```sysl
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    head(self) -> Self::Item = self.v
+
+print(1)
+```
+
+```error
+'Box' does not implement 'Seq': the associated type 'Item' is missing
+```
+
+### One name per type, because a projection does not name its trait
+
+`Box::Item` says which *type* and which *name*, and never which trait. So a type may implement at most
+one trait declaring an associated type of any one name, and the second block is where that is said:
+
+```sysl
+trait A
+    type Item
+    a(self) -> Self::Item
+
+trait B
+    type Item
+    b(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl A for Box
+    type Item = int
+    a(self) -> Self::Item = self.v
+
+impl B for Box
+    type Item = bool
+    b(self) -> Self::Item = true
+
+print(1)
+```
+
+```error
+one type cannot have two of one name
+```
+
+Rust spells the qualified form `<T as A>::Item`; there is no such spelling here, and the collision is
+refused rather than left to be disambiguated at every use.
+
+### Declaring one spends the trait's erasability
+
+An erased value has forgotten which type it is, and an associated type is a function of exactly that —
+so the slot would have a different signature for every implementing type. A trait declaring one is
+therefore not a trait an object can be formed over, and the refusal names the associated type rather
+than leaving it to be discovered as a `Self`:
+
+```sysl
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+look(s: &Seq) -> int = 0
+
+print(1)
+```
+
+```error
+'Seq' declares the associated type 'Item', whose meaning is the implementing type's — an erased value has forgotten which type that is, so there is no '&Seq' to form
+```
+
+**A bound keeps the type, and so keeps the answer.** `[S: Seq]` is what such a trait is for, which is
+the same place [the operator catalog](#object-safety) ends up and for a related reason. A trait that
+*requires* one is unerasable too, and the diagnostic names the trait the associated type came from.
 
 ## A trait may require another trait
 
@@ -1194,7 +1519,9 @@ loads the value, or both. So the common case costs one indirect call and nothing
 ### Object safety
 
 Erasure forgets the type, so a member may promise nothing that depends on knowing it. A trait may be
-made into an object when every member:
+made into an object when it declares no
+[associated type](#a-trait-may-declare-an-associated-type) — the meaning of one *is* the forgotten
+type — and when every member:
 
 - **has a receiver.** An associated function has nothing to dispatch on. A property does have one — by
   value, and unwritten — so a trait asking for a property is as safe to erase as one asking for a
