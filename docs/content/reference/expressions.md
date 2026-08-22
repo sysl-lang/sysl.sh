@@ -219,6 +219,22 @@ for i in a..=3
 '..=' is not a range — inclusive is 'a..b' and exclusive is 'a..<b'
 ```
 
+**A range is not a value.** The four places one may be written are the whole of the list: a `for`, a
+slice index, a `match` pattern, and a quantifier. There is no range type, so a range cannot be bound
+to a name, passed to a function, returned from one, or named on the right of an `impl`.
+
+```sysl
+print(0..<10)
+```
+
+```error
+a range is only allowed in a 'for' loop or a 'match' pattern
+```
+
+That is the reason [`sysl.seq`](/library/seq/) supplies a `generate` rather than implementing
+`Sequence` for a range: `(0..<n).map(f)` is the spelling a reader reaches for, and there is nothing
+for it to be a method on.
+
 ## `is` — a pattern where a condition is wanted
 
 `x is Pat` tests a value against a pattern and yields a `bool`; `x is not Pat` negates it. The right
