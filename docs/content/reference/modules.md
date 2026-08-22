@@ -770,7 +770,7 @@ is what it should compile to — a library is not an error.
 
 `val` and `var` at the top of the entry file are **locals**: initialized where they are written, in
 the order the statements around them run. A function declared there is a **nested function**
-([functions](../functions/)), so it reads and writes the bindings above it with nothing passed in:
+([functions](../functions/)), so it reads and writes the file's bindings with nothing passed in:
 
 ```sysl
 var counter = 0
@@ -798,11 +798,11 @@ an ordinary module function: generic if it says so, addressable, passable as a v
 from another file. Only one that reads a binding is nested, and only that one takes the nested
 function's limits.
 
-#### What a nested function may read is anything its block binds
+#### It may read anything the block binds, wherever that is written
 
-The nested functions of a block share **one** environment, and it is built after the last binding any
-of them reads. So where a binding stands relative to the functions makes no difference — one written
-below them is read as readily as one written above:
+"The bindings above it" is the usual case rather than the rule. A nested function may read **anything
+its block binds**, including something written below it — so helpers can sit above the data they use,
+which is the natural way to lay out a script:
 
 ```sysl
 var counter = 0
@@ -822,13 +822,13 @@ print(counter + first())
 2
 ```
 
-`bump` is what starts the group: it reads `counter`, so it is nested. `first` reads `table`, which is
-written below `bump`, and that is ordinary — a function is not *run* where it is written, so tying
-what it may capture to where a sibling happens to sit would be the compiler's arrangement showing
-through rather than a fact about the program.
+The block's nested functions share **one** environment, and it is built after the last binding any of
+them reads. That single environment is what lets two of them call each other in either order — a
+sibling call and a recursive call are the same call, on the receiver the body already holds.
 
-**What is refused is calling one too early.** The environment is a single object serving the whole
-group, so until every binding the group reads has been bound there is nothing to hand any of them:
+**What it costs is that none of them may be called until that point.** Calling one earlier would read
+a binding whose initializer has not run, so it is refused — and all of them are refused together,
+because there is one environment and it does not exist yet:
 
 ```sysl
 var counter = 0
@@ -836,23 +836,21 @@ var counter = 0
 bump()
     counter += 1
 
+first() -> int = table[0]
+
 bump()
 
 val table: [3]int = [1, 2, 3]
 
-first() -> int = table[0]
-
-print(counter + first())
+print(first())
 ```
 
 ```error
 'bump' cannot be called here — the nested functions of this block share one environment, and it is not built until everything they read is bound. 'table' is bound below this call: move the call below it, or move it above the functions
 ```
 
-**All of them wait, not only the one that reads it.** That is forced rather than cautious: one
-environment serves the group, which is exactly what lets two nested functions call each other in
-either order — a sibling call and a recursive call are the same call, on the receiver the body
-already holds — so there is nothing to give any of them until it is built.
+Both moves the message names work, and neither is preferred: put the call after `table`, or put
+`table` above the functions.
 
 ### `static` — asking for the module instead
 

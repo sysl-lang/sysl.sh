@@ -786,9 +786,9 @@ needs a filesystem. That is a piece of work with a parser in it, and it is not d
 is the half that needs neither — the host's own zone, above, and `resolve`, which is the arithmetic
 any zone would be resolved by.
 
-`wall_us` and `wall_of` are the seam a zone conversion starts from: they read a `LocalDateTime` as a
-single count measured from the same origin as an `Instant`, which is what the count would be if the
-offset happened to be zero.
+`wall_us` and `wall_of` are the seam all of this starts from: they read a `LocalDateTime` as a single
+count measured from the same origin as an `Instant`, which is what the count would be if the offset
+happened to be zero.
 
 **The clock**, in *this* module. There is no `sysl.time.now()`, because reading one is a capability
 rather than arithmetic — `clock_gettime` is a call into the environment, and this module has no
