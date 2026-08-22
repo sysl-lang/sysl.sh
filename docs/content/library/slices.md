@@ -137,9 +137,9 @@ identity — a record ordered on one field — and when it matters, it matters a
 It is the first question anybody arriving from C asks, and the answer is not that the C library is
 slow.
 
-The binding is perfectly writable. `guide/qsort` in the compiler's repository writes it in a dozen
-lines, and everything it needs is in the language: the address of a per-instantiation comparison, the
-address of a slice's storage, and the size of an element.
+The binding is perfectly writable, in a dozen lines, and everything it needs is in the language: the
+address of a per-instantiation comparison, the address of a slice's storage, and the size of an
+element. [The foreign interface](/reference/ffi/) writes exactly this one out.
 
 What decides it is what this module **promises**. `sysl.slices` requires no capability, which is a
 promise made to every machine sysl builds for — and several of those are freestanding, where there is

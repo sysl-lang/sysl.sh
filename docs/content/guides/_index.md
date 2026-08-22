@@ -1,12 +1,12 @@
 ---
 title: Guide Programs
-summary: Fourteen real programs written to force a language decision — what each one owns, and what writing it found.
+summary: Thirteen real programs written to force a language decision — what each one owns, and what writing it found.
 weight: 50
 ---
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-fourteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
+thirteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
 to **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,
@@ -31,7 +31,7 @@ own file records what it found in the place the code that provoked it lives, whi
 somebody reading the program and useless for somebody wondering **why the language is shaped this
 way**. These pages pull each finding out and link it to the rule it produced.
 
-## The fourteen, and the axis each owns
+## The thirteen, and the axis each owns
 
 In the order they were written, which matters — a finding must be discharged before the next program
 starts, so each one is written on top of what the last one settled.
@@ -50,7 +50,6 @@ starts, so each one is written on top of what the last one settled.
 | [ring](/guides/ring/) | the constrained-subtype surface — ranges, `::` attributes, contracts, invariants |
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |
 | [lisp](/guides/lisp/) | the reference cycle — the shape a count cannot reclaim, and `weak T` as the instrument that measures it |
-| [qsort](/guides/qsort/) | the C boundary in the direction nothing else goes — a C routine that calls *back*, and the trampoline it takes |
 | [simd](/guides/simd/) | the register width as the variable — one solver body instantiated at four lanes and at eight, from a lane count that is an ordinary value parameter |
 
 **Two pairs are written to be compared**, and the comparison is the measurement:
