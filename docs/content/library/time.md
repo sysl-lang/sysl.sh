@@ -614,6 +614,49 @@ A date and a time with no offset name a **wall clock reading**, not an instant, 
 the fact the format exists to carry, and it is the single most common way a timestamp ends up hours
 wrong in a system that never notices.
 
+## A zone, which is a rule rather than a number
+
+An offset is a number; a **zone** is a rule with a history. The difference shows up in exactly one
+place — converting a wall clock reading *into* an instant. Against a fixed offset that conversion is
+total, which is why `from_offset` above is an ordinary function. Against a zone whose clocks move it
+is not: the hour a zone skips never happened, and the hour it repeats happened twice.
+
+`resolve` is what says which of the three occurred, and the return type is the point of it:
+
+```sysl
+import sysl.time.*
+
+// US Eastern in 2023: -04:00 between the two moments its clocks moved, -05:00 outside them. The
+// transitions are named in UTC because that is the only reading of them that is not itself
+// ambiguous.
+eastern(t: Instant) -> Offset =
+    if t.us >= 1678604400000000 && t.us < 1699164000000000 then Offset(-240) else Offset(-300)
+
+print(resolve(datetime_at(2023, 6, 15, 12, 0, 0), eastern))
+print(resolve(datetime_at(2023, 11, 5, 1, 30, 0), eastern))
+print(resolve(datetime_at(2023, 3, 12, 2, 30, 0), eastern))
+```
+
+```output
+2023-06-15 16:00 Z
+2023-11-05 05:30 Z or 2023-11-05 06:30 Z
+no such time: the clocks went from -05:00 to -04:00
+```
+
+**The zone arrives as a function rather than as a type**, and that is what keeps this in
+capability-free `sysl.time`: the whole of what resolution needs to know about a zone is what its
+offset was at a given instant. A host reading its own zone, a package talking to an RTC chip and a
+table written out by hand can all answer that one question, and none of them has to be a type this
+module knows about.
+
+`Gap` carries the offsets either side of the transition rather than an instant, because there is no
+instant to carry. What to do about a reading that never happened is a policy question — push it
+forward by the size of the gap, clamp it to the transition, or refuse it — and `from_offset(ldt,
+before)` is the first of those, which is the one most libraries choose.
+
+**Nothing above holds a zone database, and `resolve` is not one.** It is the arithmetic that a zone
+database would be consulted *by*.
+
 ## Reading a clock — `sysl.posix.time`
 
 Everything above is arithmetic, and arithmetic needs a value to start from. Obtaining one is asking
@@ -672,6 +715,49 @@ error: 't' of 'sysl.time.instant_text' is sysl.time.Instant, but sysl.time.Durat
 
 Both require `posix`.
 
+### The zone the host is set to
+
+The host already knows its own zone and keeps it up to date, so a program does not have to write an
+offset into its source and does not go wrong when the clocks move.
+
+```sysl
+import sysl.posix.time.{now, local, local_text, local_offset, from_local}
+import sysl.time.{timestamp_text, parse_timestamp, Resolution}
+
+val t = now()
+
+print(local_text(t) == timestamp_text(t, local_offset(t)))
+print(parse_timestamp(local_text(t)).unwrap() == t)
+
+// A reading taken *from* an instant is one the clocks did show, so it is never a gap -- but it may
+// still be one of the two readings of a repeated hour.
+val found = from_local(local(t)) match
+    Unique(at) -> at == t
+    Ambiguous(earlier, later) -> earlier == t || later == t
+    Gap(before, after) -> false
+
+print(found)
+```
+
+```output
+true
+true
+true
+```
+
+`local_offset` takes an **instant** rather than answering "the current offset", because those are
+different questions wherever a zone moves its clocks — and the one a caller almost always wants is
+the offset that applied to *the timestamp being rendered*, not the one that applies now. It is
+answered from the host's own data, so a date from a year whose rules differed is answered correctly:
+`2005-11-01` is `-05:00` in New York under the rules of the day, where today's rules would say
+`-04:00`, and Kathmandu is `+05:30` before 1986 and `+05:45` after.
+
+`from_local` is the reverse and answers a `Resolution`, for the reason the section above gives.
+**The host will not tell you which of the three happened** — `mktime` answers the second occurrence
+of a repeated reading and says nothing, and for one that never happened it rewrites its caller's
+fields and answers a time nobody asked for — so the decision is made in sysl out of the offset
+lookup rather than handed to the C library.
+
 ### What a freestanding target does instead
 
 **Nothing in the library, and deliberately nothing shared with it.** A board's clock is a board's
@@ -688,12 +774,17 @@ above are chosen so that adding it later moves no caller.
 
 ## What is not here
 
-**The zone**, as distinct from the offset above. A wall clock reading becomes an instant only once
-somebody says where the wall is, and answering that from a *name* — `America/New_York` rather than
-`-05:00` — needs the IANA time zone database — a table that changes several times a year, which a
-standard library either ships and lets go stale or reads from the host and thereby needs a
-filesystem. Both are decisions with costs, and neither belongs in a module whose whole claim is that
-it is arithmetic.
+**A zone by name** — `America/New_York` rather than the host's own. That is the one thing on this
+page the library cannot reach, and the reason is POSIX rather than a decision here: the calls that
+would take a zone as an argument (`tzalloc`, `localtime_rz`, `mktime_z`) are a NetBSD extension that
+neither macOS nor glibc has, so the only portable way to name a different zone is to set `TZ` in the
+process environment and call `tzset` — global state, and not thread-safe.
+
+Reaching one properly means reading the IANA time zone database: a table that changes several times a
+year, which a standard library either ships and lets go stale or reads from the host and thereby
+needs a filesystem. That is a piece of work with a parser in it, and it is not done. What *is* done
+is the half that needs neither — the host's own zone, above, and `resolve`, which is the arithmetic
+any zone would be resolved by.
 
 `wall_us` and `wall_of` are the seam a zone conversion starts from: they read a `LocalDateTime` as a
 single count measured from the same origin as an `Instant`, which is what the count would be if the

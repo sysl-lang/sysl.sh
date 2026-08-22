@@ -129,7 +129,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
-    "docs/content/library/time.md"                       -> (16, 4, 4),
+    "docs/content/library/time.md"                       -> (18, 4, 4),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.
