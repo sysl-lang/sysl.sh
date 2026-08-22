@@ -1129,18 +1129,55 @@ print(r.n)
 8
 ```
 
-A **trait's** member is refused, and not for a reason about packs. No member a trait requires may
-declare parameters of its own of any kind: a table slot cannot hold a function that does not exist
-until a call names its types. A pack is one more way of writing that list, so it meets the rule
-already there.
+A **trait's** member takes one on the same terms, and what it costs is the trait *object* rather than
+the declaration. A member with parameters of its own is not a function until a call names them, so no
+slot of a `&Trait`'s table can point at it: the member is left out of the table, and it is reached
+through a **bound** instead, where the receiver's type is known.
 
 ```sysl
 trait Take
     take[..A: Display](self, t: (..A)) -> usize
+
+struct Row
+    n: usize
+
+impl Take for Row
+    take[..A: Display](self, t: (..A)) -> usize
+        var total: usize = 0
+
+        for const i in 0..<A.len
+            total = total + str(t.i).len
+
+        return total
+
+count[T: Take](x: T) -> usize = x.take((1, "abc", true))
+
+print(count(Row(0)))
+```
+
+```output
+8
+```
+
+Through an object it is refused, and the refusal names the member the table has no slot for:
+
+```sysl
+trait Take
+    take[..A: Display](self, t: (..A)) -> usize
+
+struct Row
+    n: usize
+
+impl Take for Row
+    take[..A: Display](self, t: (..A)) -> usize = 0
+
+val r: &Take = Row(0)
+
+print(r.take((1, 2)))
 ```
 
 ```error
-declares type parameters of its own, which a trait's member may not
+no slot of a &Take's table can point at it
 ```
 
 A `struct`, an `enum` and a `trait` are refused a pack for a different reason — their parameters

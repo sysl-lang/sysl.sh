@@ -32,7 +32,7 @@ operator symbols, and no facility to add one.
 | 10 | `+` `-` | add, subtract | left |
 | 11 | `*` `/` `%` `<<` `>>` | multiply, divide, remainder, shift | left |
 | 12 | `-` `!` `~` `*` `&` `++` `--` | prefix unary | right |
-| 13 | `[]` `.` `()` `::` `?` `++` `--` | postfix | left |
+| 13 | `[]` `.` `()` `::` `with` `?` `++` `--` | postfix | left |
 
 `*` and `&` appear at two levels each — prefix at 12 (dereference, address-of) and binary at 11 and 9
 (multiply, bitwise and). Position tells them apart, and nothing else has to.
@@ -391,7 +391,7 @@ Postfix binds tighter than prefix, so `*p++` is `*(p++)` and `-a.b` is `-(a.b)`,
 
 ## The postfix tail
 
-Seven things attach to an expression on the right, and they compose left to right.
+Eight things attach to an expression on the right, and they compose left to right.
 
 | tail | what it does |
 |---|---|
@@ -401,6 +401,7 @@ Seven things attach to an expression on the right, and they compose left to righ
 | `e(…)` | call |
 | `e:` and an indented block | call, with the block as an argument — [below](#a-trailing-block) |
 | `T::Attr` | a type's attribute rather than a value's — a constrained type's bounds live here |
+| `e with { f = v }` | this struct again, with those fields changed — [below](#with-this-value-with-one-field-different) |
 | `e?` | try — unwrap or propagate |
 | `e++`, `e--` | post-increment, post-decrement |
 
@@ -451,6 +452,191 @@ cross. And **the error types must match exactly**; there is no implicit widening
 its own error type converts a callee's explicitly.
 
 `?` is an expression and composes as one, so its unwrapped value flows into whatever surrounds it.
+
+## `with` — this value, with one field different
+
+`base with { bg = 9 }` is `base` again, with the fields named in the braces changed. Everything else
+comes along, and the value written on the left is untouched.
+
+```sysl
+struct Style
+    fg: int
+    bg: int
+    pad: int
+
+val theme = Style(1, 2, 3)
+val hot = theme with { bg = 9 }
+
+print(theme.fg, theme.bg, theme.pad)
+print(hot.fg, hot.bg, hot.pad)
+```
+
+```output
+1 2 3
+1 9 3
+```
+
+Several fields at once are separated by commas. A brace suspends the off-side rule until it closes,
+so they may be written one per line, and the last one may carry a comma like every other bracketed
+list in the language:
+
+```sysl
+struct Style
+    fg: int
+    bg: int
+    pad: int
+
+val theme = Style(1, 2, 3)
+
+val hot = theme with {
+    bg = 9,
+    pad = 8,
+}
+
+print(hot.fg, hot.bg, hot.pad)
+```
+
+```output
+1 9 8
+```
+
+### It is the two statements you would otherwise write
+
+The whole of the rule is one desugaring. `base with { bg = 9 }` means:
+
+```
+var tmp = base
+tmp.bg = 9
+tmp
+```
+
+so the base is copied first, the fields are assigned to **in the order written**, and the copy is the
+value. Nothing else is defined anywhere: a struct's `invariant` is re-checked because a field
+assignment re-checks it, a field another module keeps `private` is refused because an assignment
+refuses it, a literal needs no width suffix because it is read against the field's type, and a
+[settable property](/reference/declarations/) runs its setter because `p.count = v` is a call.
+
+```sysl
+struct Cell
+    v: int
+
+    count -> int = self.v
+
+    set count(x)
+        self.v = x * 10
+
+val c = Cell(0)
+
+print((c with { count = 4 }).v)
+```
+
+```output
+40
+```
+
+### What it buys is that it composes
+
+The two statements are perfectly good and are still there. What they cannot do is stand inside a
+larger expression — so a value could not be layered at the point it is used, which is what a theme
+overridden for one state and overridden again for the next actually is:
+
+```sysl
+struct Style
+    fg: int
+    bg: int
+
+paint(s: Style)
+    print(s.fg, s.bg)
+
+val theme = Style(1, 2)
+val pressed = theme with { bg = 9 }
+
+paint(theme)
+paint(pressed)
+paint(pressed with { fg = 7 })
+```
+
+```output
+1 2
+1 9
+7 9
+```
+
+The base is evaluated **once**, however many fields change, so a base that is a call is called once.
+
+### The base has to be a struct
+
+A counted reference or a pointer is refused, and it is the one case where refusing matters rather
+than merely being tidy: `var tmp = p` on a `&Style` binds a second reference to the *same* object, so
+the writes would reach every other holder and the form would quietly mean the opposite of a copy.
+
+```sysl
+struct Style
+    bg: int
+
+val base: &Style = Style(2)
+val hot = base with { bg = 9 }
+
+print(hot.bg)
+```
+
+```error
+'with' copies a struct, and this is a counted reference to one
+```
+
+The refusal names the spelling that does copy, and the parentheses in it are load-bearing: the clause
+is a postfix tail, so `*p with { … }` is `*(p with { … })`.
+
+```sysl
+struct Style
+    bg: int
+    pad: int
+
+var base = Style(2, 3)
+val p = &base
+val hot = (*p) with { bg = 9 }
+
+print(base.bg, hot.bg, hot.pad)
+```
+
+```output
+2 9 3
+```
+
+A field named twice in one clause is refused too, since the first change is one the value cannot
+carry:
+
+```sysl
+struct Style
+    bg: int
+
+val base = Style(2)
+val hot = base with { bg = 9, bg = 8 }
+
+print(hot.bg)
+```
+
+```error
+'bg' is changed twice in one 'with'
+```
+
+### `with` is not a reserved word
+
+It is read as a keyword only after a value and before a brace, and is an ordinary identifier
+everywhere else — including as a field's own name, on both sides of the clause:
+
+```sysl
+struct Flags
+    with: int
+
+val f = Flags(1)
+
+print((f with { with = 9 }).with)
+```
+
+```output
+9
+```
 
 ## A leading dot — the qualifier the context already knows
 
