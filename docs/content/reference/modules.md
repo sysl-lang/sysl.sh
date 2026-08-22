@@ -824,7 +824,8 @@ print(counter)
 ```
 
 `bump` is what starts the group: it reads `counter`, so it is nested, and the environment is built at
-its line. `first` is written five lines below `table` and still cannot read it.
+its line. `first` is written *after* `table` and still cannot read it — the distance makes no
+difference, since the line that matters is `bump`'s.
 
 One environment for the block is what makes two nested functions able to call each other whichever
 order they are written in — a sibling call and a recursive call are the same call, on the receiver
