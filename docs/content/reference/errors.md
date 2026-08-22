@@ -453,29 +453,30 @@ Each of the three parts may be left out, with one exception:
 | `type Age = int within 0..150` | `int` with a range, but the *same type* as `int` |
 | `type Even = int where value % 2 == 0` | `int` with a predicate |
 | `type Slot = new u8 within 0..<200` | distinct **and** constrained |
-| `type Alias = int` | **rejected** |
+| `type Alias = int` | a [type alias](/reference/declarations/#type-declarations) — no new type at all |
 
-The last row is the exception. A transparent alias with no constraint declares nothing — it neither
-narrows the values nor makes a new type — so writing it can only be a mistake or an attempt at a
-`typedef` of one's own, which is not a thing to write here:
+The last row is different in kind from the four above it. Adding nothing to the base declares no
+type: it is a second spelling for one that already exists, and a value crosses between the two names
+with nothing emitted and nothing checked, because there are not two things for anything to be
+emitted between.
 
 ```sysl
 type Alias = int
 
 var n: Alias = 1
 
-print(n)
+print(n + 1)
 ```
 
-```error
-'Alias' has no constraint — add a 'within' range or a 'where' predicate, or 'new' to make it a distinct type
+```output
+2
 ```
 
-Note that `type Name = Existing` **is** legal as a [type alias](/reference/declarations/#type-declarations)
-for a name that has grown long; what is refused is calling that a constrained type by adding nothing
-to it. The diagnostic is what tells the two apart.
+Everything in the rest of this section is about the other four rows, and the first thing it says is
+the clearest way to tell them apart: an alias's base may be **any** type, and a constrained
+subtype's may not.
 
-**The base must be a scalar** — an integer, a float, or a `char`:
+**A constrained subtype's base must be a scalar** — an integer, a float, or a `char`:
 
 ```sysl
 struct Point

@@ -1063,26 +1063,34 @@ print(c_take(&sum))
 A plain sysl function is what is left, and there the refusal stands: it has no C-convention entry to
 point at, and an address that is quietly wrong is worse than no address.
 
-### What it costs today
+### Naming a signature once
 
-**A signature cannot be named once.** Every declaration mentioning a callback spells the whole of
-it, and a real binding mentions one several times — `signal` takes a handler and returns the
-previous one, so its declaration says the same eight tokens twice. This is not the foreign
-interface's restriction: `type` declares a
-[constrained subtype](/reference/errors/), whose base must be a scalar, so a name
-for a pointer type is refused in the same words:
+A real binding mentions one callback several times — `signal` takes a handler and returns the
+previous one, so its declaration says the same tokens twice, and every function that passes one
+along says them again. A [type alias](/reference/declarations/#type-declarations) is what says it
+once:
 
 ```sysl
-type Handle = *u8
+type Comparison = *extern(*u8, *u8) -> i32
 
-print(1)
+compare(a: *u8, b: *u8) -> i32 = i32(a[0]) - i32(b[0])
+
+call(f: Comparison, a: *u8, b: *u8) -> i32 = f(a, b)
+
+var xs: [2]u8 = [9, 4]
+
+print(call(&compare, &xs[0], &xs[1]))
 ```
 
-```error
-a constrained subtype's base must be an integer, a float, or 'char', not *byte
+```output
+5
 ```
 
-What would fix it is an alias that is not a subtype.
+The alias declares no type: `Comparison` and the signature written out are one type, so a value
+crosses between the two spellings with nothing emitted and no conversion to write. That is the
+difference between it and a [constrained subtype](/reference/errors/), which `type` also
+introduces — a subtype's base must be a scalar, and an alias's base may be anything at all,
+including the pointer and struct types a binding is made of.
 
 ## Variadic functions
 
@@ -1989,7 +1997,6 @@ standing in for it and losing what it was.
 | a header parser or a binding generator | an `extern` per declaration, and a `.c` shim for what a header hides |
 | a calling convention on an export | open — `@export` implies C's, and `interrupt` already built the shape a second one would take |
 | a capability gate on an extern | open — an extern reaching libc plausibly needs `os`, and does not yet say so |
-| an alias for a pointer signature | open — what is missing is a type alias that is not a constrained subtype |
 
 Both directions now exist. `extern` calls out of sysl and `@export` calls into it, which is what an
 incremental replacement of a C codebase needs: the sysl side can sit underneath an existing C

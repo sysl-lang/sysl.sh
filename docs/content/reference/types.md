@@ -566,6 +566,36 @@ are told apart by the enum they belong to, and a variant and a constant have not
 creates **no** new type and no checking: an alias is for shortening a name that has grown long, not
 for distinguishing two uses of the same representation.
 
+**The base may be any type at all**, which is what makes it worth having — the names that grow long
+are the compound ones:
+
+```sysl
+struct Point
+    x: int
+    y: int
+end Point
+
+type P = Point
+type Comparison = *extern(*u8, *u8) -> i32
+type Triple = [3]int
+type MaybeInt = Option[int]
+
+val p: P = P(3, 4)
+var t: Triple = [1, 2, 3]
+val m: MaybeInt = Some(t[2])
+
+print(p.x + p.y, m.unwrap())
+```
+
+```output
+7 3
+```
+
+Because the alias is a spelling and not a type, everything the base has is reached through it: a
+value written at one name is accepted where the other is wanted, a struct is constructed and read
+through the alias, and a method or a trait implementation declared on the base needs nothing said
+about the alias at all.
+
 When you want a genuinely distinct type — one the compiler will not let you confuse with its base —
 that is a **constrained type**, written with `new`, and it is covered under
 [contracts](/tour/contracts/).

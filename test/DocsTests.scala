@@ -54,7 +54,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
-    "docs/content/reference/types.md"                 -> (18, 3, 0),
+    "docs/content/reference/types.md"                 -> (19, 3, 0),
     "docs/content/reference/expressions.md"           -> (25, 11, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
@@ -63,7 +63,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
-    "docs/content/reference/declarations.md"          -> (27, 8, 1),
+    "docs/content/reference/declarations.md"          -> (28, 8, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (30, 21, 0),
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
@@ -79,7 +79,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
-    "docs/content/reference/errors.md"                 -> (21, 28, 2),
+    "docs/content/reference/errors.md"                 -> (22, 27, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -90,7 +90,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A struct now names itself in the header: one more runnable, showing that the sysl side is
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
     // typedef and a function, a generic struct, and a private one.
-    "docs/content/reference/ffi.md"                    -> (20, 32, 11),
+    "docs/content/reference/ffi.md"                    -> (21, 31, 11),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:

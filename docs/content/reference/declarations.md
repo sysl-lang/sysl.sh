@@ -975,7 +975,26 @@ compiler privileges.
 ## Type declarations
 
 `type Name = Existing` introduces a second spelling, interchangeable with the first. It creates **no**
-new type and no checking — an alias is for shortening a name that has grown long.
+new type and no checking — an alias is for shortening a name that has grown long. The base may be
+anything a type expression can name:
+
+```sysl
+struct Reading
+    at: int
+    value: f64
+end Reading
+
+type Sample = Reading
+type Window = [4]Sample
+
+var w: Window = [Sample(0, 1.5), Sample(1, 2.5), Sample(2, 3.5), Sample(3, 4.5)]
+
+print(w[2].at, w[2].value)
+```
+
+```output
+2 3.5
+```
 
 Adding `new` makes it a genuinely distinct type, and `within` and `where` add checked bounds:
 
