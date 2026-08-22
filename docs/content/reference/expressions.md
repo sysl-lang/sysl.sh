@@ -1013,14 +1013,12 @@ blocks:
 struct Vec2
     x: real
     y: real
-end Vec2
 
 struct Mat2
     a: real
     b: real
     c: real
     d: real
-end Mat2
 
 impl Mul[Vec2, real] for Vec2
     mul(self, o: Vec2) -> real = self.x * o.x + self.y * o.y
@@ -1050,7 +1048,6 @@ are therefore refused where they are written, rather than ranked at the use:
 ```sysl
 struct V
     x: real
-end V
 
 impl Mul[V, real] for V
     mul(self, o: V) -> real = self.x * o.x
@@ -1071,7 +1068,6 @@ operand's type is felt: `a op= b` is `a = a op b`, so there is nothing to assign
 ```sysl
 struct V
     x: real
-end V
 
 impl Mul[V, real] for V
     mul(self, o: V) -> real = self.x * o.x
@@ -1104,7 +1100,6 @@ The vector space above is therefore written once over an element type:
 struct Vec2[T]
     a: T
     b: T
-end Vec2
 
 impl[T: Mul + Add] Mul[Vec2[T], T] for Vec2[T]
     mul(self, rhs: Vec2[T]) -> T = self.a * rhs.a + self.b * rhs.b
@@ -1134,7 +1129,6 @@ else — a choice between implementations rather than a lookup:
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 impl[T] Mul[Box[int]] for Box[T]
     mul(self, rhs: Box[int]) -> Box[T] = self

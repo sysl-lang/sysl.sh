@@ -1036,7 +1036,6 @@ between implementations rather than a lookup:
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 impl[T] Mul[Box[int]] for Box[T]
     mul(self, rhs: Box[int]) -> Box[T] = self
