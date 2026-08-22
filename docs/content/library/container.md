@@ -1,19 +1,19 @@
 ---
-title: The container modules
+title: The container module
 summary: "`sysl.container` — `Map` and `Set` over one flat probe table, `Deque` for a queue at both ends, `Heap` for a priority queue, and an immutable `List` that shares its tail."
 weight: 32
 ---
 
-Five modules under `sysl.container`, each a separate import so that a program wanting a map does not
-link a heap:
+One module, `sysl.container`, holding five types. A program names the ones it wants and gets nothing
+else — what a program does not import, it does not link.
 
-| module | holds |
+| type | is |
 |---|---|
-| [`sysl.container.map`](#the-map-sysl-container-map) | `Map[K: Hash + Eq, V]` — keys to values |
-| [`sysl.container.set`](#the-set-sysl-container-set) | `Set[K: Hash + Eq]` — membership, and the algebra over it |
-| [`sysl.container.deque`](#the-queue-at-both-ends-sysl-container-deque) | `Deque[T]` — a sequence cheap to take from at either end |
-| [`sysl.container.heap`](#the-priority-queue-sysl-container-heap) | `Heap[T: Ord]` — smallest out first |
-| [`sysl.container.list`](#the-immutable-list-sysl-container-list) | `List[T]` — never modified, shares its tail |
+| [`Map[K: Hash + Eq, V]`](#the-map) | keys to values |
+| [`Set[K: Hash + Eq]`](#the-set) | membership, and the algebra over it |
+| [`Deque[T]`](#the-queue-at-both-ends) | a sequence cheap to take from at either end |
+| [`Heap[T: Ord]`](#the-priority-queue) | smallest out first |
+| [`List[T]`](#the-immutable-list) | never modified, shares its tail |
 
 None of them is a type the compiler knows. Each is ordinary sysl over a `[]T` or a
 [`Buf[T]`](/library/buf/), in files a program could have written — which is the same thing worth
@@ -50,14 +50,14 @@ The `u64` beside each key is the hash it mixed down to. It earns its eight bytes
 rejects a wrong slot on an integer comparison without touching either key, and a rehash re-places
 every entry without hashing anything.
 
-## The map — `sysl.container.map`
+## The map
 
 `K: Hash + Eq` is the whole requirement, and both are [core traits](/library/core/) — so every
 built-in key type already qualifies, and a program's own type joins by writing the two `impl` blocks
 it would write anyway.
 
 ```sysl
-import sysl.container.map.{Map, map}
+import sysl.container.{Map, map}
 
 main()
     var ages: Map[string, int] = map()
@@ -103,13 +103,13 @@ map grew. The cost is that a value is updated by putting it back. The matching r
 must not be modified while a cursor over it is live — doing so is memory-safe and nothing more, since
 what the cursor yields in that case is unspecified.
 
-## The set — `sysl.container.set`
+## The set
 
 The same table with nothing in the value column. `add` answers whether the key was **new**, which is
 what makes a set the "have I seen this before" test rather than something you ask twice:
 
 ```sysl
-import sysl.container.set.{Set, set, set_of, intersection}
+import sysl.container.{Set, set, set_of, intersection}
 
 main()
     var seen: Set[int] = set()
@@ -138,7 +138,7 @@ shared: 2
 `difference` and `is_subset` — `intersection` walks the smaller side, since the answer cannot be
 bigger than that and walking the larger would ask more questions to reach it.
 
-## The queue at both ends — `sysl.container.deque`
+## The queue at both ends
 
 **This is the module with a performance argument rather than an expressiveness one.** A queue written
 over a [`Buf`](/library/buf/) takes from the front with `remove(0)`, which shifts every remaining
@@ -149,7 +149,7 @@ A `Deque` holds its elements in a ring: a head index says where the first one is
 rather than move. Taking from the front advances the head and touches nothing else.
 
 ```sysl
-import sysl.container.deque.{Deque, deque}
+import sysl.container.{Deque, deque}
 
 main()
     var work: Deque[int] = deque()
@@ -178,7 +178,7 @@ doing 11
 That is the shape of every work list and every breadth-first walk. `d[i]` counts from the **front**
 whatever the ring is doing underneath, and `first`/`last` answer an `Option` at either end.
 
-## The priority queue — `sysl.container.heap`
+## The priority queue
 
 A binary heap over a `Buf`, and a **min**-heap: the three things a priority queue is actually reached
 for — a scheduler ordered by deadline, a shortest path ordered by distance, an event loop ordered by
@@ -187,7 +187,7 @@ time — all want the smallest first.
 A tuple is ordered when its parts are, so a `(priority, payload)` queue needs no wrapper type:
 
 ```sysl
-import sysl.container.heap.{Heap, heap_of}
+import sysl.container.{Heap, heap_of}
 
 main()
     var due = heap_of([(30, "sweep"), (10, "tick"), (20, "poll")])
@@ -212,14 +212,14 @@ root.
 element is guaranteed to be anything in particular — so a cursor would hand back elements in an order
 that looks meaningful and is not. Draining with `pop` is the only reading that answers truthfully.
 
-## The immutable list — `sysl.container.list`
+## The immutable list
 
 Every operation answers a **new** list and the old one is still there. Putting an element on the front
 makes one cell holding it and a reference to the list that was there, so two lists differing by one
 element share every cell but one:
 
 ```sysl
-import sysl.container.list.{List, list_of}
+import sysl.container.{List, list_of}
 
 main()
     val outer = list_of(["x"])

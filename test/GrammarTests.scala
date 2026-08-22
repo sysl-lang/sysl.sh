@@ -74,7 +74,7 @@ class GrammarTests extends AnyFreeSpec with Matchers {
     * where the grammar expects one and ordinary identifiers everywhere else, so `SyslLexical` never
     * sees them. Adding to this set is a decision about the language, not a way to fix a red test.
     */
-  private val soft = Set("is", "not", "invariant", "new", "within", "where")
+  private val soft = Set("is", "not", "invariant", "new", "within", "where", "opaque", "deriving")
 
   "the highlighting grammar" - {
 
