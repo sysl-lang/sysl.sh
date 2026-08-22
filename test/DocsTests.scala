@@ -55,7 +55,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (19, 3, 0),
-    "docs/content/reference/expressions.md"           -> (27, 14, 0),
+    // Six more runnable and two more refusals: `with` — a struct again with some of its fields
+    // changed — is a postfix tail of its own, and the two refusals are the readings that would
+    // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
+    // field changed twice).
+    "docs/content/reference/expressions.md"           -> (33, 16, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -72,7 +76,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/traits.md"                -> (26, 22, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
-    "docs/content/reference/generics.md"              -> (26, 14, 0),
+    // One more runnable, and the same number of refusals: a trait's member may declare type
+    // parameters of its own now, so the pack section's refusal became a program — and the thing that
+    // *is* refused moved to the trait object, whose table has no slot to point at such a member.
+    "docs/content/reference/generics.md"              -> (27, 14, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (17, 13, 10),
