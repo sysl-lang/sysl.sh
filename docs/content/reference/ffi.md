@@ -902,7 +902,7 @@ Recovering the state is still a `ptr_cast` from `*u8`, which is a promise rather
 that is C's shape and nothing here changes it. What is no longer needed is the shape the *language*
 was forcing: a trampoline written over `*T` because it could not be written over `*u8`, a second
 `ptr_cast` of the function pointer, and a `val` whose only job was to be somewhere to put the type.
-[qsort](/guides/qsort/) is written the new way.
+Every one of those is gone, and the program above is the whole binding.
 
 More than one argument is written the same way, `&f[A, B]`, and a value parameter takes its place in
 the list like any other.
