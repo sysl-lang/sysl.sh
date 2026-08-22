@@ -42,6 +42,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.posix.tty`](/library/term/#whether-to-write-escapes-at-all-sysl-posix-tty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` — and taking the terminal over: `raw`, `cooked`, `flush`, `tty_writer` | `posix` |
 | [`sysl.term.edit`](/library/term/#reading-a-line-sysl-term-edit) | a line editor for a terminal with no line discipline — echo, editing, history, over a `Reader` and a `Writer` | — |
 | [`sysl.slices`](/library/slices/) | what a program does *to* a `[]T` — searching, comparing, `reverse`, two sorts that neither allocate, `binary_search`, and `as_ptr` for a C binding | — |
+| [`sysl.seq`](/library/seq/) | what a program asks *of* a sequence — `map`, `filter`, `fold`, `any`, `all`, `find`, `position`, `count_where`, `each`, `flat_map`, on a slice or a `Buf` alike | — |
 | [`sysl.encoding`](/library/encoding/) | hexadecimal and base64 both ways, fixed-width integers to and from bytes at either byte order, and `DecodeError` | — |
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
 | [`sysl.posix.rand`](/library/rand/#taking-a-seed-from-the-host-sysl-posix-rand) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
