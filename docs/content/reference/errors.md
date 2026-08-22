@@ -445,7 +445,7 @@ print(c.where, c.invariant, where(5))
 3 4 10
 ```
 
-Each of the three parts may be left out, with one exception:
+Each of the three parts may be left out, and leaving out all three is a form of its own:
 
 | written | means |
 |---|---|
