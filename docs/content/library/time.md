@@ -688,16 +688,50 @@ above are chosen so that adding it later moves no caller.
 
 ## What is not here
 
-**The zone**, as distinct from the offset above. A wall clock reading becomes an instant only once
-somebody says where the wall is, and answering that from a *name* — `America/New_York` rather than
-`-05:00` — needs the IANA time zone database — a table that changes several times a year, which a
-standard library either ships and lets go stale or reads from the host and thereby needs a
-filesystem. Both are decisions with costs, and neither belongs in a module whose whole claim is that
-it is arithmetic.
+**A table of named zones.** Answering from a *name* — `America/New_York` rather than `-05:00` —
+needs the IANA time zone database, which changes several times a year: a standard library either
+ships it and lets it go stale, or reads it from the host and thereby needs a filesystem. Neither
+belongs in a module whose whole claim is that it is arithmetic.
 
-`wall_us` and `wall_of` are the seam a zone conversion starts from: they read a `LocalDateTime` as a
-single count measured from the same origin as an `Instant`, which is what the count would be if the
-offset happened to be zero.
+**The resolution itself is here, and needs no table.** `resolve` takes the zone as a *function* —
+anything able to say what its offset was at a given instant — so a host reading `localtime_r`, a
+package talking to an RTC chip and a table written out by hand all answer it the same way:
+
+```sysl
+import sysl.time.*
+
+// US Eastern in 2023: -04:00 between the two moments its clocks moved, -05:00 outside them.
+eastern(t: Instant) -> Offset
+    val dst_from: long = 1678604400 * us_per_second
+    val dst_until: long = 1699164000 * us_per_second
+
+    if t.us >= dst_from && t.us < dst_until then Offset(-240) else Offset(-300)
+
+print(resolve(datetime_at(2023, 6, 15, 12, 0, 0), eastern))
+print(resolve(datetime_at(2023, 11, 5, 1, 30, 0), eastern))
+print(resolve(datetime_at(2023, 3, 12, 2, 30, 0), eastern))
+```
+
+```output
+2023-06-15 16:00 Z
+2023-11-05 05:30 Z or 2023-11-05 06:30 Z
+no such time: the clocks went from -05:00 to -04:00
+```
+
+A wall clock reading is one instant *usually*, and the return type says so rather than picking
+silently: `Unique`, `Ambiguous` where a zone set its clocks back and the hour happened twice, and
+`Gap` where it set them forward and the hour never happened at all. The host's own `mktime` answers
+the repeated reading with the second occurrence and reports nothing, and rewrites the caller's fields
+for the skipped one — which is the behaviour this type exists to avoid inheriting.
+
+**The host's zone is [`sysl.posix.time`](#reading-a-clock-sysl-posix-time)'s** — `local_offset`,
+`local`, `local_text` and `from_local`, which is `resolve` wired to the host. It answers for the
+host's zone at any instant, historically, and for no other zone: naming a different one portably
+means setting `TZ` and calling `tzset`, which is a process-global mutation.
+
+`wall_us` and `wall_of` are the seam all of this starts from: they read a `LocalDateTime` as a single
+count measured from the same origin as an `Instant`, which is what the count would be if the offset
+happened to be zero.
 
 **The clock**, in *this* module. There is no `sysl.time.now()`, because reading one is a capability
 rather than arithmetic — `clock_gettime` is a call into the environment, and this module has no
