@@ -772,19 +772,78 @@ module and a board package alike link an implementation of — [`sysl.harness`](
 `attach` one layer down — and it is not built, for want of a second thing that needs it. The names
 above are chosen so that adding it later moves no caller.
 
+## A zone by name
+
+`America/New_York` rather than the host's own. There is no portable C call for it — `tzalloc`,
+`localtime_rz` and `mktime_z` are a NetBSD extension that neither macOS nor glibc carries, and the
+remaining route is setting `TZ` in the environment and calling `tzset`, which mutates process-wide
+state. So the database is read instead, and **the reading splits in two**:
+
+| half | what it is | capability |
+|---|---|---|
+| [`sysl.time.tzif`](#decoding-a-zone) | decoding a TZif file (RFC 8536) | **none** |
+| `sysl.posix.time.zone_data` | fetching the bytes off the host | `os` |
+
+**The split is what makes a zone reachable on a bare machine.** A board with a real-time clock carries
+one zone's bytes in flash — the zone it was deployed in — and resolves local time with no filesystem
+anywhere. Weld the decoder to the file reading and a freestanding target gets none of it.
+
+```sysl
+import sysl.posix.time.zone_data
+import sysl.time.tzif.{parse, offset_at, abbrev_at, is_dst_at}
+import sysl.time.{Instant, Offset, datetime_at, resolve, Resolution}
+import sysl.time.tzif.Zone
+
+// Module storage, so that the function below is a top-level one rather than nested in this file's
+// body — only a top-level function may be passed as a callable.
+static val bytes: []u8 = zone_data("America/Toronto").unwrap()
+static val toronto: Zone = parse(bytes[..]).unwrap()
+
+toronto_offset(t: Instant) -> Offset = offset_at(toronto, t).unwrap()
+
+val summer = Instant(1686844800000000)
+
+print(offset_at(toronto, summer).unwrap(), abbrev_at(toronto, summer).unwrap(), is_dst_at(toronto, summer).unwrap())
+print(resolve(datetime_at(2023, 11, 5, 1, 30, 0), toronto_offset))
+print(resolve(datetime_at(2023, 3, 12, 2, 30, 0), toronto_offset))
+```
+
+```output
+-04:00 EDT true
+2023-11-05 05:30 Z or 2023-11-05 06:30 Z
+no such time: the clocks went from -05:00 to -04:00
+```
+
+The name is a path under the database root, which is why a region-qualified one has a `/` in it.
+`zone_data` looks under **`TZDIR`** where that is set and `/usr/share/zoneinfo` where it is not — the
+convention every other reader of the database follows, consulted through
+[`sysl.env`](/library/env/). `zone_data_in` takes a root outright, and `local_zone_data` reads
+`/etc/localtime`, which is this host's own zone as a file.
+
+### Decoding a zone
+
+**Nothing is copied and nothing is allocated.** A `Zone` is a handful of offsets *into the caller's
+bytes*, and every lookup reads the packed arrays where they lie — so the storage is the file the
+caller already holds, and a target with no allocator can use one. The cost is the ordinary borrow:
+**the bytes must outlive the `Zone`**, which is why they are a named binding above rather than a
+temporary.
+
+**Leap seconds are skipped**, because POSIX time ignores them by definition and `Instant` counts the
+same way — a table of them describes a timeline this library does not have. The version 2 block is
+the one read, its transition times being 8 bytes where version 1's run out in 2038. The footer's
+`TZ` string, which extrapolates past the last transition, is not read: a lookup past the end answers
+with the last type, which is what the table says.
+
+**A time before the first transition takes the first type that is not daylight saving**, which is
+RFC 8536's rule and is not the same as "the first type" — a file whose type 0 is the daylight one
+would otherwise be an hour out for every date before its table begins.
+
 ## What is not here
 
-**A zone by name** — `America/New_York` rather than the host's own. That is the one thing on this
-page the library cannot reach, and the reason is POSIX rather than a decision here: the calls that
-would take a zone as an argument (`tzalloc`, `localtime_rz`, `mktime_z`) are a NetBSD extension that
-neither macOS nor glibc has, so the only portable way to name a different zone is to set `TZ` in the
-process environment and call `tzset` — global state, and not thread-safe.
-
-Reaching one properly means reading the IANA time zone database: a table that changes several times a
-year, which a standard library either ships and lets go stale or reads from the host and thereby
-needs a filesystem. That is a piece of work with a parser in it, and it is not done. What *is* done
-is the half that needs neither — the host's own zone, above, and `resolve`, which is the arithmetic
-any zone would be resolved by.
+**Shipping the database.** What is read above is the host's copy, which the operating system keeps up
+to date; the library carries no table of its own, because one changes several times a year and a
+standard library that shipped it would either go stale or need a release each time a legislature
+moved a clock.
 
 `wall_us` and `wall_of` are the seam all of this starts from: they read a `LocalDateTime` as a single
 count measured from the same origin as an `Instant`, which is what the count would be if the offset

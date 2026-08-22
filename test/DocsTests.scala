@@ -73,13 +73,21 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
-    "docs/content/reference/traits.md"                -> (30, 29, 0),
+    // One more of each: a member that declares type parameters of its own is left out of the table
+    // rather than out of the object, so the page shows an object forming on such a trait and
+    // dispatching everything else, and refuses the one member on it.
+    //
+    // And the associated-type section on top of that: four more running and seven more refused,
+    // since a feature whose whole point is what an implementation may leave unwritten owes its
+    // edges as programs.
+    "docs/content/reference/traits.md"                -> (31, 30, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
-    // One more runnable, and the same number of refusals: a trait's member may declare type
-    // parameters of its own now, so the pack section's refusal became a program — and the thing that
-    // *is* refused moved to the trait object, whose table has no slot to point at such a member.
-    "docs/content/reference/generics.md"              -> (27, 14, 0),
+    // One more again, and one more refusal, for the same rule seen from here: a trait's member may
+    // declare type parameters of its own now, so the pack section's refusal became a program — and
+    // the two things that rule costs, the member on an object and an object standing at a bound on
+    // its own trait, are each refused by name.
+    "docs/content/reference/generics.md"              -> (27, 15, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (17, 13, 10),
@@ -136,7 +144,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
-    "docs/content/library/time.md"                       -> (18, 4, 4),
+    "docs/content/library/time.md"                       -> (19, 4, 4),
+    "docs/content/library/env.md"                        -> (1, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.
@@ -145,6 +154,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),
     "docs/content/library/slices.md"                      -> (7, 0, 0),
+    // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
+    // signatures, and a page that only showed calls would never show the two members whose type
+    // parameter is their own.
+    "docs/content/library/seq.md"                         -> (7, 2, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),

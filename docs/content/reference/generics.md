@@ -538,11 +538,43 @@ in one, an indirect call through the table in the other. That is the same differ
 instantiations would have had anyway, and it is decided the same way — by looking at the type the
 parameter was bound to.
 
-**It is total, and that is a property of object safety rather than a promise made here.** A trait
-with a member that cannot be dispatched — one mentioning `Self` away from its receiver, say — has no
-object *at all* in sysl, rather than an object missing that member. So a `&Shape` existing is already
-the proof that every member of `Shape` is reachable through it, and there is no "this method is
-unavailable on the object" case for a bound to trip over.
+**It holds because of object safety rather than because of anything promised here.** A trait with a
+member that cannot be dispatched — one mentioning `Self` away from its receiver, say — has no object
+*at all* in sysl, rather than an object missing that member. So a `&Shape` existing is already the
+proof that every member of `Shape` is reachable through it.
+
+**The one exception is a member that declares type parameters of its own**, which is left out of the
+*table* rather than out of the object ([traits](/reference/traits/#object-safety)). A bound promises
+every member and an object reaches only what its table holds, so an object does not stand at a bound
+on such a trait — and the refusal says which member and why, because without that it reads as a
+`&Applies` failing to implement `Applies`:
+
+```sysl
+trait Applies
+    tag(self) -> int
+    apply[U](self, f: &Fn(int) -> U) -> U
+
+struct N
+    v: int
+
+impl Applies for N
+    tag(self) -> int = self.v
+    apply[U](self, f: &Fn(int) -> U) -> U = f(self.v)
+
+total[T: Applies](x: T) -> int = x.tag()
+
+val o: &Applies = N(3)
+
+print(total(o))
+```
+
+```error
+a bound promises every member and an erased value reaches only what its table holds
+```
+
+The value itself is unaffected — `N(3).apply(…)` is an ordinary call, and a bound taken on a type
+parameter reaches it at every instantiation. What has no answer is the erased form, and only for that
+member.
 
 It follows for **required** traits with no rule of its own. `trait Shape: Display` puts `Display`'s
 slots in the object's table, and a bound on a trait is already satisfied wherever a bound on one that
@@ -1112,7 +1144,7 @@ longer — and the `override` is the separate rule it has always been. Coherence
 may be written; `override` says which of two blocks that both have a home answers. A block for a
 tuple **written out in full** is the specific one, so it is the one that says so.
 
-### A member declares one too, unless a trait requires it
+### A member declares one too, and a trait's member as well
 
 A pack stands in a method's own parameter list on the same terms a value parameter does, and for the
 same reason — the list belongs to the member:
@@ -1136,10 +1168,13 @@ print(r.n)
 8
 ```
 
-A **trait's** member takes one on the same terms, and what it costs is the trait *object* rather than
-the declaration. A member with parameters of its own is not a function until a call names them, so no
-slot of a `&Trait`'s table can point at it: the member is left out of the table, and it is reached
-through a **bound** instead, where the receiver's type is known.
+A **trait's** member takes one too, and not for a reason about packs: a member may declare parameters
+of its own whatever their kind, and a pack is one more way of writing that list. What it costs is the
+trait **object** rather than the declaration — a member with parameters of its own is not a function
+until a call names them, so no slot of a `&Trait`'s table can point at it.
+
+The `impl` spells the same list — by position, so the letters need not agree — and the types are named
+at the call, whether that call is on the type or through a bound:
 
 ```sysl
 trait Take
@@ -1150,41 +1185,49 @@ struct Row
 
 impl Take for Row
     take[..A: Display](self, t: (..A)) -> usize
-        var total: usize = 0
+        var total = self.n
 
         for const i in 0..<A.len
             total = total + str(t.i).len
 
-        return total
+        total
 
-count[T: Take](x: T) -> usize = x.take((1, "abc", true))
+through[S: Take](s: S) -> usize = s.take((1, "abc", true))
 
-print(count(Row(0)))
+print(Row(0).take((1, "abc", true)))
+print(through(Row(2)))
 ```
 
 ```output
 8
+10
 ```
 
-Through an object it is refused, and the refusal names the member the table has no slot for:
+**What such a member gives up is its table slot**, which is a rule about erasure rather than one about
+packs: no slot can hold a function that does not exist until a call names its types. The trait still
+has an object and it still dispatches every other member; what is refused is reaching *that* member
+through one ([traits](/reference/traits/#object-safety)).
 
 ```sysl
 trait Take
+    tag(self) -> usize
     take[..A: Display](self, t: (..A)) -> usize
 
-struct Row
+struct P
     n: usize
 
-impl Take for Row
-    take[..A: Display](self, t: (..A)) -> usize = 0
+impl Take for P
+    tag(self) -> usize = self.n
+    take[..A: Display](self, t: (..A)) -> usize = self.n
 
-val r: &Take = Row(0)
+val o: &Take = P(5)
 
-print(r.take((1, 2)))
+print(o.tag())
+print(o.take((1, "ab")))
 ```
 
 ```error
-no slot of a &Take's table can point at it
+'take' of 'Take' declares type parameters of its own, so it is not a function until a call names them
 ```
 
 A `struct`, an `enum` and a `trait` are refused a pack for a different reason — their parameters

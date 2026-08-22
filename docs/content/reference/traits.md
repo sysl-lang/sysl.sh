@@ -1616,6 +1616,74 @@ hashes, and a heterogeneous array of either is ordinary code. The rest of the ca
 `Bits`, `Signed` — names `Self` away from the receiver, so object safety refuses the *type* before a
 value gets that far.
 
+#### A member with its own type parameters leaves the table, not the trait
+
+The four rules above decide whether a trait has an object **at all**. A member that declares
+[type parameters of its own](/reference/generics/#a-member-declares-its-own) is a different case and
+costs less: it is not a function until a call names its types, so no slot can point at it — and
+nothing about the other members changes. The object forms, and dispatches them:
+
+```sysl
+trait Applies
+    tag(self) -> int
+    apply[U](self, f: &Fn(int) -> U) -> U
+
+struct N
+    v: int
+
+impl Applies for N
+    tag(self) -> int = self.v
+    apply[U](self, f: &Fn(int) -> U) -> U = f(self.v)
+
+reach[T: Applies](x: T) -> string = x.apply(n -> s"<${n}>")
+
+val o: &Applies = N(3)
+
+print(o.tag())
+print(N(3).apply(n -> s"<${n}>"))
+print(reach(N(4)))
+```
+
+```output
+3
+<3>
+<4>
+```
+
+Three routes to that member and only one of them is closed. On the value it is an ordinary call; a
+bound solves the member's own parameters at the instantiation, which is what `reach` is; and the
+object is the one that cannot, because a table is what it dispatches through:
+
+```sysl
+trait Applies
+    tag(self) -> int
+    apply[U](self, f: &Fn(int) -> U) -> U
+
+struct N
+    v: int
+
+impl Applies for N
+    tag(self) -> int = self.v
+    apply[U](self, f: &Fn(int) -> U) -> U = f(self.v)
+
+val o: &Applies = N(3)
+
+print(o.apply(n -> s"<${n}>"))
+```
+
+```error
+'apply' of 'Applies' declares type parameters of its own, so it is not a function until a call names them
+```
+
+**What follows for bounds is the one consequence worth carrying**: an object does not satisfy a bound
+on such a trait, because a bound promises every member and the object reaches only its table
+([generics](/reference/generics/#a-trait-object-satisfies-a-bound-on-the-trait-it-dispatches-through)).
+That is the exception to a rule which is otherwise total, and it is stated there.
+
+**This is what lets a trait carry a `map`.** A member choosing its own result type is the whole reason
+[`sysl.seq`](/library/seq/) can exist — `map[U]` names `U` at the call and nowhere else — and the
+price is a member no object dispatches, paid by traits that declare one and by nothing else.
+
 ### Forming and using one
 
 Erasure is a **coercion**, applied wherever a trait-object type is expected: at an argument, a declared
