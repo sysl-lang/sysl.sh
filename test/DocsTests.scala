@@ -73,7 +73,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/arrays.md"                -> (20, 9, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     "docs/content/reference/strings.md"               -> (22, 7, 1),
-    "docs/content/reference/traits.md"                -> (30, 28, 0),
+    "docs/content/reference/traits.md"                -> (30, 29, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more runnable, and the same number of refusals: a trait's member may declare type

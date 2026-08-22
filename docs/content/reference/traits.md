@@ -1082,8 +1082,9 @@ hi
 
 `type Item: Render` declares the parameter and what the type filling it must implement. `type Item =
 string` fills it. `Self::Item` is the **projection** — the same `::` that reads
-[`int::Max`](/reference/attributes/) in expression position, reaching type position — and `show`'s body may
-call `render` on what it gets because that is what the trait asked of `Item` and nothing more.
+[`int::Max`](/reference/attributes/) in expression position, reaching type position — and `show`'s
+body may call `render` on what it gets because that is what the trait asked of `Item`, and nothing
+more.
 
 That is the whole difference from `trait Sink[T]`, and it is one difference with three consequences:
 
@@ -1219,12 +1220,51 @@ No `type Body = …` line is written, and none is wanted: the body is the answer
 `Text` from that point on, so the two spellings are the same feature — one writes the type and the
 other reads it off the body.
 
-**`some` is a contextual word**, special only in front of a bound in a member's result. A program may
-still name something `some`.
+**`some` is a contextual word**, special only in front of a bound in a result position. A program may
+still name a variable, a parameter or a function `some`.
 
 **Every path out of the member must produce one type.** Two branches yielding different concrete types
 are an error, not a silent widening to the bound — the bound is what a *caller* may rely on, and it is
-not what the member returns.
+not what the member returns. No rule of its own is needed for this: an `if` used as a value already
+has to agree with itself, and that is the rule that speaks.
+
+```sysl
+trait Render
+    render(self) -> string
+
+trait Seq
+    type Item: Render
+    head(self) -> Self::Item
+
+struct A
+    n: int
+
+struct B
+    n: int
+
+impl Render for A
+    render(self) -> string = "a"
+
+impl Render for B
+    render(self) -> string = "b"
+
+struct Box
+    flag: bool
+
+impl Seq for Box
+    head(self) -> some Render = if self.flag then A(1) else B(2)
+
+print(1)
+```
+
+```error
+if branches have different types: A and B
+```
+
+**And the type may be one nobody else can name.** A `private` struct supplied through a `some` result
+works and is genuinely opaque outside the file that declared it — a caller reaching it through a bound
+does what the bound allows and has no spelling for the type at all, which is what Swift's `some View`
+buys by concealment and this gets from ordinary visibility.
 
 **It stands in that one position and nowhere else.** A free function has no trait to settle anything
 for, so the reason to write one is missing and the refusal says where it belongs:
