@@ -35,7 +35,9 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
 | [`sysl.time`](/library/time/) | `Instant` and `Duration` — with `5.ms` and `5.hours` on any integer — the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, `resolve` for a zone whose clocks move, and the ISO 8601 renderers and parsers | — |
-| [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring — and the zone it is set to | `posix` |
+| [`sysl.time.tzif`](/library/time/#decoding-a-zone) | a zone decoded from the bytes of a TZif file — no copy, no allocator, and no filesystem | — |
+| [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring — the zone it is set to, and the zone database by name | `posix` |
+| [`sysl.env`](/library/env/) | the environment a program was started with — `get`, `get_or`, `is_set`. Reading only | `os` |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |

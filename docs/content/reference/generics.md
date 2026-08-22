@@ -1162,9 +1162,12 @@ print(r.n)
 ```
 
 A **trait's** member takes one too, and not for a reason about packs: a member may declare parameters
-of its own whatever their kind, and a pack is one more way of writing that list. The `impl` spells the
-same list — by position, so the letters need not agree — and the types are named at the call, whether
-that call is on the type or through a bound:
+of its own whatever their kind, and a pack is one more way of writing that list. What it costs is the
+trait **object** rather than the declaration — a member with parameters of its own is not a function
+until a call names them, so no slot of a `&Trait`'s table can point at it.
+
+The `impl` spells the same list — by position, so the letters need not agree — and the types are named
+at the call, whether that call is on the type or through a bound:
 
 ```sysl
 trait Take

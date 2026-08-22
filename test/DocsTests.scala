@@ -55,7 +55,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
     "docs/content/reference/types.md"                 -> (19, 3, 0),
-    "docs/content/reference/expressions.md"           -> (27, 14, 0),
+    // Six more runnable and two more refusals: `with` — a struct again with some of its fields
+    // changed — is a postfix tail of its own, and the two refusals are the readings that would
+    // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
+    // field changed twice).
+    "docs/content/reference/expressions.md"           -> (33, 16, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -76,8 +80,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may
-    // declare a pack now, so the block that asserted the refusal runs — and the two things that
-    // rule costs, the member on an object and an object at a bound, are each refused by name.
+    // declare type parameters of its own now, so the pack section's refusal became a program — and
+    // the two things that rule costs, the member on an object and an object standing at a bound on
+    // its own trait, are each refused by name.
     "docs/content/reference/generics.md"              -> (27, 15, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
@@ -135,7 +140,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
-    "docs/content/library/time.md"                       -> (18, 4, 4),
+    "docs/content/library/time.md"                       -> (19, 4, 4),
+    "docs/content/library/env.md"                        -> (1, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.
