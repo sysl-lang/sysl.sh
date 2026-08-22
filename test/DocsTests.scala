@@ -153,7 +153,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.
-    "docs/content/library/seq.md"                         -> (7, 2, 1),
+    "docs/content/library/seq.md"                         -> (8, 3, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),

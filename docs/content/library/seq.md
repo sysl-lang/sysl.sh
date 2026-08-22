@@ -7,7 +7,8 @@ weight: 56
 `sysl.seq` is what a program asks *of* a sequence of values: transform every element, keep the ones
 satisfying a predicate, carry a running value across the lot. It is a single trait, `Sequence[T]`,
 and the library implements it twice — for a built-in slice and for a
-[`Buf`](/library/buf/) — so the same ten names work on either.
+[`Buf`](/library/buf/) — so the same ten names work on either. One function stands beside the trait,
+`generate`, for the case where there is no sequence yet.
 
 ```sysl
 import sysl.seq.Sequence
@@ -217,6 +218,51 @@ print(xs[..].flat_map(n -> [n, n * 10]))
 it implements 'sysl.Fn1[int, [2]int]'
 ```
 
+## Making one from a count
+
+Everything above takes a sequence that already exists. `generate` makes one, out of nothing but a
+count and a closure from an index to an element.
+
+```sysl
+import sysl.seq.{Sequence, generate}
+
+val squares = generate(5, i -> i * i)
+
+print(squares)
+print(generate(3, i -> s"row ${i}"))
+print(generate(0, i -> i + 1))
+print(squares.filter(n -> n > 2).map(n -> n + 1))
+```
+
+```output
+[0, 1, 4, 9, 16]
+[row 0, row 1, row 2]
+[]
+[5, 10, 17]
+```
+
+It is a free function rather than a member of the trait because a creator has no receiver: there is
+nothing for `self` to be until the call has already done the work. What it hands back is the same
+`[]U` every member here returns, so the last line above is a chain and not a special case. `f` is
+called exactly once for each index, in order, and the buffer is given the length the answer is known
+to have, so it grows once.
+
+**What a reader reaches for first is `(0..<n).map(f)`, and that is not something sysl can say.** A
+range is not a value — it is legal in a `for`, in a slice index, in a `match` pattern and in a
+quantifier, and nowhere else.
+
+```sysl
+print(0..<10)
+```
+
+```error
+a range is only allowed in a 'for' loop or a 'match' pattern
+```
+
+So there is no type for `Sequence` to be implemented for and nothing to map over, and `generate`
+names the count where the range would have stood. Making a range a value is an open question rather
+than a decided omission, and if it is ever answered the two spellings will say the same thing.
+
 ## The members are on a slice, not on an array
 
 The `impl` covers `[]const E`, so an array reaches these members the way it reaches anything expecting
@@ -257,7 +303,8 @@ makes every member here allocation-free without changing a call site.
 **Three of the ten allocate for a second reason**: `map`, `filter` and `flat_map` build a sequence to
 hand back, and that cost is inherent. `map` is given the length its answer is known to have, so it
 grows once rather than at every doubling; `filter` cannot know its own length in advance and does not
-pretend to.
+pretend to. `generate` is in `map`'s position — the whole of what it returns is built, and the count
+it was handed is the length, so it grows once and boxes one closure.
 
 **So this module is not the one to reach for in an inner loop**, and the library does not use it in
 one: a `for` over a slice allocates nothing and always will. What `sysl.seq` is for is the code where
