@@ -44,7 +44,7 @@ about it: every construct in its own place, with the rules complete. The
 [standard library](/library/) is documented apart from it, because none of what ships beside the
 compiler is a language feature.
 
-The [guide programs](/guides/) are the evidence: fifteen real programs — a JSON parser, a scheduler,
+The [guide programs](/guides/) are the evidence: fourteen real programs — a JSON parser, a scheduler,
 a slab allocator, SHA-2, a Lisp — each written to force a language decision, with what it found
 written down.
 Most of the features documented above exist because one of them could not be written without.

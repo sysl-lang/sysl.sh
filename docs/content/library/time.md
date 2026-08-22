@@ -693,8 +693,7 @@ somebody says where the wall is, and answering that from a *name* — `America/N
 `-05:00` — needs the IANA time zone database — a table that changes several times a year, which a
 standard library either ships and lets go stale or reads from the host and thereby needs a
 filesystem. Both are decisions with costs, and neither belongs in a module whose whole claim is that
-it is arithmetic. The [date and time guide](/guides/datetime/) builds a fixed-offset zone over this
-module and shows what the real thing would take.
+it is arithmetic.
 
 `wall_us` and `wall_of` are the seam a zone conversion starts from: they read a `LocalDateTime` as a
 single count measured from the same origin as an `Instant`, which is what the count would be if the
