@@ -113,7 +113,7 @@ true
 ```
 
 Both come in a `_by` form taking a comparison, which is where the work actually is — the `Ord` forms
-are one line handing it `<`. The comparison is a [bare arrow](/reference/functions/), so it is
+are one line handing it `<`. The comparison is a [bare arrow](/reference/types/#function-types), so it is
 monomorphized and inlined rather than boxed, and the pair costs nothing over one function.
 
 ```sysl

@@ -1317,6 +1317,14 @@ That is the exception to a rule which is otherwise total, and it is stated there
 [`sysl.seq`](/library/seq/) can exist — `map[U]` names `U` at the call and nowhere else — and the
 price is a member no object dispatches, paid by traits that declare one and by nothing else.
 
+**A bare-arrow callable is the same case wearing different syntax**, and it is the one a trait meets
+most often. `f: T -> U` is sugar for a type parameter bounded by `Fn(T) -> U`
+([types](/reference/types/#function-types)), so a member written that way declares one whether or not
+its author was thinking about type parameters — and loses its slot for it. That is the trade
+`sysl.seq` takes on purpose: nothing is boxed at any call into it, and `&Sequence[int]` dispatches
+none of its members. The boxed spelling keeps the slot, which is what a trait meant to be erased
+writes.
+
 ### Forming and using one
 
 Erasure is a **coercion**, applied wherever a trait-object type is expected: at an argument, a declared

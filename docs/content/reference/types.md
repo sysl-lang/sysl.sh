@@ -618,6 +618,39 @@ A named function used where a callable is expected is the capture-free case of t
 is no separate "function pointer" concept to learn. A raw C function pointer, for a foreign boundary,
 is spelled `*extern(A) -> R` and is covered under the [foreign interface](/reference/ffi/).
 
+**A parameter written with a bare arrow is a type parameter, and that is the difference between the
+two spellings.** `f: A -> B` is sugar for `[$F: Fn(A) -> B](f: $F)`: the closure is a *type argument*,
+so the function is monomorphized and calls it directly with nothing on the heap. `f: &Fn(A) -> B` is a
+counted reference to a trait object, so the closure is boxed at the call and dispatched through a
+table. Both accept the same closures; what differs is what the call costs and what the declaration
+becomes.
+
+**A trait's member takes either**, and the choice has a consequence there that it does not have on a
+free function: an arrow makes the member declare a type parameter, so it gets no table slot and no
+object can dispatch it ([traits](/reference/traits/#object-safety)). A trait meant to be erased asks
+for `&Fn(…)`; one meant to be fast asks for the arrow.
+
+```sysl
+trait Applies
+    tag(self) -> int
+    apply(self, f: int -> int) -> int
+
+struct N
+    v: int
+
+impl Applies for N
+    tag(self) -> int = self.v
+    apply(self, f: int -> int) -> int = f(self.v)
+
+reach[T: Applies](x: T) -> int = x.apply(n -> n * 2)
+
+print(N(20).apply(n -> n + 1), reach(N(21)))
+```
+
+```output
+21 42
+```
+
 ### A parameter passed by name
 
 A parameter written with the arrow and **nothing on its left** takes an expression the call does not

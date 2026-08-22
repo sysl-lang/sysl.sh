@@ -54,7 +54,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
-    "docs/content/reference/types.md"                 -> (19, 3, 0),
+    // One more runnable: the two callable spellings differ in what a call costs and in what the
+    // declaration becomes, which is a rule about *types* — and a trait's member may write either,
+    // so the page shows one taken on a value and through a bound.
+    "docs/content/reference/types.md"                 -> (20, 3, 0),
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one

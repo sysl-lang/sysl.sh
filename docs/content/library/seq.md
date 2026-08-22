@@ -27,30 +27,35 @@ print(xs[..].fold(0, (a, n) -> a + n))
 *where is this value* — `index_of`, `contains`, `min_index` — and answers every question by comparing
 elements. This one asks *which of these satisfies this predicate*, and answers every question by
 calling something the caller wrote. The two never overlap, and they are separate modules because they
-have different costs: nothing in `sysl.slices` allocates, and everything here does.
+have different costs: nothing in `sysl.slices` allocates, and the three members here that build a new
+sequence do.
 
 ## The trait
 
 ```sysl
 trait Sequence[T]
-    fold[A](self, init: A, f: &Fn(A, T) -> A) -> A
-    any(self, p: &Fn(T) -> bool) -> bool
-    all(self, p: &Fn(T) -> bool) -> bool
-    find(self, p: &Fn(T) -> bool) -> Option[T]
-    position(self, p: &Fn(T) -> bool) -> Option[usize]
-    count_where(self, p: &Fn(T) -> bool) -> usize
-    each(self, f: &Fn(T) -> unit)
-    map[U](self, f: &Fn(T) -> U) -> []U
-    filter(self, p: &Fn(T) -> bool) -> []T
-    flat_map[U](self, f: &Fn(T) -> []U) -> []U
+    fold[A](self, init: A, f: (A, T) -> A) -> A
+    any(self, p: T -> bool) -> bool
+    all(self, p: T -> bool) -> bool
+    find(self, p: T -> bool) -> Option[T]
+    position(self, p: T -> bool) -> Option[usize]
+    count_where(self, p: T -> bool) -> usize
+    each(self, f: T -> unit)
+    map[U](self, f: T -> U) -> []U
+    filter(self, p: T -> bool) -> []T
+    flat_map[U](self, f: T -> []U) -> []U
 ```
 
 **`map` and `flat_map` declare a type parameter of their own**, which is a thing a trait's member may
 do ([generics](/reference/generics/#a-member-declares-its-own)) and is what this module needed before
 it could be written: a `map`'s result type is chosen at the call by what the closure returns, and by
-nothing about the receiver. The cost is that those two members have no table slot, so they are
-reached on a value whose type is known and not through a `&Sequence` — which is not a restriction
-anything here runs into, since a slice and a `Buf` are what a program holds.
+nothing about the receiver.
+
+**Every one of them declares another without writing it**, because a bare-arrow parameter *is* one:
+`f: T -> U` is sugar for a type parameter bounded by `Fn(T) -> U`, which is what makes the closure a
+type argument rather than something on the heap. So none of these members has a table slot, and
+`Sequence` has no useful trait object — the trade this module makes deliberately, and the one [What
+it costs](#what-it-costs) is about.
 
 ## Asking a question
 
@@ -242,26 +247,26 @@ one is not handed a member that could write through it. Nothing here writes.
 
 ## What it costs
 
-**Every member allocates, and it is the callable rather than the result that does it.** A parameter
-written `&Fn(…)` is a counted box, so the closure a caller passes goes on the heap at the call — one
-allocation per call, whichever member it is, before an element is touched. A `fold` over three
-elements is one allocation and not none.
+**The callable costs nothing.** Every member takes it by **bare arrow** — `f: T -> U` — which is a
+bounded type parameter ([types](/reference/types/#function-types)): the closure is a *type argument*,
+so the member is monomorphized into a copy that calls it directly and nothing goes on the heap. The
+seven members that build no sequence therefore reach the allocator not at all, and a `fold` over a
+slice costs exactly what the loop it replaces costs.
 
-The spelling that would avoid it is not available to a trait. A parameter written with a bare arrow —
-`f: T -> U` — becomes a bounded type parameter instead, monomorphized and called directly with nothing
-boxed ([types](/reference/types/#function-types)), and that is what `sysl.slices`'s sorts take. The
-desugaring that turns an arrow into a bound runs for a type's own members and for an `impl` block's,
-and not for a trait's, so a trait can only ask for the boxed form. That gap is filed, and closing it
-makes every member here allocation-free without changing a call site.
+The other spelling would have cost one allocation per call. `&Fn(T) -> U` is a counted reference, so
+the closure is boxed at the call before an element is touched — which is what these members took
+until a trait's member was allowed to write an arrow at all.
 
-**Three of the ten allocate for a second reason**: `map`, `filter` and `flat_map` build a sequence to
-hand back, and that cost is inherent. `map` is given the length its answer is known to have, so it
+**Three of the ten allocate, and for the other reason**: `map`, `filter` and `flat_map` build a
+sequence to hand back, which is inherent. `map` is given the length its answer is known to have, so it
 grows once rather than at every doubling; `filter` cannot know its own length in advance and does not
 pretend to.
 
-**So this module is not the one to reach for in an inner loop**, and the library does not use it in
-one: a `for` over a slice allocates nothing and always will. What `sysl.seq` is for is the code where
-a chain says what is happening and a loop would not.
+**What the arrow costs instead is `Sequence`'s trait object.** A member that declares type parameters
+of its own — which is what an arrow desugars to — has no table slot
+([traits](/reference/traits/#object-safety)), so a `&Sequence[int]` cannot dispatch these. That is the
+right trade here, because what a program holds is a slice or a `Buf` and both have types; a trait
+meant to be *erased* writes `&Fn(…)` deliberately, and keeps its slots.
 
 ## Eager, and what that leaves room for
 
