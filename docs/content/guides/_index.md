@@ -1,12 +1,12 @@
 ---
 title: Guide Programs
-summary: Sixteen real programs written to force a language decision — what each one owns, and what writing it found.
+summary: Fifteen real programs written to force a language decision — what each one owns, and what writing it found.
 weight: 50
 ---
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-sixteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
+fifteen programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
 to **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,
@@ -31,7 +31,7 @@ own file records what it found in the place the code that provoked it lives, whi
 somebody reading the program and useless for somebody wondering **why the language is shaped this
 way**. These pages pull each finding out and link it to the rule it produced.
 
-## The sixteen, and the axis each owns
+## The fifteen, and the axis each owns
 
 In the order they were written, which matters — a finding must be discharged before the next program
 starts, so each one is written on top of what the last one settled.
@@ -46,7 +46,6 @@ starts, so each one is written on top of what the last one settled.
 | [shapes](/guides/shapes/) | dynamic dispatch — a collection whose element types are forgotten |
 | [scheduler](/guides/scheduler/) | OS shapes — a run queue, blocking and waking, `&T` graphs mutated through references |
 | [kernel](/guides/kernel/) | the same scheduler with **no heap** — a fixed table, indices for identity |
-| [datetime](/guides/datetime/) | a conversion that can succeed twice — wall clocks, timelines, daylight saving |
 | [matrix](/guides/matrix/) | an operator whose result is neither operand's type |
 | [ring](/guides/ring/) | the constrained-subtype surface — ranges, `::` attributes, contracts, invariants |
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |

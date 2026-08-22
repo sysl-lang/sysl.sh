@@ -110,7 +110,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/shapes.md"                    -> (0, 0, 0),
     "docs/content/guides/scheduler.md"                 -> (0, 0, 0),
     "docs/content/guides/kernel.md"                    -> (0, 0, 0),
-    "docs/content/guides/datetime.md"                  -> (0, 0, 0),
     "docs/content/guides/matrix.md"                    -> (0, 0, 0),
     "docs/content/guides/ring.md"                      -> (0, 0, 0),
     "docs/content/guides/slab.md"                      -> (0, 0, 1),

@@ -41,8 +41,8 @@ table from UAX #11 is *data* rather than language and had nowhere to live.
 
 **That reason was already false when it was written, and that is the more useful half of the
 finding.** Module-level `const` and `val` had landed the day before, and four other programs in the
-set were already using them — [datetime](/guides/datetime/) carries a transition table built by a
-function at module level, which is the exact shape a width table needs. An absence is worth checking
+set were already using them — [simd](/guides/simd/) builds a module-level `val` out of a function
+call, which is the exact shape a width table needs. An absence is worth checking
 against the language as it is *today* rather than as it was when the habit formed. This one cost a
 paragraph explaining why something could not be done that could.
 

@@ -74,4 +74,4 @@ rather than a run of statements.
 ---
 
 [Source](https://github.com/sysl-lang/sysl/tree/dev/guide/kernel) ·
-Next: [datetime](/guides/datetime/) — a conversion that can succeed twice.
+Next: [matrix](/guides/matrix/) — an operator whose result is neither operand's type.

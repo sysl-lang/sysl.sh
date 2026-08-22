@@ -16,10 +16,11 @@ This is the program that demonstrates [parameterized traits](/reference/traits/)
 a type implements a trait once at each argument list, so three multiplications on one type are
 ordinary rather than a conflict, and the argument list is what tells a call which it meant.
 
-Contrast [datetime](/guides/datetime/), where the same mechanism does *not* rescue
+Contrast [`sysl.time`](/library/time/), where the same mechanism does *not* rescue
 `Instant - Instant -> Duration`. The difference is exactly which position the varying type is in: here
 the result is named by the row that was selected, and there it would have had to be named by a row
-that could not exist.
+that could not exist — which is what `Out` on the operator traits was added for, and what makes both
+rows of `Sub` on `Instant` writable today.
 
 ## What it exercises
 
