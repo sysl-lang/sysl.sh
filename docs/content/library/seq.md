@@ -152,7 +152,7 @@ print(seen.len(), seen[0], seen[2])
 ## Building a new sequence
 
 `map`, `filter` and `flat_map` each answer a **new slice**, eagerly — the elements are there when the
-call returns, and a chain of three stages allocates three times.
+call returns, so each stage is complete — and paid for — before the next begins.
 
 ```sysl
 import sysl.seq.Sequence
