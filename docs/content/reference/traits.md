@@ -745,6 +745,180 @@ declaring `Point`. One type, one table.
 The cost that remains, stated plainly: a library can no longer rely on its own implementations. What
 `override` buys is that every such site is greppable rather than invisible.
 
+## The compiler writes four of them
+
+Four traits are pure structure. `Eq` on a product is its fields compared one by one; `Ord` is those
+comparisons in declaration order; `Hash` is the fields mixed; `Display` is the name and the fields.
+Writing them out is the most mechanical code a program contains, and it is code that goes wrong
+quietly — a field added to a struct and forgotten in its `eq` is a comparison that silently stops
+looking at it.
+
+A **`deriving` clause** on a `struct` or an `enum` asks for them:
+
+```sysl
+struct Size deriving Eq, Ord, Hash, Display
+    w: int
+    h: int
+end Size
+
+val a = Size(3, 4)
+
+print(a == Size(3, 4), a < Size(3, 5), a)
+```
+
+```output
+true true Size(3, 4)
+```
+
+The clause goes after the name and its type parameters, before the body. What it produces is an
+ordinary `impl` block — the one a person would have typed — so a derived implementation is found,
+checked, dispatched and erased exactly as a written one is, and a field that cannot do the work says
+so in the ordinary words.
+
+**The four are the whole list**, and it is closed: `Eq`, `Ord`, `Hash`, `Display`. They are the four
+the library already provides structurally for [every tuple](/reference/types/#what-the-library-gives-every-tuple),
+and a derived block walks a named product by the same rules a tuple's is walked by — so a `Size` and
+a `(int, int)` compare and order alike, and render alike but for the name in front. A trait of your own is implemented with an
+`impl` block; there is no way to teach the clause a fifth name.
+
+```sysl
+trait Show
+    show(self) -> string
+
+struct P deriving Show
+    x: int
+end P
+```
+
+```error
+is not a trait the compiler knows how to write
+```
+
+### Order is declaration order
+
+`Ord` is lexicographic, first field first — the only ordering a named product has a claim to, and the
+one a tuple already has. That makes the order fields are written in part of what the type promises,
+which it already was for layout: a struct's fields are laid out in the order they are written.
+
+```sysl
+struct Version deriving Ord, Display
+    major: int
+    minor: int
+end Version
+
+print(Version(1, 9) < Version(2, 0), Version(2, 0) < Version(1, 9))
+```
+
+```output
+true false
+```
+
+**So a type that orders by one of its fields should say so rather than derive.** A block written out
+is not a failure to use the clause; it is the case the clause does not cover.
+
+### A generic type derives conditionally
+
+Every type parameter gains the derived trait as a bound, which is exactly
+[conditional conformance](#conditional-conformance) written for you: a `Box[int]` is `Eq` and a `Box`
+of something unequatable is not, and neither needs saying.
+
+```sysl
+struct Box[T] deriving Eq, Display
+    v: T
+end Box
+
+print(Box(1) == Box(1), Box(1) == Box(2), Box("x"))
+```
+
+```output
+true false Box(x)
+```
+
+A `const` value parameter gains nothing — it is not a type and has no membership to ask for — and the
+type's own bounds are kept, since `struct Sorted[T: Ord]` is only a type at all where `T` is `Ord`.
+
+### An enum takes the clause too
+
+A variant renders under **its own** name, which is how it is written. Comparison is by variant first,
+in declaration order, and then field by field within the variant.
+
+```sysl
+enum Shape deriving Eq, Ord, Display
+    Circle(r: int)
+    Rect(w: int, h: int)
+    Empty
+end Shape
+
+print(Circle(2), Rect(3, 4), Empty)
+print(Circle(9) < Rect(0, 0), Rect(1, 5) < Rect(1, 6), Circle(1) == Circle(1))
+```
+
+```output
+Circle(2) Rect(3, 4) Empty
+true true true
+```
+
+The hash mixes the variant before the payload, so two variants carrying equal payloads are not one
+key — which a table holding both would otherwise collide on at every insert.
+
+A **simple** enum — one where no variant carries anything — is already `Eq` by rule, because its
+value *is* its discriminant. The clause says so rather than letting the block be refused further in:
+
+```sysl
+enum Colour deriving Eq
+    Red
+    Green
+end Colour
+```
+
+```error
+a simple enum is already 'Eq'
+```
+
+Its `Ord` is its discriminants' order, so a simple enum still has three worth deriving:
+
+```sysl
+enum Colour deriving Ord, Hash, Display
+    Red
+    Green
+    Blue
+end Colour
+
+print(Red < Green, Blue < Green, Green)
+```
+
+```output
+true false Green
+```
+
+### What the clause deliberately cannot say
+
+It takes no `override`. Nothing in the library covers a type you declared, so there is no more
+general block for a derived one to outrank; where one is ever needed, an
+[`override impl`](#override-when-the-overlap-is-deliberate) is written by hand and the two forms do
+not have to compose.
+
+And deriving is **all or nothing per trait**. There is no writing the block and then replacing one
+method of it, and a derived block beside a hand-written one for the same trait is the duplicate
+implementation it looks like.
+
+Nor does it reach a type whose fields it cannot see. An `opaque struct` with no body is C's
+incomplete type — the storage belongs to whoever allocated it and nothing here knows its shape — so a
+derived `Eq` over no fields at all would answer `true` for every pair with nothing to say it had:
+
+```sysl
+opaque struct Handle deriving Eq
+```
+
+```error
+opaque and declares no fields
+```
+
+That is the only place visibility comes into it, and it is about a layout that is absent rather than
+one that is hidden. The clause is part of the declaration, so the block it writes is in the module
+that declares the type: a **private field is walked**, because the block is written where the type
+is.
+
 ## A trait may take type parameters
 
 A trait declares parameters in the same bracketed list every other generic declaration writes, and an
