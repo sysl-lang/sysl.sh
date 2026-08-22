@@ -655,7 +655,7 @@ what a zone that is one fixed offset, or one read out of a table the closure cap
 ```sysl
 import sysl.time.{Instant, Offset, datetime_at, resolve}
 
-val mins = 0 - 300
+val mins = -300
 
 print(resolve(datetime_at(2023, 11, 5, 1, 30, 0), t -> Offset(mins)))
 ```
