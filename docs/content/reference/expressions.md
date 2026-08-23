@@ -248,10 +248,16 @@ anything with a cursor rather than a second kind of loop. The cursor moves, and 
 **copy**, so the same range is walked twice with the same answer both times.
 
 **Its bounds are read by the same two rules a `for` header's are** — they must agree, and they must
-be integers — so the value and the loop cannot come to disagree about what a range is.
+be integers — so the value and the loop cannot come to disagree about what a range is. Note that a
+bound written as a literal takes its type from the other end, so `0..<3u8` is a `u8` range rather
+than a disagreement; it takes two names to write one.
 
 ```sysl
-val r = 0..<3u8
+f(a: int, b: u8) -> int
+    val r = a..<b
+    0
+
+print(f(0, 3))
 ```
 
 ```error
