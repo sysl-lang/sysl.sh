@@ -53,7 +53,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/contracts.md"                  -> (8, 2, 0),
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
-    "docs/content/reference/lexical.md"               -> (9, 1, 2),
+    // Two more runnable and one more refusal: a line may now continue the one above it by starting
+    // with a dot, so the page shows a chain broken before the dot, refuses the trailing spelling,
+    // and shows the `match` whose arms the rule's second half is what keeps.
+    "docs/content/reference/lexical.md"               -> (11, 2, 2),
     "docs/content/reference/types.md"                 -> (19, 3, 0),
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
