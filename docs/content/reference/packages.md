@@ -498,6 +498,18 @@ Three things follow from that, and they are the reason for it:
 
 The cost is the honest one: you do not automatically get the newest patch release.
 
+**When your own version is the one that got raised, the build says so:**
+
+```text
+sysl: note: 'plutovg' is named at 0.2.0 and the build selected 0.2.1, which syslui asks for
+```
+
+A note and not a refusal, because the higher version is the right answer and the build is correct.
+Selection is otherwise silent by design — it raises floors constantly, and a line for each would be a
+wall of them about packages nobody typed. What is different here is that the version came from *your*
+manifest: you wrote one number, the build used another, and nothing in the file you are reading says
+so.
+
 ## What a dependency's modules are called
 
 A package is a tree of modules, and **its modules come in under their own names**. A module is a
@@ -526,6 +538,49 @@ under the names their own documentation shows.
 A binding covers the module it names and everything below it, so `sh.sysl.table.Style` reaches the
 same package and keeps its tail.
 
+### Imports are transitive
+
+**A package reached through another is importable too.** Naming one dependency brings its own
+dependencies with it, and theirs, however far down the graph they are — so a manifest names what a
+project *takes* rather than everything it can see:
+
+```hocon
+dependencies {
+  syslui-sdl { git = "github.com/sysl-lang/syslui-sdl", version = "0.1.0" }
+}
+```
+
+is enough to `import sh.sysl.ui`, `import sh.sysl.plutovg` and `import sh.sysl.sdl3`, because the
+driver depends on all three.
+
+The reason is that **a package's public surface is made of its dependencies' types**. `syslui-sdl`
+hands out a `&Fn() -> &View` and `View` belongs to the toolkit it is built on, so a program that
+could not name the toolkit could not call the one function that package exists for. Declaring it
+anyway is a line that says nothing the build could not work out.
+
+**Three levels of precedence, and only a tie inside one of them is an error:**
+
+1. your own modules, and every `--lib` source root's;
+2. what your manifest declared;
+3. what arrived through something else.
+
+A nearer name wins, quietly — a project with its own `json/`, or a dependency it mounted as `json`,
+keeps that name however many packages three levels down offer one. A name nobody asked for never
+takes one somebody wrote, and refusing there would mean a package you have never heard of could break
+your own module names.
+
+**Two packages at the *same* level wanting one name is the collision below**, and it is refused
+whether they were declared or inherited. Naming one of them yourself is what settles an inherited
+pair, since a declared name beats an inherited one.
+
+**A `mount` does not travel.** It is a name its writer chose for their own import lines, so what an
+inherited package offers is what its own documentation shows.
+
+The cost is stated rather than hidden: a program may import through a package that never promised to
+keep depending on what it depends on, so a library dropping one of its own dependencies can break a
+consumer that never named it. Every language with a class path has this, and the ceremony of the
+alternative is what people actually complain about.
+
 **Two packages cannot quietly share a name.** If two dependencies both offer a `json`, or one offers
 a `json` and your own project has a `json/` directory of source, the build stops and says so rather
 than picking one. So does one offering a path *inside* another's — a package offering `sh.sysl` and
@@ -549,6 +604,18 @@ dependencies {
 which hangs that whole package under one segment, so its `json` is `ejson.json` and your own `json`
 is untouched. A mount is yours alone: another project may mount the same package differently, and
 both still link one copy of it.
+
+**Two major versions of one library are named as such**, because that collision reads very
+differently from an ordinary one:
+
+```text
+'json' and 'json' cannot both be imported — github.com.e.json and github.com.e.json.v2 are two major
+versions of one library and both are in this graph, and their modules have the same names
+```
+
+Selection cannot fold those together — a major above the first is a different coordinate, which is
+the whole point of the suffix — while their module names are identical, because a module's name is
+its directory. A `mount` is still the answer where you genuinely want both.
 
 ## `sysl.sum`
 
