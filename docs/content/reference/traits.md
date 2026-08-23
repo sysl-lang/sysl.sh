@@ -1361,12 +1361,12 @@ one type cannot have two of one name
 Rust spells the qualified form `<T as A>::Item`; there is no such spelling here, and the collision is
 refused rather than left to be disambiguated at every use.
 
-### Declaring one spends the trait's erasability
+### Declaring one spends the trait's erasability, unless the object says which type it is
 
 An erased value has forgotten which type it is, and an associated type is a function of exactly that —
-so the slot would have a different signature for every implementing type. A trait declaring one is
-therefore not a trait an object can be formed over, and the refusal names the associated type rather
-than leaving it to be discovered as a `Self`:
+so the slot would have a different signature for every implementing type. A bare `&Seq` is therefore
+not something that can be formed, and the refusal names the associated type rather than leaving it to
+be discovered as a `Self`:
 
 ```sysl
 trait Seq
@@ -1385,6 +1385,122 @@ print(1)
 **A bound keeps the type, and so keeps the answer.** `[S: Seq]` is what such a trait is for, which is
 the same place [the operator catalog](#object-safety) ends up and for a related reason. A trait that
 *requires* one is unerasable too, and the diagnostic names the trait the associated type came from.
+
+### An object may fix the associated type
+
+The other answer is to write the type down. `&Seq[Item = int]` is a value of some forgotten type
+**whose `Item` is known to be `int`** — so every slot has one signature again, and there is a table to
+point at:
+
+```sysl
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    type Item = int
+    head(self) -> Self::Item = self.v
+
+show(s: &Seq[Item = int]) -> unit
+    print(s.head())
+
+show(Box(7))
+```
+
+```output
+7
+```
+
+**Where a trait has no parameters of its own and exactly one associated type, the name may be left
+off.** `&Seq[int]` and `&Seq[Item = int]` are then the same type — not two types with a conversion
+between them — so a function declared with either takes what the other made:
+
+```sysl
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    type Item = int
+    head(self) -> Self::Item = self.v
+
+named(s: &Seq[Item = int]) -> int = s.head()
+bare(s: &Seq[int]) -> int = named(s)
+
+print(bare(Box(4)))
+```
+
+```output
+4
+```
+
+The short form stops exactly where it could be read two ways. A trait with parameters **and** an
+associated type takes its arguments in order, at the front, and names the associated type beside
+them — `&Keyed[int, Item = string]` — because a bare argument there means one of the trait's own:
+
+```sysl
+trait Keyed[K]
+    type Item
+    at(self, k: K) -> Self::Item
+
+struct Row
+    v: int
+
+impl Keyed[int] for Row
+    type Item = int
+    at(self, k: int) -> Self::Item = self.v + k
+
+show(s: &Keyed[int, Item = int]) -> unit
+    print(s.at(2))
+
+show(Row(5))
+```
+
+```output
+7
+```
+
+**The value put into the object has to have chosen the same type.** That is what makes the binding
+sound rather than a promise: every slot's signature was read under the object's answer, so a value
+whose own implementation chose otherwise would be called through a table promising the wrong types.
+It is refused at the erasure, which is the one place both are known:
+
+```sysl
+trait Seq
+    type Item
+    head(self) -> Self::Item
+
+struct Box
+    v: int
+
+impl Seq for Box
+    type Item = int
+    head(self) -> Self::Item = self.v
+
+show(s: &Seq[Item = string]) -> unit
+    print(s.head())
+
+show(Box(7))
+```
+
+```error
+a &Seq[Item = string] says 'Item' is string, and Box supplies int for it — an object fixes the associated type, so only a type that chose the same one goes into it
+```
+
+A binding is held to whatever the trait asked of the associated type, exactly as an implementation
+is; and a required trait's associated type is bound in the same brackets, under the name it was
+declared with, since its members are slots in the same table.
+
+**A bound has no such spelling.** `[S: Seq[Item = int]]` is not written, and nothing bounds a
+projection either — so a generic body may call what a bound licenses and may not assume anything
+about what comes back beyond what the trait itself promised of the type. Where a body needs more, the
+promise belongs on the trait's own declaration: `type Item: Display`.
 
 ## A trait may require another trait
 

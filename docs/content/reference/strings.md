@@ -217,7 +217,7 @@ undo it.
 
 ### Walking the characters
 
-`s.chars` is a **cursor** — a value implementing `Iterate[char]` — and it is the one row of the table
+`s.chars` is a **cursor** — a value implementing `Iterate` with `char` for its `Item` — and it is the one row of the table
 above that could not be a value or a view. Every other row yields a value; this one yields a
 *sequence*, and the decoding is what makes the scalar values, so something has to carry a position
 and answer "the next one".

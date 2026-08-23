@@ -242,9 +242,10 @@ discipline gives a program nothing.** Over a serial cable there is none at all; 
 `raw()` has just removed it. Either way nothing appears as it is typed and a mistake cannot be
 corrected — which is not a program that reads badly but a program that looks broken.
 
-`editor(r, w)` is a line editor over a `*Reader` and a `*Writer`. It answers whole lines through
-`Iterate[string]`, the same as `sysl.io.lines` and `console_lines`, **so the three are
-interchangeable at a call site** and a program chooses by what is producing its input.
+`editor(r, w)` is a line editor over a `*Reader` and a `*Writer`. It answers whole lines — an
+`Iterate` whose `Item` is `string`, the same as `sysl.io.lines` and `console_lines`, **so the three
+are interchangeable at a call site**, as a `*Iterate[string]`, and a program chooses by what is
+producing its input.
 
 ```sysl
 import sysl.io.{bytes_reader, bytes_writer}
