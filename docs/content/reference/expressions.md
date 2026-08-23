@@ -219,6 +219,22 @@ for i in a..=3
 '..=' is not a range — inclusive is 'a..b' and exclusive is 'a..<b'
 ```
 
+**A range is not a value.** The four places one may be written are the whole of the list: a `for`, a
+slice index, a `match` pattern, and a quantifier. There is no range type, so a range cannot be bound
+to a name, passed to a function, returned from one, or named on the right of an `impl`.
+
+```sysl
+print(0..<10)
+```
+
+```error
+a range is only allowed in a 'for' loop or a 'match' pattern
+```
+
+That is the reason [`sysl.seq`](/library/seq/) supplies a `generate` rather than implementing
+`Sequence` for a range: `(0..<n).map(f)` is the spelling a reader reaches for, and there is nothing
+for it to be a method on.
+
 ## `is` — a pattern where a condition is wanted
 
 `x is Pat` tests a value against a pattern and yields a `bool`; `x is not Pat` negates it. The right
@@ -1280,10 +1296,13 @@ readings fall out of one trait:
 | `impl Mul[V, real] for V` | as written | a dot product — `V * V -> real` |
 | `impl Mul[V, V] for M` | as written | a transform — `M * V -> V` |
 
-**No associated type is involved.** Rust's `Add` carries an associated `Output` so that `+` may
-return something other than the operands; here the result is an ordinary trait argument defaulting to
-`Self`, which is the mechanism [`Index`](#the-postfix-tail) already uses to carry the element type of
-what it reads. A vector space needs three of the four readings at once, and they are three ordinary
+**No associated type is involved, and that is a choice rather than an absence.** sysl has
+[associated types](/reference/traits/#a-trait-may-declare-an-associated-type), and the catalog
+deliberately does not use one: an associated type is **one per type**, so `Out` as an associated type
+would let a `Vec2` have exactly one multiplication. Rust's `Add` carries an associated `Output` and
+pays for it with a separate trait per operand type; here the result is an ordinary trait argument
+defaulting to `Self`, so one trait covers all four readings below — which is the mechanism
+[`Index`](#the-postfix-tail) already uses to carry the element type of what it reads. A vector space needs three of the four readings at once, and they are three ordinary
 blocks:
 
 ```sysl
