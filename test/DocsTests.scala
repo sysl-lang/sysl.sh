@@ -62,7 +62,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
     // field changed twice).
-    "docs/content/reference/expressions.md"           -> (33, 16, 0),
+    "docs/content/reference/expressions.md"           -> (36, 19, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -162,10 +162,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.
-    // One more runnable: `generate` makes a sequence out of a count, which is the one thing in the
-    // module that is not a member — a creator has no receiver, and `(0..<n).map(f)` cannot be
-    // written because a range is not a value.
-    "docs/content/library/seq.md"                         -> (8, 2, 1),
+    // One more runnable and one more refusal: `generate` makes a sequence out of a count, which is
+    // the one thing in the module that is not a member — a creator has no receiver — and the
+    // refusal is the spelling a reader reaches for first, since `(0..<n).map(f)` cannot be written
+    // at all: a range is not a value.
+    "docs/content/library/seq.md"                         -> (8, 3, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),

@@ -7,7 +7,8 @@ weight: 56
 `sysl.seq` is what a program asks *of* a sequence of values: transform every element, keep the ones
 satisfying a predicate, carry a running value across the lot. It is a single trait, `Sequence[T]`,
 and the library implements it twice — for a built-in slice and for a
-[`Buf`](/library/buf/) — so the same ten names work on either.
+[`Buf`](/library/buf/) — so the same ten names work on either. One function stands beside the trait,
+`generate`, for the case where there is no sequence yet.
 
 ```sysl
 import sysl.seq.Sequence
@@ -222,33 +223,50 @@ print(xs[..].flat_map(n -> [n, n * 10]))
 it implements 'sysl.Fn1[int, [2]int]'
 ```
 
-## Making a sequence out of a count
+## Making one from a count
 
-Everything above takes a sequence and answers something. `generate` is the one thing here that
-**makes** one — `n` elements, each produced from its index:
+Everything above takes a sequence that already exists. `generate` makes one, out of nothing but a
+count and a closure from an index to an element.
 
 ```sysl
-import sysl.seq.generate
+import sysl.seq.{Sequence, generate}
 
-print(generate(5, i -> i * i))
+val squares = generate(5, i -> i * i)
+
+print(squares)
+print(generate(3, i -> s"row ${i}"))
+print(generate(0, i -> i + 1))
+print(squares.filter(n -> n > 2).map(n -> n + 1))
 ```
 
 ```output
 [0, 1, 4, 9, 16]
+[row 0, row 1, row 2]
+[]
+[5, 10, 17]
 ```
 
-**It is a free function rather than a member**, because a creator has no receiver: there is nothing
-for `self` to be until the call has already done the work. And it lives here rather than in
-[`sysl.buf`](/library/buf/) because the shape a caller wants is `map`'s — an index goes in and an
-element comes out.
+It is a free function rather than a member of the trait because a creator has no receiver: there is
+nothing for `self` to be until the call has already done the work. What it hands back is the same
+`[]U` every member here returns, so the last line above is a chain and not a special case. `f` is
+called exactly once for each index, in order, and the buffer is given the length the answer is known
+to have, so it grows once.
 
-**What they would write if they could is `(0..<n).map(f)`, and they cannot**: a range is not a value
-in sysl, so there is no type for `Sequence` to be implemented for and nothing to map over. `generate`
-names the count where the range would have stood, and hands back the same `[]U` every other member of
-the module does.
+**What a reader reaches for first is `(0..<n).map(f)`, and that is not something sysl can say.** A
+range is not a value — it is legal in a `for`, in a slice index, in a `match` pattern and in a
+quantifier, and nowhere else.
 
-`f` is called exactly once per index, in order, and the buffer is given the length its answer is known
-to have — so it grows once.
+```sysl
+print(0..<10)
+```
+
+```error
+a range is only allowed in a 'for' loop
+```
+
+So there is no type for `Sequence` to be implemented for and nothing to map over, and `generate`
+names the count where the range would have stood. Making a range a value is an open question rather
+than a decided omission, and if it is ever answered the two spellings will say the same thing.
 
 ## The members are on a slice, not on an array
 
@@ -288,7 +306,8 @@ until a trait's member was allowed to write an arrow at all.
 **Three of the ten allocate, and for the other reason**: `map`, `filter` and `flat_map` build a
 sequence to hand back, which is inherent. `map` is given the length its answer is known to have, so it
 grows once rather than at every doubling; `filter` cannot know its own length in advance and does not
-pretend to.
+pretend to. `generate` is in `map`'s position — the whole of what it returns is built, and the count
+it was handed is the length, so it grows once and allocates for nothing else.
 
 **What the arrow costs instead is `Sequence`'s trait object.** A member that declares type parameters
 of its own — which is what an arrow desugars to — has no table slot
