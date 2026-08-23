@@ -54,12 +54,18 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/tour/capstone.md"                   -> (1, 0, 1),
     "docs/content/reference/_index.md"                -> (0, 0, 0),
     "docs/content/reference/lexical.md"               -> (9, 1, 2),
-    "docs/content/reference/types.md"                 -> (19, 3, 0),
+    // One more runnable: the two callable spellings differ in what a call costs and in what the
+    // declaration becomes, which is a rule about *types* — and a trait's member may write either,
+    // so the page shows one taken on a value and through a bound.
+    "docs/content/reference/types.md"                 -> (20, 3, 0),
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
-    // field changed twice).
-    "docs/content/reference/expressions.md"           -> (36, 19, 0),
+    // field changed twice). Three more runnable and two more refusals for the trailing block, and
+    // one more of each again for the identities: every integer type is a member of `Zero` and `One`
+    // now, so a generic sum runs over an `int` and over a `real` from one body, and a constrained
+    // subtype is refused by name because a range need not hold the value.
+    "docs/content/reference/expressions.md"           -> (37, 20, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -159,6 +165,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.
+    // One more runnable and one more refusal: `generate` makes a sequence out of a count, which is
+    // the one thing in the module that is not a member — a creator has no receiver — and the
+    // refusal is the spelling a reader reaches for first, since `(0..<n).map(f)` cannot be written
+    // at all: a range is not a value.
     "docs/content/library/seq.md"                         -> (8, 3, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
