@@ -133,8 +133,10 @@ struct Complex[F: Float]
 end Complex
 ```
 
-Plus `Add`, `Sub`, `Mul`, `Div`, `Neg`, `Eq` and `Display` — with `Add`, `Sub`, `Mul` and `Div`
-written **twice each**, once for another complex number and once for a real on the right.
+Plus `Add`, `Sub`, `Mul`, `Div`, `Neg`, `Eq`, `Display` and
+[`Magnitude`](/library/math/#magnitude-how-big-when-that-is-not-which-is-greater) — with `Add`,
+`Sub`, `Mul` and `Div` written **twice each**, once for another complex number and once for a real on
+the right.
 
 **Scaling is `Mul` at a second argument list rather than a second trait.** The complex numbers are a
 vector space over the reals, and scaling is the operation a transform performs most often: every
@@ -157,6 +159,29 @@ print(Complex(1.0, 0.0) < Complex(2.0, 0.0))
 
 sysl keeps `Eq` and `Ord` independent traits precisely so a type can have the one without the other.
 There is nothing to opt out of.
+
+**And yet `|z|` orders these by size perfectly well, which is what `Magnitude` is for.** It carries an
+associated type saying what a size comes out at, and for a `Complex[F]` that is `F` — the modulus is a
+*real* number however the parts are stored. So a body that cannot compare two complex numbers can
+still ask which is the larger:
+
+```sysl
+import sysl.math.complex.Complex
+import sysl.math.Magnitude
+
+var z = Complex(3.0, 4.0)
+var w = Complex(1.0, 1.0)
+
+print(z.magnitude(), z.magnitude() > w.magnitude())
+```
+
+```output
+5 true
+```
+
+It is the type's own `abs` and nothing more. What the trait adds is that a generic body can *ask*:
+`guide/matrix` pivots on exactly this, which is what lets one Gaussian elimination run over the reals
+and over the plane.
 
 **There is no scalar on the left.** `2.0 * z` would need an `impl Mul[Complex[F]] for F`, which is an
 implementation of a library trait for a built-in written by a module that owns neither — and it could

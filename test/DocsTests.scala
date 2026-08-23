@@ -151,8 +151,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // line editor and made anything taking a `*Reader` testable without a descriptor.
     "docs/content/library/io.md"                        -> (6, 3, 3),
     "docs/content/library/fs.md"                        -> (7, 5, 3),
-    "docs/content/library/math.md"                      -> (18, 9, 2),
-    "docs/content/library/complex.md"                   -> (6, 1, 1),
+    "docs/content/library/math.md"                      -> (21, 10, 3),
+    "docs/content/library/complex.md"                   -> (7, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
