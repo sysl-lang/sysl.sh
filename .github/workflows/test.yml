@@ -29,9 +29,37 @@ permissions:
   contents: read
   packages: read
 
+# **`dev` is keyed by SHA, and that is what gives every dev commit a run.** This is the site's copy of
+# the rule the compiler's `ci.yml` carries, and it is here for the same reason: both local gates are
+# the author's macOS machine, so a cancelled run on `dev` means nothing ever compiled, linked and ran
+# those four hundred programs on Linux — which is precisely the class of bug this repository's CI
+# found in the first place, `sysl$stdout` defined twice and taken quietly by `ld64` where GNU `ld`
+# refuses it.
+#
+# **Measured 2026-08-23 over the last twenty dev commits: two lost their Test run** — `cca09c4` and
+# `b68b392`, both `cancelled`. Neither was a mistake by anybody. Four sessions coordinated their
+# merges by hand all day and still lost two builds, because a merge that is correctly waiting its turn
+# still lands while the previous commit's suite is running.
+#
+# **Two separate mechanisms drop a run, and `cancel-in-progress` only governs one of them.** A run
+# that has STARTED is killed by that flag; a run merely QUEUED is replaced by the next push whatever
+# the flag says, because GitHub keeps **one pending run per concurrency group**. So while every dev
+# push shared `test-refs/heads/dev`, both doors were open. Keying by `github.sha` shuts both at once —
+# each push gets a group of its own, so there is no sibling to cancel and no pending sibling to evict.
+#
+# **`stable` deliberately keeps the ref**, and this is where the site parts company with the compiler.
+# `stable` is what `docs.yml` deploys from, and for a deploy superseding is *correct*: the newest
+# commit is the one the world should read, and two runs racing out of order would publish the older
+# one last. A skipped deploy is recoverable and a stale deploy is not.
+#
+# `A && B || C` is Actions' ternary. `github.sha` is always non-empty, so the middle term is truthy
+# and the selection is exact.
+#
+# What it costs is concurrent suites when dev pushes land close together. The repository is public, so
+# the minutes are free and the cost is queue position.
 concurrency:
-  group: "test-${{ github.ref }}"
-  cancel-in-progress: true
+  group: "test-${{ github.ref == 'refs/heads/dev' && github.sha || github.ref }}"
+  cancel-in-progress: ${{ github.ref != 'refs/heads/dev' }}
 
 jobs:
   test:

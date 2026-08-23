@@ -1,11 +1,9 @@
 # Build & deploy the sysl documentation site.
 #
-#   Push to `dev`        → builds and deploys to GitHub Pages.
-#   PR targeting `dev`   → builds only, as a sanity check.
+#   Push to `stable`     → builds and deploys to GitHub Pages.
+#   Push to `dev`        → builds only, so a page is never written blind.
+#   PR targeting either  → builds only, as a sanity check.
 #   workflow_dispatch    → manual trigger from the Actions tab.
-#
-# `dev` rather than `stable` to match the compiler's repository, where `dev` is the default branch
-# and what a merged feature lands on.
 #
 # The site is built by juicer, which lives in its own repository and has no published launcher — so
 # this workflow checks juicer out beside the site and runs it from its own sbt project. When juicer
@@ -27,8 +25,24 @@ on:
 permissions:
   contents: read
 
+# **`dev` is keyed by SHA for the same reason `test.yml` is, and `stable` is deliberately not.**
+#
+# `cancel-in-progress: false` protects a run that has STARTED and does nothing for one that is merely
+# QUEUED — GitHub keeps one pending run per concurrency group, so while every dev push shared
+# `docs-refs/heads/dev` a third push could evict the second commit's build before it ever began. That
+# has not happened yet: all twenty of the last twenty dev commits got a Docs run, because rendering is
+# fast enough to finish before the next push. **This half is therefore prophylactic**, and is here
+# because the failure is silent when it does arrive — a page that never rendered leaves no trace in
+# the run list, and the render check is not the same check `DocsTests` makes. A page can compile every
+# fenced program and still fail to build, which is how 0.0.35 shipped: a literal `[=` in a table
+# opened a juicer shortcode and nothing in the test suite had any reason to look.
+#
+# **`stable` keeps the ref, and that is not an oversight.** It is the branch this workflow *deploys*
+# from, and superseding is the behaviour a deploy wants: the newest commit is what the world should
+# read. Per-sha groups would let two stable runs proceed independently and publish out of order,
+# leaving the older content live — a skipped deploy can be re-run, a stale one looks finished.
 concurrency:
-  group: "docs-${{ github.ref }}"
+  group: "docs-${{ github.ref == 'refs/heads/dev' && github.sha || github.ref }}"
   cancel-in-progress: false
 
 jobs:
