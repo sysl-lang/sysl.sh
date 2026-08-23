@@ -535,13 +535,85 @@ What is *excluded* follows from the same rule rather than from taste:
 - **`..`, `..<` and `...`** can be complete too: `s[..]` is the whole range, and `int...` is a
   variadic tail.
 - **`.`** would work, but the continuation style worth having for a call chain puts the dot at the
-  *start* of the next line, which needs the opposite mechanism.
+  *start* of the next line — which is the opposite mechanism, and is the next section.
+
+### An unbracketed line continues before a dot
+
+A chain is the one expression people habitually break across lines, and the break goes *before* the
+dot rather than after it. There is no operator at the end of `text(label)` for the rule above to see,
+so this one looks at how the next line **begins**: a line starting with a `.` followed by a name
+continues the line above it.
+
+```sysl
+import sysl.text.Search
+
+val trimmed = "  a line with room around it  "
+    .trim()
+    .len
+
+print(trimmed)
+```
+
+```output
+26
+```
+
+As with a trailing operator, the continuation line's own indentation means nothing, so a chain may be
+laid out however reads best.
+
+**A name after the dot is required, and it is what makes the rule safe.** A continued line's margin is
+discarded, so a rule that fired on anything which could also *begin* a statement would pull that line
+into the block above and move where the block ends. Requiring a letter or `_` excludes everything else
+a line could start with a dot for — `..` and `..<` are ranges, `...` is a variadic tail, `.0` is a
+tuple index, and `.*` is an import wildcard.
+
+**And the line above has to be one a chain could continue.** This is the exact dual of the rule
+before it: a trailing operator carries the line because it *cannot* finish an expression, and a
+leading dot continues one only where the line above *could* have. A **reserved word** could not —
+there is nothing to call a method on — so a block opened by one keeps its body:
+
+```sysl
+enum Colour
+    Red
+    Green
+
+val n = Colour.Red match
+    Red -> 1
+    Green -> 2
+
+print(n)
+```
+
+```output
+1
+```
+
+Without that half, the first arm of the `match` would read as a chain hanging off the header. The
+four reserved words that *are* values — `self`, `true`, `false` and `null` — are the exception, so
+`self` on its own line with `.field` under it is an ordinary chain.
+
+A **trailing** dot is not a continuation, and is an error:
+
+```sysl
+val n = "hi".
+    len
+
+print(n)
+```
+
+```error
+tuple index expected
+```
+
+Two ways of writing one chain is a style argument in every file that has one, so the language admits
+exactly the one.
 
 ### The one hazard
 
 A continuation line that is **dedented** has its dedent swallowed along with the newline, so a
 trailing operator can hold a block open further than it looks. Every language that joins lines has
-this, including on brackets.
+this, including on brackets. A chain written at the outer margin is the same hazard from the other
+end: it is still inside the block above it, and that block ends one line later than it appears to.
 
 It is documented rather than guarded against, and the reason is worth knowing: guarding would mean
 the indentation of a continuation line carried meaning, and the entire point of continuing a line is
