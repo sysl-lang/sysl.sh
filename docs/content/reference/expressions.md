@@ -228,7 +228,7 @@ print(0..<10)
 ```
 
 ```error
-a range is only allowed in a 'for' loop or a 'match' pattern
+a range is only allowed in a 'for' loop, in a 'for all' or 'for some' quantifier, in a slice index, or in a 'match' pattern
 ```
 
 That is the reason [`sysl.seq`](/library/seq/) supplies a `generate` rather than implementing
