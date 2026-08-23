@@ -933,7 +933,7 @@ parameter it fills**:
 | the parameter is | the block is |
 |---|---|
 | a collection — `[]T`, `[N]T` | an **array** whose elements are its lines |
-| a callable — `() -> T`, `&Fn() -> T`, or a by-name `-> T` | a **closure** whose body is the block |
+| a callable — `A -> T`, `&Fn(A) -> T`, or a by-name `-> T` | a **closure** whose body is the block |
 
 Nothing else takes one. A block at a parameter that is neither is refused, and the message names
 both readings:
@@ -967,6 +967,88 @@ print(n)
 
 ```output
 42
+```
+
+### The one value it is passed is `it`
+
+A block writes no parameter list, so the callable it stands at is what names one. Where that callable
+takes a **single** value, the block binds it as **`it`**.
+
+```sysl
+each(xs: []int, f: int -> unit)
+    for i in 0..<xs.len
+        f(xs[i])
+
+each([1, 2, 3]):
+    print(it * 10)
+```
+
+```output
+10
+20
+30
+```
+
+`it` is an ordinary parameter of the closure the block became, and not a keyword. It is not reserved,
+a binding inside the block shadows it, it shadows a name from outside, and a block nested in another
+block hides the outer one's:
+
+```sysl
+outer(f: &Fn(int) -> int) -> int = f(1)
+inner(f: &Fn(int) -> int) -> int = f(2)
+
+val n = outer:
+    inner:
+        it * 10
+
+print(n)
+```
+
+```output
+20
+```
+
+A block with no use for the value simply never writes it. A callable taking **none** binds nothing at
+all, so `it` inside such a block is whatever the surrounding scope already had.
+
+**A block cannot name two.** There is one implicit name and no positional spelling behind it, so a
+callable of two parameters or more is written as a closure literal, which names its own:
+
+```sysl
+on_drag(f: &Fn(int, int) -> unit) = f(1, 2)
+
+on_drag:
+    print(it)
+```
+
+```error
+binds the one value it is passed as 'it'
+```
+
+```sysl
+on_drag(f: &Fn(int, int) -> unit) = f(1, 2)
+
+on_drag((dx, dy) -> print(dx + dy))
+```
+
+```output
+3
+```
+
+None of this reaches the **collection** reading. A block filling `[]T` is a list of its lines and
+binds nothing, so `it` there is an undefined name like any other:
+
+```sysl
+total(xs: []int) -> int = xs[0]
+
+val n = total:
+    it
+
+print(n)
+```
+
+```error
+undefined name 'it'
 ```
 
 ### Where the block stands

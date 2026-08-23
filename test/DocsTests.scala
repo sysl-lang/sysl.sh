@@ -59,7 +59,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
     // field changed twice).
-    "docs/content/reference/expressions.md"           -> (33, 16, 0),
+    "docs/content/reference/expressions.md"           -> (36, 18, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
