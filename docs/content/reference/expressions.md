@@ -219,21 +219,60 @@ for i in a..=3
 '..=' is not a range — inclusive is 'a..b' and exclusive is 'a..<b'
 ```
 
-**A range is not a value.** The four places one may be written are the whole of the list: a `for`, a
-slice index, a `match` pattern, and a quantifier. There is no range type, so a range cannot be bound
-to a name, passed to a function, returned from one, or named on the right of an `impl`.
+**A range with both ends written is a form in four places and a value everywhere else.** In a `for`
+header, a slice index, a `match` pattern and a quantifier the compiler reads the two bounds directly
+and no range object exists in what it emits — that is what keeps the most ordinary loop in the
+language a counter and a comparison, with no struct, no `Option` a step and no call. Anywhere else it
+builds a `sysl.Range[T]`: three fields, the two bounds and whether the upper one is included.
 
 ```sysl
-print(0..<10)
+val r = 0..<4
+
+total(r: Range[int]) -> int
+    var acc = 0
+
+    for i in r
+        acc += i
+
+    acc
+
+print(total(r), total(0..3))
+```
+
+```output
+6 6
+```
+
+A `Range` is walked by [`Iterate`](/library/core/), so a `for` over one is the ordinary `for` over
+anything with a cursor rather than a second kind of loop. The cursor moves, and a `for` walks a
+**copy**, so the same range is walked twice with the same answer both times.
+
+**Its bounds are read by the same two rules a `for` header's are** — they must agree, and they must
+be integers — so the value and the loop cannot come to disagree about what a range is.
+
+```sysl
+val r = 0..<3u8
 ```
 
 ```error
-a range is only allowed in a 'for' loop, in a 'for all' or 'for some' quantifier, in a slice index, or in a 'match' pattern
+a range needs matching bounds
 ```
 
-That is the reason [`sysl.seq`](/library/seq/) supplies a `generate` rather than implementing
-`Sequence` for a range: `(0..<n).map(f)` is the spelling a reader reaches for, and there is nothing
-for it to be a method on.
+**An open end has no value reading.** `..`, `lo..` and `..hi` mean something only in a slice index,
+because what an absent bound *is* depends on what is being indexed. They stay index-only and are
+refused elsewhere by name.
+
+```sysl
+val r = 1..
+```
+
+```error
+a range with an open end is only allowed in a slice index
+```
+
+Because a range is a value, it implements [`Sequence`](/library/seq/), which is what makes
+`(0..<n).map(f)` the spelling it looks like it should be. Nothing is materialized to answer a
+question about one, so `(0..<1_000_000).any(p)` costs the predicate and no storage.
 
 ## `is` — a pattern where a condition is wanted
 

@@ -252,21 +252,40 @@ nothing for `self` to be until the call has already done the work. What it hands
 called exactly once for each index, in order, and the buffer is given the length the answer is known
 to have, so it grows once.
 
-**What a reader reaches for first is `(0..<n).map(f)`, and that is not something sysl can say.** A
-range is not a value — it is legal in a `for`, in a slice index, in a `match` pattern and in a
-quantifier, and nowhere else.
+**`(0..<n).map(f)` says the same thing**, and is what a reader reaches for first. A range with both
+ends written is a [value](/reference/expressions/) and implements this trait, so every member here is
+on one.
 
 ```sysl
-print(0..<10)
+print((0..<5).map(i -> i * i))
+print((0..<10).filter(i -> i % 3 == 0))
+print((0..<10).fold(0, (a, n) -> a + n))
 ```
 
-```error
-a range is only allowed in a 'for' loop, in a 'for all' or 'for some' quantifier, in a slice index, or in a 'match' pattern
+```output
+[0, 1, 4, 9, 16]
+[0, 3, 6, 9]
+45
 ```
 
-So there is no type for `Sequence` to be implemented for and nothing to map over, and `generate`
-names the count where the range would have stood. Making a range a value is an open question rather
-than a decided omission, and if it is ever answered the two spellings will say the same thing.
+**Nothing is materialized to answer a question about a range**, which is the difference from the
+slice implementation rather than a detail of it: the seven members that do not build a sequence walk
+and stop, so a question about the front of a very long range costs the predicate and no storage at
+all.
+
+```sysl
+print((0..<1000000).any(i -> i == 3))
+```
+
+```output
+true
+```
+
+So what `generate` keeps is the **allocation**. A count is a length in hand, so it gives its buffer
+the size the answer will be and grows once; a range is two bounds, and working its length out
+generically means arithmetic at a type the bound says only is an integer — so a range's `map` doubles
+the way `filter` does. Reach for `generate` where the count is what you have, and for the range
+where the range is.
 
 ## The members are on a slice, not on an array
 

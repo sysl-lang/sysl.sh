@@ -65,7 +65,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // one more of each again for the identities: every integer type is a member of `Zero` and `One`
     // now, so a generic sum runs over an `int` and over a `real` from one body, and a constrained
     // subtype is refused by name because a range need not hold the value.
-    "docs/content/reference/expressions.md"           -> (37, 20, 0),
+    // And one more of each again for ranges: a range with both ends written is a value now, so the
+    // section shows one bound, passed and returned, and refuses the two readings that have no value
+    // — bounds that disagree, and an end left open.
+    "docs/content/reference/expressions.md"           -> (38, 21, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -169,7 +172,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // the one thing in the module that is not a member — a creator has no receiver — and the
     // refusal is the spelling a reader reaches for first, since `(0..<n).map(f)` cannot be written
     // at all: a range is not a value.
-    "docs/content/library/seq.md"                         -> (8, 3, 1),
+    // Two more runnable and one refusal fewer: `(0..<n).map(f)` is a program rather than the thing
+    // the page said could not be written, and the block that asserted a range is refused is what it
+    // replaced.
+    "docs/content/library/seq.md"                         -> (10, 2, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),
