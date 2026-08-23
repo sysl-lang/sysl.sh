@@ -686,9 +686,9 @@ import sysl.math.complex.Complex
 
 size(x: &Magnitude[real]) -> real = x.magnitude()
 
-var x: real = -7.5
+var scalar: real = -7.5
 
-print(size(x), size(Complex(3.0, 4.0)))
+print(size(scalar), size(Complex(3.0, 4.0)))
 ```
 
 ```output
