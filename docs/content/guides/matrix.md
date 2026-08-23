@@ -42,27 +42,37 @@ zero for a vector nowhere near the origin. So a length is the root of a sum of s
 and the dot product is left to be what it is. One element type is not enough to tell the two apart,
 and the program had them as one function until it had two.
 
-**The pivot is where the library stops, and it is a reported finding rather than a rough edge.**
-Elimination picks the largest remaining cell in a column, and the complexes carry no `Ord` at all —
-there is no order on the plane that respects arithmetic, and the library refuses to invent one. What
-pivoting wants is a **magnitude**, an ordering on size rather than on values, and no core trait offers
-one. The program declares its own, with the result fixed to `real`, and said why that was a guide's
-decision and not a library's: a library `Magnitude` would have had to fix the answer for every element
-type at once, committing a rational matrix to floating point.
+**The pivot was where the library stopped, and it is the library's now.** Elimination picks the
+largest remaining cell in a column, and the complexes carry no `Ord` at all — there is no order on the
+plane that respects arithmetic, and the library refuses to invent one. What pivoting wants is a
+**magnitude**, an ordering on size rather than on values. The program declared its own with the result
+fixed to `real`, and said why that was a guide's decision and not a library's: a library trait would
+have had to fix the answer for every element type at once, committing a rational matrix to floating
+point.
 
-**That reason has since gone.** A trait may now declare an
-[associated type](/reference/traits/#a-trait-may-declare-an-associated-type), so a library
-`Magnitude` can let each element type say what it measures with — `type Size: Ord`, and the pivot
-compares `T::Size` values without anybody committing to a width. What is left is a library decision
-rather than a language one: which module such a trait belongs in, and whether an ordering-on-size
-earns a name beside the operator catalogue. Until that is taken the trait stays in the program, which
-is where the guide's own comment now points.
+**An [associated type](/reference/traits/#a-trait-may-declare-an-associated-type) removed the
+obstacle.** [`sysl.math.Magnitude`](/library/math/#magnitude-how-big-when-that-is-not-which-is-greater)
+declares `type Size: Ord` and each implementation fills it, so a `Complex[F]` measures in `F` and an
+integer measures in itself. The program now *requires* that trait and implements none of it — the
+three memberships it pivots on are the library's own — and the elimination compares `T::Size` values
+without naming what one is. A `Matrix[f32]` compares `f32` sizes where it used to widen every one of
+them to `real`.
 
-**The integers are outside, and the identities are what keep them out.** `Zero` and `One` are written
-for the floats and for `Complex` and cannot be written for `int`: the `iN`/`uN` families are open, so
-no list of blocks covers them, and every membership the compiler hands out is a method with a
-receiver — which a `zero()` has nothing to be called on. A `Matrix[int]` is not writable today, and a
-matrix of exact integers is a thing people want.
+**What `Scalar` still declares is one member, and it is a choice rather than a gap.** `norm` is the
+view of a size as a `real`, which is what a length and a literal tolerance are written at in this
+program. So the line falls where it should: the *ordering* is asked of the element type in its own
+terms, and the one fixed number — the tolerance below which a pivot counts as zero — is this
+program's, at this program's width.
+
+**The integers are outside, and it is *not* the identities that keep them out — that finding was
+wrong.** It said `Zero` and `One` could not be written for `int` because the `iN`/`uN` families are
+open and every provided membership was a method with a receiver, which a `zero()` has nothing to be
+called on. A receiverless membership is reached through the type instead, so an integer has both
+identities, and `Magnitude` covers the family through one blanket block: `int` meets every
+requirement in `Scalar`'s bound outright. What actually keeps a `Matrix[int]` out is the arithmetic —
+integer `/` truncates, so elimination over the integers is not the same algorithm and would answer
+confidently with the wrong numbers. A matrix of exact integers wants fraction-free elimination, which
+is a different program and a good one to write.
 
 **A matrix is a handle exactly as a vector is.** The cells are stored row-major in one `&Buf[T]`, so
 the operators build fresh values and `copy` is how a caller stops sharing. That makes the memory

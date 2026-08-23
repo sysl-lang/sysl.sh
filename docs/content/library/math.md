@@ -1,11 +1,12 @@
 ---
 title: The math module
-summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits` over the open integer family, the constants, `min`/`max`/`clamp` over anything ordered, the float comparisons, and the integer arithmetic above the operators."
+summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits` over the open integer family, `Magnitude` and the size a type measures in, the constants, `min`/`max`/`clamp` over anything ordered, the float comparisons, and the integer arithmetic above the operators."
 weight: 60
 ---
 
-`sysl.math` is four files and three traits, and the interesting thing about it is that **the three
-traits are written three different ways** — because the types they cover are three different shapes.
+`sysl.math` is five files and four traits, and the interesting thing about it is that **no two of
+them are written the same way** — because the types they cover are different shapes, and the shape of
+the family is what decides how a trait can reach it.
 Above them sit the free functions, which are not members of anything and say in a bound what they
 need. It requires no capability at all: every name here is reachable under `no alloc` and on a target
 with no operating system.
@@ -611,6 +612,119 @@ it and a `u4` has none either. **Every member of `Bits` is total over every inte
 else's instantiation.
 
 A program that means to reorder bytes has the shifts, and knows its own width while writing them.
+
+## `Magnitude` — how big, when that is not which is greater
+
+```sysl
+trait Magnitude
+    type Size: Ord
+    magnitude(self) -> Self::Size
+```
+
+**The associated type is the whole of why this is a trait rather than a function.** A magnitude has to
+say what it answers *with*, and there is no one answer: the modulus of a complex number is a real, the
+magnitude of an integer is an integer of that same width, and a rational's is a rational. Fixing the
+result to `real` would be a floating-point commitment made on behalf of element types with no floating
+point in them; fixing it to `Self` would leave `Complex` out, which is the one type the trait exists
+for. [`type Size`](/reference/traits/#a-trait-may-declare-an-associated-type) lets each implementation
+answer in its own terms, and a generic body name the answer without knowing it.
+
+```sysl
+import sysl.math.Magnitude
+import sysl.math.complex.Complex
+
+var narrow: f32 = (-7.5f32).magnitude()
+var wide: real = Complex(3.0, 4.0).magnitude()
+
+print((-9).magnitude(), 200u8.magnitude())
+print(narrow, wide)
+```
+
+```output
+9 200
+7.5 5
+```
+
+The two annotations are the claim: an `f32` measures in `f32` and never widens, and a
+`Complex[real]` measures in `real` because a modulus is a real number however the parts are stored.
+
+**It is not `Ord` on the values, and that distinction is the reason it exists.** `Complex` has no
+`Ord` on purpose — no order on the plane respects the arithmetic — and yet `|z|` orders complex
+numbers by size perfectly well:
+
+```sysl
+import sysl.math.Magnitude
+
+largest[T: Magnitude](xs: []const T) -> T::Size
+    var best = xs[0].magnitude()
+
+    for x in xs do if best < x.magnitude() then best = x.magnitude()
+
+    best
+
+print(largest([3.0, -40.0, 7.0]), largest([3, -40, 7]))
+```
+
+```output
+40 40
+```
+
+`largest` names `T::Size` once, in its result, and compares values of it without knowing what one is.
+That is the shape [`guide/matrix`](/guides/matrix/) pivots on: Gaussian elimination chooses the
+largest remaining cell in a column, which is a comparison every element type can answer and `<` is
+not.
+
+### The three memberships, and the one written over a family
+
+`real` and `f32` each measure in themselves. Every integer type — at every width and either
+signedness — arrives through **one blanket block** over `Integer`, the same shape `Display` is written
+in, because the `iN`/`uN` families are open and no list of blocks covers them. `Complex[F]` measures
+in `F`, and lives in [`sysl.math.complex`](/library/complex/).
+
+**At the most negative value a signed integer answers that value again**, exactly as
+[`Signed.abs`](#signed) does — the magnitude is one larger than the width can hold, and
+two's-complement negation wraps:
+
+```sysl
+import sysl.math.Magnitude
+import sysl.math.Signed
+
+var edge: i8 = -128
+
+print(edge.magnitude(), edge.abs())
+```
+
+```output
+-128 -128
+```
+
+Answering anything else would need a wider type to answer in, which is a promise a size cannot make.
+
+### One name per type, so `Size` is spent
+
+An associated type is written without its trait — `T::Size` and never `T::Magnitude.Size` — so **a
+type has at most one associated type of any one name**, and the refusal lands on the block that
+creates the collision:
+
+```sysl
+trait Sized
+    type Size
+    extent(self) -> Self::Size
+
+impl[T: Integer + Zero] Sized for T
+    type Size = T
+    extent(self) -> Self::Size = self
+
+print(1)
+```
+
+```error
+already implements 'sysl.math.Magnitude', which declares an associated type 'Size'
+```
+
+That is the price of the name and it is worth knowing before picking one: a library trait covering a
+family spends its associated type's name for every member of that family. A program wanting its own
+size-like trait over the integers picks a different word for the type it answers with.
 
 ## The arithmetic above the operators
 
