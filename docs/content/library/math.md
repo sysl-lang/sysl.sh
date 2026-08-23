@@ -674,6 +674,37 @@ That is the shape [`guide/matrix`](/guides/matrix/) pivots on: Gaussian eliminat
 largest remaining cell in a column, which is a comparison every element type can answer and `<` is
 not.
 
+**A bound is not the only way to reach `Size`, and the other way is what lets one function serve types
+with nothing else in common.** `largest` is generic, so each call is compiled for one element type and
+its slice holds one kind of thing. Writing the trait as an object instead forgets the type and keeps
+the answer — `&Magnitude[real]` is *some* type that measures in a real, decided where the call is
+rather than where the function is:
+
+```sysl
+import sysl.math.Magnitude
+import sysl.math.complex.Complex
+
+size(x: &Magnitude[real]) -> real = x.magnitude()
+
+var x: real = -7.5
+
+print(size(x), size(Complex(3.0, 4.0)))
+```
+
+```output
+7.5 5
+```
+
+A `real` and a `Complex` share no supertype, no layout and no arithmetic; `&Magnitude[real]` is the
+whole of what that parameter promises, and it is enough. The bracket is the sugar — `Magnitude` takes
+no arguments of its own and declares exactly one associated type, so `&Magnitude[real]` and
+`&Magnitude[Size = real]` are the same type, spelled two ways
+([an object may fix the associated type](/reference/traits/#an-object-may-fix-the-associated-type)).
+
+**An `f32` does not fit that parameter, and that is the trait working rather than a limitation.** It
+measures in `f32`, so it belongs to `&Magnitude[f32]` — a different type, and the object has to say
+which it is for the same reason the bound had to name `T::Size`.
+
 ### The three memberships, and the one written over a family
 
 `real` and `f32` each measure in themselves. Every integer type — at every width and either
