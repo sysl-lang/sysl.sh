@@ -271,6 +271,8 @@ refused elsewhere by name.
 
 ```sysl
 val r = 1..
+
+print(r)
 ```
 
 ```error
