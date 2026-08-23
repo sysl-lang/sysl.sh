@@ -236,16 +236,17 @@ total(r: Range[int]) -> int
 
     acc
 
-print(total(r), total(0..3))
+print(total(r), total(r), total(0..3))
 ```
 
 ```output
-6 6
+6 6 6
 ```
 
 A `Range` is walked by [`Iterate`](/library/core/), so a `for` over one is the ordinary `for` over
-anything with a cursor rather than a second kind of loop. The cursor moves, and a `for` walks a
-**copy**, so the same range is walked twice with the same answer both times.
+anything with a cursor rather than a second kind of loop. The cursor moves, but a `for` walks a
+**copy** — which is why `r` above answers the same both times rather than coming back spent, and why
+`0..3` reaching the same total says the inclusive form counts one more.
 
 **Its bounds are read by the same two rules a `for` header's are** — they must agree, and they must
 be integers — so the value and the loop cannot come to disagree about what a range is. Note that a
