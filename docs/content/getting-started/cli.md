@@ -615,10 +615,22 @@ typo produces.
 | **2** | the command line did not parse |
 | *the program's* | `run` only, once the program has started |
 
-A compiler diagnostic is printed exactly as the compiler wrote it, with its location and a caret
-under the offending column. A driver error — something that went wrong *around* the compilation
-rather than inside it — is prefixed `sysl: error:`, which is why every message quoted on this page
-carries it and none of the ones on the language pages do.
+A compiler diagnostic is printed exactly as the compiler wrote it: the message, the location, the
+line it happened on, and what went wrong underlined beneath it. The underline is as wide as the thing
+being complained about — a name, a literal, or a whole expression where the expression is what is
+wrong — and stops at the end of the line, since only the one line is quoted.
+
+```
+error: 'b' of 'add' is int, but string was given
+ --> hello.sysl:7:14
+  |
+7 | print(add(x, "two"))
+  |              ^^^^^
+```
+
+A driver error — something that went wrong *around* the compilation rather than inside it — is
+prefixed `sysl: error:`, which is why every message quoted on this page carries it and none of the
+ones on the language pages do.
 
 ---
 

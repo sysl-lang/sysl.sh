@@ -292,11 +292,17 @@ live in the standard module beside the operators whose identities they are, so n
 and a body bounded by `[T: Add + Zero]` reaches `T.zero()` for a `real`, an `f32` and a
 [`Complex`](/library/complex/) alike without asking for the rest of `Float`.
 
-**The integers are not among them.** An `impl` can only name types that exist and the `iN`/`uN`
-families are open — a program may write `u256` — so no list of blocks covers them, and every
-membership the compiler hands out is a method with a **receiver**, which a `zero()` has nothing to be
-called on. `[T: Add + Zero]` therefore takes a `real`, an `f32` and a `Complex`, and does not take an
-`int`.
+**The integers are among them too, and no block below says so.** An `impl` can only name types that
+exist and the `iN`/`uN` families are open — a program may write `u256` — so no list of blocks covers
+them; their membership is the compiler's, exactly as `Signed`'s and `Bits`' are. What made this the
+last of the three to arrive is that a provided membership used to have to be a method with a
+**receiver**, and a `zero()` has no value to be called on. One without a receiver is reached through
+the type instead, and `T.zero()` at an integer lowers to the literal. `[T: Add + Zero]` therefore
+takes an `int` and a `u256` beside the `real`, the `f32` and the [`Complex`](/library/complex/).
+
+A **constrained subtype** is the one thing left out, and it is the difference between a value and an
+operation: a subtype has every operation its base has, and a range written to exclude zero has not
+got a zero. [Expressions](/reference/expressions/) states the rule with its edges.
 
 `epsilon` is what a convergence test should be written against — a loop that stops when two iterations
 agree to within a few epsilons stops at the right point at *both* widths, where a literal tolerance

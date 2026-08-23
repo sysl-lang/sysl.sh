@@ -41,22 +41,23 @@ zero. A shift by the full width is the case the instruction does not define, so 
 That is the more useful shape of finding: not "the language cannot express this" but "the language
 expresses it and the *machine* has an edge case", which no amount of language design removes.
 
-**A trait written for somebody else's type has to find a name that is still free.** What survived the
-move to the library is `sum` — the generic total that starts at a value the type promised rather than
-at `xs[0]`, which is what keeps an empty sequence from needing an `Option` in the signature. The
-trait behind it wanted a `zero() -> Self` and could not have one: a trait's members become the
-implementing type's, and `zero` on `Complex` is already taken — by [`Zero`](/library/math/), the core
-trait that answers this exact need. So the member is called `identity`, for what it is rather than for
-the value it answers. The more ordinary the concept, the likelier that collision is, and there is no
-way to name the member the trait *means* apart from the name it goes under.
+**A trait written for somebody else's type has to find a name that is still free — a finding this
+program made, paid for, and no longer pays.** What survived the move to the library is `sum`, the
+generic total that starts at a value the type promised rather than at `xs[0]`, which is what keeps an
+empty sequence from needing an `Option` in the signature. The trait behind it wanted a `zero() ->
+Self` and could not have one: a trait's members become the implementing type's, and `zero` on
+`Complex` was already taken — by [`Zero`](/library/math/), the core trait that answers this exact
+need. So its member was called `identity`, for what it is rather than for the value it answers. The
+more ordinary the concept, the likelier that collision, and there is still no way to name the member
+a trait *means* apart from the name it goes under.
 
-**Which raises the obvious question: why not just use `Zero`?** For a sum over the floats or over
-`Complex`, you should — `[T: Add + Zero]` is the ordinary spelling and needs no trait of your own.
-What keeps this program's four lines is the one type `Zero` cannot reach: `int`. The `iN` / `uN`
-families are open, so no finite list of `impl` blocks covers them, and every membership the compiler
-hands out is a method with a **receiver**, which a `zero()` has no value to be called on. A body that
-must serve a built-in integer *and* a library type still declares its own identity, and that is the
-only shape left that does.
+**What closed it is that `Zero` now reaches `int`.** The one type it could not was the whole reason
+for a trait of this program's own: the `iN` / `uN` families are open, so no finite list of `impl`
+blocks covers them, and a membership the compiler provided had to be a method with a **receiver**,
+which a `zero()` has no value to be called on. A provided membership may have no receiver now, so
+every integer width is a member and `[T: Add + Zero]` spans this program's whole selection. `sum` is
+the function with no trait above it, and the free name is a cost the *next* program to widen a trait
+over types it did not write will meet — not this one.
 
 ---
 
