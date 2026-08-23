@@ -30,11 +30,9 @@ only writable because a `*u8` can be read as a `**u8` and back:
 ```sysl
 link(b: *u8) -> **u8
     ptr_cast(b)
-end link
 
 next_free(b: *u8) -> *u8
     *link(b)
-end next_free
 ```
 
 ## What it found

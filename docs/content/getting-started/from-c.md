@@ -44,7 +44,6 @@ construction where a `&T` is expected is what puts the object on the heap:
 struct Node
     value: int
     next: weak Node
-end Node
 
 var head: &Node = Node(1, None)
 
@@ -156,7 +155,6 @@ passing to a C function. [Strings](/reference/strings/) has both directions.
 enum Shape
     Circle(r: real)
     Square(side: real)
-end Shape
 
 area(s: Shape) -> real = s match
     Circle(r)  -> r * r
@@ -183,7 +181,6 @@ belongs to its enum.
 struct Node
     value: int
     next: weak Node
-end Node
 
 var p: *int = null
 
@@ -210,7 +207,6 @@ A reference is never null, so there is no failure to test for:
 struct Point
     x: int
     y: int
-end Point
 
 var r: &Point = null
 print(r.x)
@@ -230,7 +226,6 @@ Nor does a reference do arithmetic:
 struct Point
     x: int
     y: int
-end Point
 
 var p: &Point = Point(1, 2)
 var q = p + 1

@@ -56,11 +56,9 @@ import sysl.io.Reader
 struct Memory
     src: []const u8
     at: usize
-end Memory
 
 impl Reader for Memory
     read(*self, into: []u8) -> []const u8 = into[0..<0]
-end Memory
 ```
 
 ```error
@@ -78,7 +76,6 @@ import sysl.io.Reader
 struct Memory
     src: []const u8
     at: usize
-end Memory
 
 impl Fallible for Memory
 
@@ -154,7 +151,6 @@ import sysl.io.{Reader, lines}
 struct Flaky
     left: int
     bad: bool
-end Flaky
 
 impl Fallible for Flaky
     override failed(*self) -> bool = self.bad
@@ -196,7 +192,6 @@ import sysl.io.{Reader, lines}
 struct Memory
     src: []const u8
     at: usize
-end Memory
 
 impl Fallible for Memory
 
@@ -350,7 +345,6 @@ import sysl.io.*
 struct Typed
     src: []const u8
     at: usize
-end Typed
 
 impl Fallible for Typed
 

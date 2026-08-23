@@ -105,7 +105,6 @@ the ABI. Anyone who can name the type can still be built against its shape.
 opaque struct Conn
     fd: int
     live: bool
-end Conn
 
 open(n: int) -> Conn = Conn(n, true)
 

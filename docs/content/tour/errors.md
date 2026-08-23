@@ -125,11 +125,9 @@ error type differs from a callee's converts at the call site:
 ```sysl
 struct IoError
     code: int
-end IoError
 
 struct AppError
     why: string
-end AppError
 
 read_it(n: int) -> Result[int, IoError]
     if n > 0 then Ok(n)

@@ -24,7 +24,6 @@ solve[const W: usize](vn: <W>f32, mass: <W>f32, bias: <W>f32) -> <W>f32
 
     // The impulse a contact applies can only push, never pull — so a negative one is clamped away.
     return (impulse < 0.0).select(0.0, impulse)
-end solve
 ```
 
 Nothing in that body names a width. `W` is read off the argument, the mask `impulse < 0.0` is a

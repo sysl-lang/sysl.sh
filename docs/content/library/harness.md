@@ -199,7 +199,6 @@ impl Fallible for Console
 impl Writer for Console
     write(*self, bytes: []const u8)
         for b in bytes do putc(b)
-end Console
 
 val uart: *Console = ptr_cast(0usize)
 

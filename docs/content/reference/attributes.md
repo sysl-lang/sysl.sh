@@ -738,7 +738,6 @@ and the sysl half pins what sysl laid out:
 struct Pair
     a: i32
     b: i32
-end Pair
 
 @assert(sizeof(Pair) == 8, "Pair must match struct pair")
 @assert(offsetof(Pair, b) == 4, "struct pair.b moved")
@@ -762,7 +761,6 @@ the distance between them:
 struct Pair
     b: i32
     a: i32
-end Pair
 
 @assert(sizeof(Pair) == 8, "Pair must match struct pair")
 @assert(offsetof(Pair, b) == 4, "struct pair.b moved")

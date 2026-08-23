@@ -97,7 +97,6 @@ struct Pixel
     red:   u5
     green: u6
     blue:  u5
-end Pixel
 
 var p = Pixel(31u5, 40u6, 17u5)
 

@@ -275,7 +275,6 @@ putbytes(b: []const u8)
     while i < b.len
         sysl_putchar(int(b[i]))
         i += 1
-end putbytes
 ```
 
 **`putbytes` is one of exactly two functions a freestanding target has to replace.** Swap its body
@@ -967,7 +966,6 @@ impl[..A: Eq] Eq for (..A)
             if self.i != rhs.i then return false
 
         true
-    end eq
 ```
 
 That is the library's own source, quoted for its shape, and it is worth reading as what a pack is

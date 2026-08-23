@@ -766,7 +766,6 @@ read_port(line: string) -> Result[int, ParseError]
     var n = parse_int(parts[parts.len - 1].trim())?
 
     Ok(n)
-end read_port
 
 print(read_port("port = 8080").unwrap())
 print(read_port("port = eighty").unwrap_err())

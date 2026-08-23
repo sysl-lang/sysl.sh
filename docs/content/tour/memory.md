@@ -29,7 +29,6 @@ heap object there, and it is the declaration that says which:
 struct Point
     x: int
     y: int
-end Point
 
 var here = Point(1, 2)              // a value, in this frame
 var shared: &Point = Point(3, 4)    // on the heap, counted
@@ -56,7 +55,6 @@ type, a struct field, an enum variant's payload:
 struct Process
     id: int
     priority: int
-end Process
 
 spawn(id: int) -> &Process = Process(id, 0)
 
@@ -81,7 +79,6 @@ one object, and any of them may write to it:
 struct Account
     owner: string
     balance: int
-end Account
 
 deposit(a: &Account, amount: int)
     a.balance += amount
@@ -118,13 +115,11 @@ look the way it does:
 struct Item
     label: string
     rest: Option[&Item]
-end Item
 
 count(list: Option[&Item]) -> int
     list match
         Some(item) -> 1 + count(item.rest)
         None -> 0
-end count
 
 var last: &Item = Item("c", None)
 var middle: &Item = Item("b", Some(last))
@@ -153,13 +148,11 @@ reference goes away it simply becomes empty:
 struct Node
     label: string
     parent: weak Node
-end Node
 
 parent_of(n: &Node) -> string
     n.parent.get() match
         Some(p) -> p.label
         None -> "(none)"
-end parent_of
 
 var root: &Node = Node("root", None)
 var child: &Node = Node("child", root)
@@ -247,7 +240,6 @@ no `->`, because there is nothing else `.` could mean:
 struct Node
     value: int
     next: *Node
-end Node
 
 var third = Node(3, null)
 var second = Node(2, &third)
@@ -285,7 +277,6 @@ struct Gpio
     input:  volatile u32
     output: volatile u32
     shadow: u32
-end Gpio
 
 var block = Gpio(0b1010, 0, 0)
 var regs: *Gpio = &block
@@ -450,7 +441,6 @@ struct Table
 
     grow(*self)
         self.cell = [0; 8]
-end Table
 
 var t = Table([1, 2, 3])
 
@@ -485,7 +475,6 @@ exactly nothing:
 struct Task
     state: int
     prio: int
-end Task
 
 struct Kernel
     tasks: [4]Task

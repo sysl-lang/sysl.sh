@@ -43,7 +43,6 @@ struct Lambda
     body: &Value
     held: Option[&Env]
     seen: weak Env
-end Lambda
 ```
 
 An interpreter is made one way or the other. Both run the same source to the same answers — the page

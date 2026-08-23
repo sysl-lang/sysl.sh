@@ -268,7 +268,6 @@ copies it.
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(1, 2)
 var q = p
@@ -573,7 +572,6 @@ are the compound ones:
 struct Point
     x: int
     y: int
-end Point
 
 type P = Point
 type Comparison = *extern(*u8, *u8) -> i32

@@ -10,7 +10,6 @@ weight: 40
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(6, 7)
 
@@ -30,7 +29,6 @@ A struct is copied when you assign it, the same as any other value:
 struct Point
     x: int
     y: int
-end Point
 
 var a = Point(1, 2)
 var b = a

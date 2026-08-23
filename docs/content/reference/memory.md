@@ -26,7 +26,6 @@ an application does not, and you can tell which by looking.
 struct Point
     x: int
     y: int
-end Point
 
 var here = Point(1, 2)
 var shared: &Point = Point(3, 4)
@@ -60,7 +59,6 @@ contains it. **Assignment and argument passing copy it**, exactly as in C.
 ```sysl
 struct Counter
     n: int
-end Counter
 
 var a = Counter(1)
 var b = a
@@ -97,7 +95,6 @@ releases, and the object is destroyed the moment the last strong reference to it
 ```sysl
 struct Counter
     n: int
-end Counter
 
 var a: &Counter = Counter(1)
 var b = a
@@ -131,7 +128,6 @@ is what puts the object on the heap:
 struct Process
     id: int
     priority: int
-end Process
 
 spawn(id: int) -> &Process = Process(id, 0)
 
@@ -177,7 +173,6 @@ reaches **each branch on its own** rather than the expression as a whole:
 struct Point
     x: int
     y: int
-end Point
 
 var origin: &Point = Point(0, 0)
 var far = true
@@ -214,7 +209,6 @@ diagnose. Something that may be absent is an `Option[&T]`, and getting at it is 
 ```sysl
 struct Item
     label: string
-end Item
 
 show(o: Option[&Item]) -> string
     o match
@@ -306,7 +300,6 @@ destroyed and every weak reference to it becomes empty.
 struct Node
     label: string
     parent: weak Node
-end Node
 
 parent_of(n: &Node) -> string
     n.parent.get() match
@@ -337,7 +330,6 @@ than read as a weak edge to a box holding a reference, which is not a thing sysl
 ```sysl
 struct Node
     v: int
-end Node
 
 var r: &Node = Node(1)
 var w: weak &Node = r
@@ -355,7 +347,6 @@ selection, no method call, no `==`:
 struct Node
     label: string
     parent: weak Node
-end Node
 
 var root: &Node = Node("root", None)
 var kid: &Node = Node("kid", root)
@@ -386,7 +377,6 @@ therefore still has one, and an uninitialized declaration of it is still a decla
 struct Node
     label: string
     parent: weak Node
-end Node
 
 var n: Node
 
@@ -407,7 +397,6 @@ and the object dead before the statement ended:
 struct Node
     label: string
     parent: weak Node
-end Node
 
 var kid: &Node = Node("kid", Node("root", None))
 
@@ -429,7 +418,6 @@ the one value that holds nothing:
 struct Node
     label: string
     parent: weak Node
-end Node
 
 adopt(child: string, parent: weak Node = None) -> string
     parent.get() match
@@ -486,7 +474,6 @@ the way a bare `None` takes its type argument:
 struct Node
     value: int
     next: *Node
-end Node
 
 var third = Node(3, null)
 var second = Node(2, &third)
@@ -589,7 +576,6 @@ print(pn - pc)
 ```sysl
 struct Point
     x: int
-end Point
 
 var a: &Point = Point(1)
 var b: &Point = Point(2)
@@ -648,7 +634,6 @@ pointer — Go's rule, with no `->`. Matching a reference to an enum against its
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(1, 2)
 var pp = &p
@@ -668,7 +653,6 @@ levels are left:
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(1, 2)
 var pp = &p
@@ -710,7 +694,6 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -795,7 +778,6 @@ struct Temp
     c: int
 
     f -> int = self.c * 9 / 5 + 32
-end Temp
 
 var t = Temp(0)
 var p = &t.f
@@ -816,7 +798,6 @@ slot would be that prologue's frame and the pointer would be stale by the progra
 ```sysl
 struct Rect
     w: int
-end Rect
 
 static var p: *Rect = &Rect(2)
 
@@ -832,7 +813,6 @@ Give the value a name that lasts the run instead, and take the address of that:
 ```sysl
 struct Rect
     w: int
-end Rect
 
 static var r: Rect = Rect(2)
 static var p: *Rect = &r
@@ -855,7 +835,6 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -877,7 +856,6 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -905,7 +883,6 @@ rather than a gradient.
 struct Task
     state: int
     prio: int
-end Task
 
 struct Kernel
     tasks: [4]Task
@@ -1066,7 +1043,6 @@ struct Table
 
     grow(*self)
         self.cell = [0; 8]
-end Table
 
 var t = Table([1, 2, 3])
 
@@ -1120,7 +1096,6 @@ size:
 struct Node
     value: int
     next: Node
-end Node
 
 print(1)
 ```
@@ -1325,7 +1300,6 @@ a program comparing addresses against a signed offset wants.
 ```sysl
 struct Node
     value: int
-end Node
 
 var arena: [64]u8 = [0u8; 64]
 var n: *Node = ptr_cast(&arena[0])
@@ -1363,7 +1337,6 @@ ARC to own and no object to be non-null about:
 ```sysl
 struct Node
     value: int
-end Node
 
 var arena: [64]u8 = [0u8; 64]
 var n: &Node = ptr_cast(&arena[0])
@@ -1398,7 +1371,6 @@ struct Uart
     status: volatile u32
     data:   volatile u32
     baud:   u32
-end Uart
 
 var block = Uart(1, 0, 115200)
 var regs: *Uart = &block
@@ -1460,7 +1432,6 @@ qualifier on the whole struct would sweep it in:
 ```sysl
 struct Uart
     status: u32
-end Uart
 
 var p: *volatile Uart = null
 
@@ -1667,7 +1638,6 @@ conversion either way, and which one an object is is chosen where it is allocate
 ```sysl
 struct Cell
     n: int
-end Cell
 
 send(c: &sync Cell) -> int = c.n
 
@@ -1694,11 +1664,9 @@ of its own:
 ```sysl
 struct Cell
     n: int
-end Cell
 
 struct State
     cell: &Cell
-end State
 
 @crossing(s)
 start(s: *State) -> int = s.cell.n
