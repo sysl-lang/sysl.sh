@@ -257,6 +257,8 @@ ends written is a [value](/reference/expressions/) and implements this trait, so
 on one.
 
 ```sysl
+import sysl.seq.Sequence
+
 print((0..<5).map(i -> i * i))
 print((0..<10).filter(i -> i % 3 == 0))
 print((0..<10).fold(0, (a, n) -> a + n))
@@ -274,6 +276,8 @@ and stop, so a question about the front of a very long range costs the predicate
 all.
 
 ```sysl
+import sysl.seq.Sequence
+
 print((0..<1000000).any(i -> i == 3))
 ```
 
