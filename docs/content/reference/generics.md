@@ -208,6 +208,43 @@ That is a `u8` because one argument knew and two did not, while `id(7)` is still
 did. Once the parameter is a type the literals are read against it — the same order the operand rule
 uses inside an expression.
 
+**A construction built out of nothing but literals is consulted last for the same reason.** `Some(3)`
+is a call rather than a literal, but the only thing that decided its `Option[int]` was an unsuffixed
+`3` — so the conclusion is worth exactly what the `3` was worth, and an argument carrying a type of
+its own outranks it whichever end of the call it is written at:
+
+```sysl
+same[T: Eq](a: T, b: T) -> bool = a == b
+
+var s: Option[usize] = Some(3)
+
+print(same(s, Some(3)), same(Some(3), s), s == Some(3), Some(3) == s)
+```
+
+```output
+true true true true
+```
+
+An array literal and a generic struct reach it on the same rule, and it nests — `Some(Some(3))` is
+built out of literals however far down you look.
+
+**Two things stop it, and each is the reader having said what they meant.** A **suffix** anywhere
+inside fixes the width, so `Some(3u8)` has a type of its own and disagreeing with it is a diagnostic.
+And an ordinary **call** is not a construction: `f(3)` is spelled exactly as `Some(3)` is, and what
+comes back has nothing to do with the literal handed over, so it keeps the type it answered with.
+
+```sysl
+f(n: int) -> Option[int] = Some(n)
+
+var s: Option[usize] = Some(3)
+
+print(f(3) == s)
+```
+
+```error
+'==' needs matching types, got sysl.Option[int] and sysl.Option[usize]
+```
+
 **A parameter is solved to the type that was *written*.** Where that is a
 [transparent subtype](/reference/declarations/#type-declarations), the parameter carries the subtype
 rather than the base it is stored as — and it does so however the call said which type it is at:
