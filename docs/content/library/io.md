@@ -384,8 +384,9 @@ about the *line* — and they have to come from somewhere, because a terminal in
 as it is typed and a mistake cannot be corrected without them.
 
 They come from [`sysl.term.edit`](/library/term/#reading-a-line-sysl-term-edit), which is this trait's
-other consumer: it edits where nothing else will, and hands back whole lines through the same
-`Iterate[string]` a `Lines` does. **So the two are interchangeable at a call site**, and which one a
+other consumer: it edits where nothing else will, and hands back whole lines the same way a `Lines`
+does — an `Iterate` whose `Item` is `string`. **So the two are interchangeable at a call site**, as a
+`*Iterate[string]`, and which one a
 program wants is decided by whether anything else is already doing the editing — the kernel, on a
 cooked terminal, and nothing at all over a serial cable.
 

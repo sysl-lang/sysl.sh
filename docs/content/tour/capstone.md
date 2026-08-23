@@ -115,7 +115,7 @@ the source is interchangeable.
 
 ## The loop walks a cursor
 
-`lines(src)` hands back a cursor implementing `Iterate[string]`, and `for` walks anything that does.
+`lines(src)` hands back a cursor implementing `Iterate`, and `for` walks anything that does.
 That means the loop reads a line at a time out of a 4 KiB chunk, rather than pulling the whole input
 into memory — and it looks exactly like the `for x in xs` that walks an array.
 

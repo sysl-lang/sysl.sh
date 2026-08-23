@@ -810,14 +810,42 @@ read a slot past the count that the backing slice still has.
 ## Walking a type of your own
 
 ```sysl
-trait Iterate[E]
-    next(*self) -> Option[E]
+trait Iterate
+    type Item
+    next(*self) -> Option[Self::Item]
 ```
 
 This is what a `for` asks of what it walks, when what it walks is not an array, a slice, or a range
 written straight into the header — those three the compiler walks directly. A range **value** is not
 among them: `sysl.Range[T]` implements this trait like any other type, which is what makes a `for`
 over a named range the ordinary loop rather than a second kind of one.
+
+**The element is an [associated type](/reference/traits/#a-trait-may-declare-an-associated-type)
+rather than a parameter**, because a cursor walks one kind of thing and the choice is the cursor's.
+That is what lets a signature be generic over *what* it walks without naming what comes out:
+
+```sysl
+count_all[I: Iterate](it: I) -> usize
+    var n: usize = 0
+    var cur = it
+
+    loop
+        cur.next() match
+            Some(_) -> n += 1
+            None -> break
+
+    n
+
+print(count_all(0..<4), count_all("hi".chars))
+```
+
+```output
+4 2
+```
+
+Written `Iterate[E]` that signature could not be spelled at all: `E` would appear only in a bound, and
+a call has nothing there to solve it from. A body that *does* want the element names it as
+`I::Item`.
 
 **`next` answers with an `Option`**, so ending and yielding are one question with one answer. A
 separate `has_next` would be two, and two questions can disagree — the classic iterator bug is a
@@ -827,7 +855,8 @@ separate `has_next` would be two, and two questions can disagree — the classic
 struct Countdown
     n: int
 
-impl Iterate[int] for Countdown
+impl Iterate for Countdown
+    type Item = int
     next(*self) -> Option[int]
         if self.n <= 0 then return None
         self.n -= 1
@@ -850,14 +879,17 @@ reader's failure latch, say — which is why such a cursor has to borrow what it
 own it. [`sysl.io`](/library/io/)'s `lines()` is built that way for exactly this reason.
 
 **A `for` also walks an erased cursor**, since `next` takes `*self` and mentions no `Self` elsewhere
-— so `Iterate` has an object, and the loop calls its member through the table. The element type is
-whatever the object was erased to, which is why there is nothing to annotate:
+— so `Iterate` has an object, and the loop calls its member through the table. What the object type
+has to say is the **element**, since that is the one thing erasure forgot: `&Iterate[int]` is the
+short spelling of `&Iterate[Item = int]`, and both are
+[the same type](/reference/traits/#an-object-may-fix-the-associated-type).
 
 ```sysl
 struct Countdown
     n: int
 
-impl Iterate[int] for Countdown
+impl Iterate for Countdown
+    type Item = int
     next(*self) -> Option[int]
         if self.n <= 0 then return None
         self.n -= 1
