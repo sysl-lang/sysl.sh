@@ -261,7 +261,7 @@ print(0..<10)
 ```
 
 ```error
-a range is only allowed in a 'for' loop
+a range is only allowed in a 'for' loop, in a 'for all' or 'for some' quantifier, in a slice index, or in a 'match' pattern
 ```
 
 So there is no type for `Sequence` to be implemented for and nothing to map over, and `generate`

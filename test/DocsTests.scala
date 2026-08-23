@@ -61,8 +61,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
-    // field changed twice).
-    "docs/content/reference/expressions.md"           -> (36, 19, 0),
+    // field changed twice). Three more runnable and two more refusals for the trailing block, and
+    // one more of each again for the identities: every integer type is a member of `Zero` and `One`
+    // now, so a generic sum runs over an `int` and over a `real` from one body, and a constrained
+    // subtype is refused by name because a range need not hold the value.
+    "docs/content/reference/expressions.md"           -> (37, 20, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.

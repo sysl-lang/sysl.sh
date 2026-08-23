@@ -2012,6 +2012,13 @@ value it has to start an accumulation from. They are in the standard module, so 
 `[T: Add + Zero]` needs no import — and a `T` that is itself generic brings its own arguments, so the
 answer at `T = Complex[real]` is a `Complex[real]` with nothing written at the call.
 
+**They are also where a receiverless member is compiler-provided rather than written**, which is the
+half a built-in could not have before. Every integer type is a member of both, and there is no block
+for it anywhere: the `iN`/`uN` families are open, so a membership over them has to be a rule, and a
+rule about a member with no receiver has to say what it *lowers to* rather than reading it off a
+value. `T.zero()` at an integer is the literal, so a bounded accumulator costs no call.
+[Expressions](/reference/expressions/) has the rule and the two types it stops at.
+
 **It is static dispatch only, and nothing was added to keep it that way.** Object safety already
 excludes a member with no receiver, because a table slot is selected *by* the receiver and there is
 nothing here to select with. A trait declaring one is usable as a bound and not as an object, exactly

@@ -1265,6 +1265,52 @@ because the caller did not think to ask for a trait. What a bound gains by them 
 operator cannot supply — a **value** — so `[T: Add + Zero]` can start an accumulation where
 `[T: Add]` has to be handed one.
 
+**Every integer type is a member of both, and no block anywhere says so.** `sysl.ops` writes an
+`impl` for `real` and one for `f32`, and it cannot write one for the integers: `iN` and `uN` are an
+[open family](/reference/types/), so a program may name a `u256` no library file ever listed. That
+membership is the compiler's, exactly as `Signed`'s and `Bits`' are — and unlike those, the member
+it supplies has **no receiver**, so what it lowers to is stated rather than read off a value.
+`T.zero()` at an integer is the literal `0`, and the accumulator below costs no call at all.
+
+```sysl
+sum[T: Add + Zero](xs: []const T) -> T
+    var total = T.zero()
+
+    for i in 0..<xs.len do total += xs[i]
+
+    total
+
+var none: []int = []
+
+print(sum([1, 2, 3]), sum(none), sum([1.5, 2.5]) == 4.0)
+```
+
+```output
+6 0 true
+```
+
+**A constrained subtype is deliberately not a member, and it is the one place a value parts company
+with an operation.** [`16 §3`](/reference/types/) gives a subtype every operation its base has,
+because narrowing which values a type holds does not narrow what can be done with them. An identity
+is not an operation: a range written to exclude zero has not got one, so the membership stops at the
+integer types themselves. A **vector** is left out for a related reason — `<4>i32` has four lanes and
+`zero()` names none of them, where every operator above is the lane's operation happening four times
+at once.
+
+```sysl
+type Age = int within 0..150
+
+first[T: Zero](x: T) -> T = T.zero()
+
+var a: Age = 30
+
+print(first(a))
+```
+
+```error
+'first' requires its type parameter 'T' to implement 'sysl.Zero', but Age does not
+```
+
 ```sysl
 struct Vec2
     x: int
