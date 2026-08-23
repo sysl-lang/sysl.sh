@@ -616,7 +616,9 @@ typo produces.
 | *the program's* | `run` only, once the program has started |
 
 A compiler diagnostic is printed exactly as the compiler wrote it: the message, the location, the
-line it happened on, and the offending token underlined beneath it.
+line it happened on, and what went wrong underlined beneath it. The underline is as wide as the thing
+being complained about — a name, a literal, or a whole expression where the expression is what is
+wrong — and stops at the end of the line, since only the one line is quoted.
 
 ```
 error: 'b' of 'add' is int, but string was given
