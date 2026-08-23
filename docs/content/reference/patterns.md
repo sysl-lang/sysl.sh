@@ -221,7 +221,6 @@ would quietly stand for a different part of the value:
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(3, 3)
 
@@ -334,7 +333,6 @@ whatever a binding binds and follows every rule in this section:
 ```sysl
 struct Counter
     n: int
-end Counter
 
 pair(c: *Counter) -> (int, int)
     c.n = c.n + 1
@@ -406,11 +404,9 @@ pattern irrefutable, and both spellings of it stand here:
 struct Point
     x: int
     y: int
-end Point
 
 struct Pair
     both: (int, int)
-end Pair
 
 show()
     val Point{y, x} = Point(3, 4)
@@ -438,7 +434,6 @@ struct Point
     x: int
     y: int
     z: int
-end Point
 
 show()
     val Point(x, y) = Point(1, 2, 3)
@@ -478,7 +473,6 @@ A variant is a **choice among shapes**, which is a different objection and gets 
 enum Shape
     Circle(r: int)
     Square(s: int)
-end Shape
 
 show()
     val (Circle(r), b) = (Circle(1), 2)

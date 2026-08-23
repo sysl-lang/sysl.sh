@@ -122,7 +122,6 @@ And **the value is evaluated exactly once**, then copied into every element:
 ```sysl
 struct Counter
     n: int
-end Counter
 
 bump(c: *Counter) -> int
     c.n = c.n + 1
@@ -164,7 +163,6 @@ a `&T` has no zero value, because a reference always points at something live.
 ```sysl
 struct Node
     next: &Node
-end Node
 
 var n: Node
 ```

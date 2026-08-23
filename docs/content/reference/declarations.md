@@ -887,14 +887,12 @@ impl Fallible for Stdout
 
 impl Writer for Stdout
     write(*self, bytes: []const u8) = putbytes(bytes)
-end Stdout
 
 show[T: Display](x: T)
     var out = Stdout()
 
     x.display(&out, FormatSpec(0, -1, false))
     printc('\n')
-end show
 
 show(42)
 show("through a sink of one's own")
@@ -982,7 +980,6 @@ anything a type expression can name:
 struct Reading
     at: int
     value: f64
-end Reading
 
 type Sample = Reading
 type Window = [4]Sample

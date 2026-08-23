@@ -335,7 +335,6 @@ import sysl.sync.*
 struct Point
     x: i32
     y: i32
-end Point
 
 var here = Atomic(Point(1, 2))
 

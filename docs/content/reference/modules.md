@@ -64,7 +64,6 @@ private[arch] reset(c: int) -> int = c
 
 private[oskit] struct FrameHeader
     magic: int
-end FrameHeader
 ```
 
 **`M` resolves innermost-outward.** The argument is a **simple name**, not a path, matched against the
@@ -116,7 +115,6 @@ write the type down.
 ```sysl
 private struct Point
     x: int
-end Point
 
 make() -> Point = Point(1)
 

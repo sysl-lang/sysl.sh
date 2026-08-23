@@ -331,7 +331,6 @@ trait From[T]
 
 struct Temp
     tenths: int
-end Temp
 
 impl From[int] for Temp
     from(x: int) -> Temp = Temp(x * 10)
@@ -363,7 +362,6 @@ trait Into[T]
 
 struct Reading
     raw: int
-end Reading
 
 impl Into[real] for Reading
     into(self) -> real = f64(self.raw) / 10.0

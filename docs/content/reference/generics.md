@@ -14,7 +14,6 @@ id[T](x: T) -> T = x
 struct Pair[A, B]
     first: A
     second: B
-end Pair
 
 var p = Pair(1, "one")
 
@@ -108,7 +107,6 @@ add[const W: usize](a: []const f32, out: []f32)
     val v: <W>f32 = a.load(0)
 
     out.store(0, v)
-end add
 
 var xs: [8]f32
 var out: [8]f32
@@ -153,7 +151,6 @@ construction, so every nested parameter is solved at once:
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 id[T](x: T) -> T = x
 
@@ -335,7 +332,6 @@ struct Box[T]
     v: T
 
     of(x: T) -> Box[T] = Box(x)
-end Box
 
 var b = Box.of(41)
 
@@ -394,13 +390,11 @@ reaches:
 struct Pair[A, B]
     first: A
     second: B
-end Pair
 
 struct Box[T]
     v: T
 
     with[U](self, x: U) -> Pair[T, U] = Pair(self.v, x)
-end Box
 
 var b = Box(1)
 var p = b.with("x")
@@ -433,7 +427,6 @@ without inspecting it, and they need no bound.
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 keep[T](x: T) -> Box[T] = Box(x)
 
@@ -662,7 +655,6 @@ struct SortedPair[T: Ord]
     hi: T
 
     ordered(self) -> bool = self.lo < self.hi
-end SortedPair
 
 var s = SortedPair(1, 2)
 
@@ -682,11 +674,9 @@ parameter, a result, a field of another type, a variant's payload, a constructio
 struct SortedPair[T: Ord]
     lo: T
     hi: T
-end SortedPair
 
 struct P
     v: int
-end P
 
 var s = SortedPair(P(1), P(2))
 
@@ -722,7 +712,6 @@ out:
 struct Pair[A, B = A]
     x: A
     y: B
-end Pair
 
 total(p: Pair[int]) -> int = p.x + p.y
 
@@ -804,7 +793,6 @@ position is not something to arrive at by accident:
 ```sysl
 struct P
     v: int
-end P
 
 make[T](b: u8) -> T = T(b)
 
@@ -854,14 +842,12 @@ trait Animal
 
 struct Cat
     n: string
-end Cat
 
 impl Animal for Cat
     noise(self) -> string = "meow"
 
 struct Box[T]
     v: T
-end Box
 
 hear(b: Box[&Animal]) -> string = b.v.noise()
 
@@ -956,7 +942,6 @@ struct Buf[const N: usize]
     used: usize
 
     room(self) -> usize = N - self.used
-end Buf
 
 var a: Buf[8] = Buf(3)
 var b: Buf[2] = Buf(1)

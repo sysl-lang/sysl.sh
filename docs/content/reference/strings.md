@@ -399,7 +399,6 @@ an ordinary call, and `str` of one *without* an implementation names the `impl` 
 struct Point
     x: int
     y: int
-end Point
 
 var p = Point(1, 2)
 

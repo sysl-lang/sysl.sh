@@ -16,7 +16,6 @@ trait Greet
 
 struct Cat
     tag: string
-end Cat
 
 impl Greet for Cat
     name(self) -> string = self.tag
@@ -57,7 +56,6 @@ trait Sized
 struct Box
     w: int
     h: int
-end Box
 
 impl Sized for Box
     size -> int = self.w * self.h
@@ -87,7 +85,6 @@ trait Counter
 
 struct Cell
     v: int
-end Cell
 
 impl Counter for Cell
     count -> int = self.v
@@ -150,7 +147,6 @@ trait Loud
 
 struct Amp
     n: int
-end Amp
 
 impl Loud for Amp
 
@@ -180,7 +176,6 @@ trait Loud
 
 struct Amp
     n: int
-end Amp
 
 impl Loud for Amp
     override volume(self) -> int = self.n
@@ -204,7 +199,6 @@ trait Loud
 
 struct Amp
     n: int
-end Amp
 
 impl Loud for Amp
     volume(self) -> int = self.n
@@ -227,7 +221,6 @@ trait Sized
 struct Box
     w: int
     h: int
-end Box
 
 impl Sized for Box
     override size -> int = self.w * self.h
@@ -255,7 +248,6 @@ struct P
     n: string
 
     label(self) -> string = self.n
-end P
 
 announce[T: Named](x: T) -> string = x.label()
 
@@ -294,11 +286,9 @@ trait Named
 
 struct Dog
     n: string
-end Dog
 
 struct Cat
     n: string
-end Cat
 
 impl Named for Dog
     label(self) -> string = "dog " + self.n
@@ -324,11 +314,9 @@ trait Shape
 struct Rect
     w: int
     h: int
-end Rect
 
 struct Square
     s: int
-end Square
 
 impl Shape for Rect
     area(self) -> int = self.w * self.h
@@ -359,7 +347,6 @@ trait Named
 
 struct Dog
     n: string
-end Dog
 
 impl Named for Dog
     label(self) -> string = "dog " + self.n
@@ -438,7 +425,6 @@ Two subjects are refused, each because an implementation for it would be about n
 ```sysl
 struct P
     v: int
-end P
 
 trait Show2
     show2(self) -> int
@@ -497,7 +483,6 @@ A block may declare **type parameters of its own**, written directly after the k
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 trait Show
     show(self) -> string
@@ -523,7 +508,6 @@ one parameter, each parameter used once, all of them spoken for:
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 trait Show2
     show2(self) -> int
@@ -558,7 +542,6 @@ implementation usable on nested types at all.
 ```sysl
 struct Box[T]
     v: T
-end Box
 
 trait Show
     show(self) -> string
@@ -759,7 +742,6 @@ A **`deriving` clause** on a `struct` or an `enum` asks for them:
 struct Size deriving Eq, Ord, Hash, Display
     w: int
     h: int
-end Size
 
 val a = Size(3, 4)
 
@@ -787,7 +769,6 @@ trait Show
 
 struct P deriving Show
     x: int
-end P
 ```
 
 ```error
@@ -804,7 +785,6 @@ which it already was for layout: a struct's fields are laid out in the order the
 struct Version deriving Ord, Display
     major: int
     minor: int
-end Version
 
 print(Version(1, 9) < Version(2, 0), Version(2, 0) < Version(1, 9))
 ```
@@ -825,7 +805,6 @@ of something unequatable is not, and neither needs saying.
 ```sysl
 struct Box[T] deriving Eq, Display
     v: T
-end Box
 
 print(Box(1) == Box(1), Box(1) == Box(2), Box("x"))
 ```
@@ -847,7 +826,6 @@ enum Shape deriving Eq, Ord, Display
     Circle(r: int)
     Rect(w: int, h: int)
     Empty
-end Shape
 
 print(Circle(2), Rect(3, 4), Empty)
 print(Circle(9) < Rect(0, 0), Rect(1, 5) < Rect(1, 6), Circle(1) == Circle(1))
@@ -868,7 +846,6 @@ value *is* its discriminant. The clause says so rather than letting the block be
 enum Colour deriving Eq
     Red
     Green
-end Colour
 ```
 
 ```error
@@ -882,7 +859,6 @@ enum Colour deriving Ord, Hash, Display
     Red
     Green
     Blue
-end Colour
 
 print(Red < Green, Blue < Green, Green)
 ```
@@ -930,7 +906,6 @@ trait Sink[T]
 
 struct Buffer
     n: int
-end Buffer
 
 impl Sink[int] for Buffer
     put(*self, x: int) -> int
@@ -980,7 +955,6 @@ trait Sink[T]
 
 struct Buf
     tag: string
-end Buf
 
 impl Sink[int] for Buf
     put(self, x: int) -> string = self.tag + " int"
@@ -1426,7 +1400,6 @@ trait Greet: Named
 
 struct P
     n: string
-end P
 
 impl Named for P
     label(self) -> string = self.n
@@ -1459,7 +1432,6 @@ trait Greet: Named
 
 struct P
     n: string
-end P
 
 impl Greet for P
 
@@ -1581,7 +1553,6 @@ trait Scale
 
 struct P
     v: int
-end P
 
 impl Scale for P
     scale(self, k: int) -> P = P(self.v * k)
@@ -1708,7 +1679,6 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -1737,11 +1707,9 @@ trait Shape
 struct Rect
     w: int
     h: int
-end Rect
 
 struct Square
     s: int
-end Square
 
 impl Shape for Rect
     area(self) -> int = self.w * self.h
@@ -1769,7 +1737,6 @@ trait Shape
 struct Rect
     w: int
     h: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w * self.h
@@ -1822,7 +1789,6 @@ trait Shape: Display
 struct Rect
     w: int
     h: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w * self.h
@@ -1856,7 +1822,6 @@ trait Shape
 struct Rect
     w: int
     h: int
-end Rect
 
 impl Shape for Rect
     area(self) -> int = self.w * self.h
@@ -1888,11 +1853,9 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 struct Sq
     s: int
-end Sq
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -1926,11 +1889,9 @@ trait Shape
 
 struct Rect
     w: int
-end Rect
 
 struct Sq
     s: int
-end Sq
 
 impl Shape for Rect
     area(self) -> int = self.w
@@ -1957,7 +1918,6 @@ value is erased — which is the case that says something the static type does n
 ```sysl
 struct Rect
     w: int
-end Rect
 
 var r = Rect(2)
 

@@ -63,7 +63,6 @@ import sysl.posix.threads.*
 struct Job
     input: i32
     output: i32
-end Job
 
 square(j: *Job)
     j.output = j.input * j.input
@@ -177,11 +176,9 @@ import sysl.posix.threads.*
 
 struct Cell
     n: int
-end Cell
 
 struct State
     cell: &Cell
-end State
 
 look(s: *State)
     print(s.cell.n)
@@ -238,7 +235,6 @@ import sysl.posix.threads.*
 struct Shared
     guard: SpinLock
     total: i32
-end Shared
 
 add_up(s: *Shared)
     for i in 0..<10000
