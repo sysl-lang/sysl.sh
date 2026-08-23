@@ -431,6 +431,25 @@ b[0] += 5
 would evaluate the receiver and the index twice — write it out as 'b[i] = b[i] + …'
 ```
 
+**The form the diagnostic names is ordinary**, and writing it is what makes the two calls visible —
+one `index` on the right of the `=`, one `index_set` on the left:
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+var b: &Buf[int] = buf()
+
+b.push(1)
+
+b[0] = b[0] + 5
+
+print(b[0])
+```
+
+```output
+6
+```
+
 Note also that `b.len()` has parentheses where `a.len` does not: the built-in length is a property of
 a type the compiler knows, and `Buf`'s is an ordinary method. Nothing a program writes competes with
 the built-in subscript — an array, a slice and a string are indexed by the compiler.

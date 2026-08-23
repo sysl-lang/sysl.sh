@@ -82,9 +82,13 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/declarations.md"          -> (28, 8, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
     "docs/content/reference/memory.md"                -> (30, 21, 0),
-    "docs/content/reference/arrays.md"                -> (20, 9, 1),
+    // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
+    // runs that spelling instead of leaving it as prose nothing compiles.
+    "docs/content/reference/arrays.md"                -> (21, 9, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
-    "docs/content/reference/strings.md"               -> (22, 7, 1),
+    // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
+    // runs that spelling instead of leaving it as prose nothing compiles.
+    "docs/content/reference/strings.md"               -> (23, 7, 1),
     // One more of each: a member that declares type parameters of its own is left out of the table
     // rather than out of the object, so the page shows an object forming on such a trait and
     // dispatching everything else, and refuses the one member on it.
@@ -106,7 +110,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
-    "docs/content/reference/errors.md"                 -> (22, 27, 2),
+    // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
+    // runs that spelling instead of leaving it as prose nothing compiles.
+    "docs/content/reference/errors.md"                 -> (23, 27, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -142,7 +148,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     "docs/content/guides/lisp.md"                      -> (0, 0, 2),
     "docs/content/guides/simd.md"                      -> (0, 0, 3),
-    "docs/content/library/core.md"                     -> (24, 4, 11),
+    // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
+    // runs that spelling instead of leaving it as prose nothing compiles.
+    "docs/content/library/core.md"                     -> (25, 4, 11),
     "docs/content/library/text.md"                      -> (17, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),
@@ -151,7 +159,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // line editor and made anything taking a `*Reader` testable without a descriptor.
     "docs/content/library/io.md"                        -> (6, 3, 3),
     "docs/content/library/fs.md"                        -> (7, 5, 3),
-    "docs/content/library/math.md"                      -> (22, 10, 3),
+    // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
+    // runs that spelling instead of leaving it as prose nothing compiles.
+    "docs/content/library/math.md"                      -> (23, 10, 3),
     "docs/content/library/complex.md"                   -> (7, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section

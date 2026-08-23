@@ -409,6 +409,27 @@ print(str(p))
 write an 'impl sysl.Display for Point' to say how it renders
 ```
 
+Written, the same `str` is an ordinary call — the [member](/library/core/#writing-display-for-your-own-type)
+takes the writer the string is being gathered into and the specifier the call site asked for:
+
+```sysl
+struct Point
+    x: int
+    y: int
+
+impl Display for Point
+    display(self, out: *Writer, fmt: FormatSpec) =
+        display_pad(("(" + str(self.x) + ", " + str(self.y) + ")").bytes, out, fmt)
+
+var p = Point(1, 2)
+
+print(str(p))
+```
+
+```output
+(1, 2)
+```
+
 A reference, a pointer, a slice and an array remain errors, since none of them can carry an `impl`.
 
 ## Interpolation

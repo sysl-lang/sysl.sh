@@ -1153,7 +1153,28 @@ this view may be written, and it views storage inside Group, whose invariant rea
 ```
 
 A `[]const T` is ordinary, since giving up the write is exactly what makes a view carry no promise it
-could break. So is `&o` itself, whose `*Outer` names the struct and is checked by the ordinary walk.
+could break — which is the first of the two spellings the diagnostic names, and the whole of the
+difference between the two programs:
+
+```sysl
+struct Inner
+    n: int
+
+struct Group
+    items: [4]Inner
+    invariant items[0].n <= 10
+
+var g = Group([Inner(0), Inner(0), Inner(0), Inner(0)])
+var view: []const Inner = g.items[0..<2]
+
+print(view.len, view[0].n)
+```
+
+```output
+2 0
+```
+
+So is `&o` itself, whose `*Outer` names the struct and is checked by the ordinary walk.
 And so is a pointer to a field **no clause mentions** — the refusal is about the clause, not about
 the struct:
 

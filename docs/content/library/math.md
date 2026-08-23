@@ -755,7 +755,24 @@ already implements 'sysl.math.Magnitude', which declares an associated type 'Siz
 
 That is the price of the name and it is worth knowing before picking one: a library trait covering a
 family spends its associated type's name for every member of that family. A program wanting its own
-size-like trait over the integers picks a different word for the type it answers with.
+size-like trait over the integers picks a different word for the type it answers with — and one word
+is the whole of the difference between the block above and this one:
+
+```sysl
+trait Sized
+    type Extent
+    extent(self) -> Self::Extent
+
+impl[T: Integer + Zero] Sized for T
+    type Extent = T
+    extent(self) -> Self::Extent = self
+
+print(7.extent(), 200u8.extent())
+```
+
+```output
+7 200
+```
 
 ## The arithmetic above the operators
 

@@ -801,7 +801,29 @@ g[0] += 1
 The expansion would be `g.index_set(0, g.index(0) + 1)`, which evaluates `g` twice and the index
 expression twice. For a `Grid` that is merely wasteful; for a receiver that is a function call, or an
 index that advances a cursor, it is wrong. The refusal makes you write the version whose cost you can
-see.
+see:
+
+```sysl
+struct Grid
+    cells: [9]int
+
+impl Index[int, int] for Grid
+    index(self, i: int) -> int = self.cells[i]
+
+impl IndexSet[int, int] for Grid
+    index_set(*self, i: int, v: int)
+        self.cells[i] = v
+
+var g: Grid
+
+g[0] = g[0] + 1
+
+print(g[0])
+```
+
+```output
+1
+```
 
 This is the [`sysl.buf`](/library/buf/) `Buf[T]` arrangement too, and there it earns something
 specific: subscripting reaches the bounds-checked members rather than the storage, so `b[i]` cannot
