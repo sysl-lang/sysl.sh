@@ -4,6 +4,14 @@ summary: Machine instructions, in an arm per architecture — where operands are
 weight: 125
 ---
 
+**Inline assembly is EXPERIMENTAL, and outside the [0.1.0 promise](/getting-started/stability/).**
+Everything below is shipped, documented and checked against the compiler like every other page here.
+What it does not have is a settled surface: a read-modify-write operand, a floating register class,
+and the two spellings that hand memory and the flags back are all unbuilt, and each would add to the
+notation rather than only to what it can reach. Build on it where it earns its place — but do not
+expect it to hold unchanged across releases, and prefer a construct from the promised part of the
+language where one will do.
+
 `asm` reaches the instructions no library can wrap: the privileged ones, the ones that talk to a bus
 rather than to memory, and the handful that change the machine the library is running on. It is the
 one construct that steps outside the language, and it is shaped so that stepping outside costs as

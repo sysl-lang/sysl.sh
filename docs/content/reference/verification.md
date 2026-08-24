@@ -4,6 +4,15 @@ summary: Quantifiers, loop invariants, termination measures, `@pure`, `@reads`/`
 weight: 135
 ---
 
+**Verification is EXPERIMENTAL, and outside the [0.1.0 promise](/getting-started/stability/).**
+Everything below is shipped, documented and checked against the compiler like every other page here.
+What it does not have is a settled surface: more open design questions sit behind this page than
+behind the rest of the language put together, and several of the answers would change what is
+written here — how an effect appears on a function type, what a specification may say about an
+array, and what a ghost variable costs. Build on it where it earns its place — but do not expect it
+to hold unchanged across releases, and prefer a construct from the promised part of the language
+where one will do.
+
 [Contracts](/tour/contracts/) give sysl `require`, `ensure` and `invariant`, and every one of them is
 a branch and a trap. This page is the other half: the vocabulary a *specification* needs that an
 executable condition does not supply on its own, and the backend that discharges the result.
