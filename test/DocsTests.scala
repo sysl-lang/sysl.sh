@@ -79,8 +79,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
-    "docs/content/reference/declarations.md"          -> (28, 8, 1),
-    "docs/content/reference/patterns.md"              -> (11, 12, 0),
+    "docs/content/reference/declarations.md"          -> (28, 9, 1),
+    "docs/content/reference/patterns.md"              -> (12, 12, 0),
     "docs/content/reference/memory.md"                -> (32, 22, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.

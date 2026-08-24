@@ -967,6 +967,22 @@ print(Circle(1.0).area(), Rect(2.0, 3.0).area())
 A member is told from a variant by what follows it: a member needs a body after its header, so
 `Circle(r: real)` — a header with nothing after it — is a variant.
 
+**An underlying type belongs to a simple enum alone.** `: u8` pins the storage of a set of
+discriminants; a data enum has a payload beside its tag, so there is no single integer for the
+annotation to be about and the tag's width is the compiler's to choose:
+
+```sysl
+enum Shape: u8
+    Circle(r: real)
+    Rect(w: real, h: real)
+
+print(Circle(1.0))
+```
+
+```error
+only a simple enum has an underlying integer type — 'Shape' carries data
+```
+
 `Option[T]` and `Result[T, E]` are ordinary data enums declared in the standard library, with no
 compiler privileges.
 

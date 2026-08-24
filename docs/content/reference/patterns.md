@@ -670,6 +670,57 @@ type switch.
 That keeps "am I matching the reference or the thing" a visible question, and it is the one place a
 reference to an enum needs the `*`.
 
+### A payload binding is a copy
+
+The dereference says *which value* is matched. It does not make the names bound inside the arms into
+windows onto the payload: **a payload binding is initialized by copy, and it is the same copy whether
+the match went through a reference or not.** Writing through the binding changes the binding, and the
+enum is untouched.
+
+```sysl
+struct Reading
+    id: int
+    value: int
+
+enum Slot
+    Empty
+    Full(r: Reading)
+
+var s: &Slot = Full(Reading(1, 10))
+
+*s match
+    Full(r) -> r.value = 99
+    Empty -> print("empty")
+
+*s match
+    Full(r) -> print("through a reference:", r.value)
+    Empty -> print("empty")
+
+var v: Slot = Full(Reading(1, 10))
+
+v match
+    Full(r) -> r.value = 99
+    Empty -> print("empty")
+
+v match
+    Full(r) -> print("by value:", r.value)
+    Empty -> print("empty")
+```
+
+```output
+through a reference: 10
+by value: 10
+```
+
+**Both readings are the value the enum was built with**, so the two spellings agree and neither
+`r.value = 99` reached the enum. A binding is a local holding a copy of the payload, and the way to
+change what a `&Slot` holds is to assign a variant to it.
+
+The rule matters most where it is least visible: the copy is the whole payload, so matching a
+reference to an enum whose variant carries a large struct copies that struct into the arm. What a
+binding does **not** copy is the object behind a `&T` payload — that is a reference, and copying it
+retains the object rather than duplicating it, which is *Refcounts survive destructuring* above.
+
 ---
 
 Next: [memory](/reference/memory/).
