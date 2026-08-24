@@ -96,7 +96,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And the associated-type section on top of that: four more running and seven more refused,
     // since a feature whose whole point is what an implementation may leave unwritten owes its
     // edges as programs.
-    "docs/content/reference/traits.md"                -> (34, 31, 0),
+    "docs/content/reference/traits.md"                -> (36, 33, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may
@@ -150,7 +150,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/simd.md"                      -> (0, 0, 3),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (25, 4, 11),
+    "docs/content/library/core.md"                     -> (26, 4, 11),
     "docs/content/library/text.md"                      -> (17, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),
