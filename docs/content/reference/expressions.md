@@ -1234,11 +1234,16 @@ this one declares a name instead
 Neither restriction applies to the callable reading, where the block is a body and every statement
 form is at home in it.
 
-### A block cannot be written inside brackets
+### A trailing block cannot be written inside brackets
 
 A bracket suspends the off-side rule until it closes, so there is no indentation inside one for a
-block to be made of. `print(total:` followed by an indented block is a parse error rather than a
-call with a block in it — bind the value first and print the name.
+trailing block to be made of. `print(total:` followed by an indented block is a parse error rather
+than a call with a block in it — bind the value first and print the name.
+
+The two forms that *do* open a block inside brackets are `match` and `->`, and
+[the layout rules](/reference/lexical/) say why they are the two: each is a token that can only ever
+open a block, so a reader is never left wondering whether the line ended. `:` is not, and a trailing
+block written as an argument has a name-it-first form that reads better anyway.
 
 ## String interpolation
 

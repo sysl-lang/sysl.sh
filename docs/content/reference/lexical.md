@@ -504,6 +504,70 @@ Inside `(`, `[` or `{`, layout stops applying until the bracket closes — so an
 literal, or a parenthesized expression may be broken across lines however you like, and the
 indentation of the continuation lines means nothing.
 
+### Except where a block opens inside them
+
+**A token that opens an indented block opens one wherever it is written, brackets included.** There
+are two of them — `match`, which opens its arms, and `->`, which opens a closure's body or an arm's
+— and inside a bracket pair the layout the bracket suspended is put back for the block's extent and
+taken away again at its dedent. Without that a block's own margin, which is the only thing saying
+where it ends, would have meant nothing.
+
+```sysl
+name(n: int)
+    print(n match
+        0 -> "none"
+        1 -> "one"
+        else "many")
+
+name(0)
+name(1)
+name(7)
+```
+
+```output
+none
+one
+many
+```
+
+The same for an arrow, which is what a multi-statement closure passed as an argument needs:
+
+```sysl
+apply(f: int -> int, n: int) -> int = f(n)
+
+print(apply((x) ->
+    val doubled = x * 2
+
+    doubled + 1, 5))
+```
+
+```output
+11
+```
+
+The bracket rule resumes at the dedent, so an argument written after the block is read at the outer
+level and its own margin means nothing again.
+
+**`then`, `else` and `do` are not among the two, and neither is the trailing block's `:`.** An `if`
+written across lines puts its `else` back at the *outer* margin, which is a dedent belonging to the
+bracket rather than to the block — a different mechanism rather than more of this one. A branch used
+as an argument has its one-line form, which is what an argument wants anyway.
+
+**What the rule costs is one layout, and it is the whole of it:** a function *type* written inside
+brackets may not be broken immediately after its arrow, since that line now opens a block instead of
+joining. Break it before the arrow, or at a comma, and it joins as it always did.
+
+```sysl
+apply(f: int
+    -> int, n: int) -> int = f(n)
+
+print(apply((x) -> x + 1, 5))
+```
+
+```output
+6
+```
+
 ### An unbracketed line continues after an operator
 
 The rule is the narrowest one that works: **an operator that cannot finish an expression continues the

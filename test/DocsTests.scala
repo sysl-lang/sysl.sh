@@ -56,7 +56,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and one more refusal: a line may now continue the one above it by starting
     // with a dot, so the page shows a chain broken before the dot, refuses the trailing spelling,
     // and shows the `match` whose arms the rule's second half is what keeps.
-    "docs/content/reference/lexical.md"               -> (11, 2, 2),
+    "docs/content/reference/lexical.md"               -> (14, 2, 2),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound.
@@ -75,7 +75,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
-    "docs/content/reference/statements.md"            -> (15, 3, 1),
+    "docs/content/reference/statements.md"            -> (17, 4, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
@@ -138,7 +138,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable again: a bound asked through a type parameter answers the subtype the
     // parameter was solved to — the one answer a transparent subtype and its base differ on — and a
     // subtype that narrows nothing answers its base's, which is what a measured typedef is.
-    "docs/content/reference/attributes.md"             -> (25, 31, 6),
+    "docs/content/reference/attributes.md"             -> (25, 32, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
@@ -157,7 +157,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/core.md"                     -> (26, 4, 11),
-    "docs/content/library/text.md"                      -> (17, 6, 4),
+    "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),
     "docs/content/library/container.md"                -> (5, 0, 3),

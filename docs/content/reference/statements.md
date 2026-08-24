@@ -142,6 +142,72 @@ A match used **for a value must be exhaustive**; one written for effect need not
 the same rule the block-value discard does. Everything about the left side of an arm — the pattern
 grammar, guards, alternatives, bindings — is on [patterns and matching](/reference/patterns/).
 
+## A branch with no type of its own takes its sibling's
+
+The branches of an `if` and the arms of a `match` must agree on one type; there is no subtyping among
+concrete types for them to widen towards. A **bare literal** is the exception, because it has no type
+of its own to be overridden. It takes the type of the branch beside it, exactly as it takes the type
+of the operand beside it in `n + 1` and of the other end in `0..<xs.len`.
+
+```sysl
+width(n: usize) -> usize = n
+
+at_least_one(n: usize) -> usize = width(if n == 0 then 1 else n)
+gap(a: usize, b: usize) -> usize = width(if a > b then a - b else 0)
+
+print(at_least_one(0), gap(9, 2), gap(2, 9))
+```
+
+```output
+1 7 0
+```
+
+`width` is what makes those three real: it takes a `usize`, so an `if` that had come out as `int`
+would not compile at all. Without the rule the `1` and the `0` fall to `int`, each pair is refused
+for a difference nobody wrote, and the fix is an annotation on the declaration restating a width the
+other branch already gives.
+
+A `match` is the same rule over as many alternatives as the form has. The arms that know what they
+are settle the type and the bare literals take it, wherever they are written — the arm that knows
+may be the last one.
+
+```sysl
+width(n: usize) -> usize = n
+
+step(n: usize) -> usize
+    val w = n match
+        0 -> 1
+        1 -> 2
+        else n
+
+    width(w)
+
+print(step(0), step(1), step(8))
+```
+
+```output
+1 2 8
+```
+
+An arm or a branch that does not finish settles nothing, which is the same standing-aside `never`
+already does when the type of the whole form is worked out.
+
+**Two branches that each know what they are still have to agree.** That is the half the rule
+protects: neither is silently decided by the other, because both arrived with an opinion.
+
+```sysl
+f(a: int, b: usize)
+    val w = if a == 0 then a else b
+
+    print(w)
+
+f(0, 1)
+```
+
+```error
+if branches have different types: int and usize
+```
+
 ## Loops
 
 Five forms, and each is an expression.

@@ -423,6 +423,24 @@ Four forms of the annotation:
 | `@test(should_trap)` | the test **passes** by stopping the program |
 | `@test(should_trap: "past the end")` | …and the run must have printed that text |
 
+**Four, and `@test()` is not a fifth.** An empty argument list would mean what bare `@test` means, and
+it is refused rather than accepted as a synonym: it is not a shorter way of saying nothing, it reads
+as a description that was going to be there and got lost, and a reader who saw it accepted could not
+tell which.
+
+```sysl
+@test()
+subtracts()
+    assert(3 - 1 == 2, "two")
+```
+
+```error
+'@test' takes a description or nothing at all, and '()' is neither — drop the parentheses, and the function's own name becomes its description
+```
+
+Everything after the `(` is answered by the annotation, so a description that is not a string and an
+argument list left open are told what `@test` wanted rather than being blamed on the function below.
+
 ### What a test may be
 
 **A test is an ordinary function with a caller nothing else has**: no parameters, no result, not

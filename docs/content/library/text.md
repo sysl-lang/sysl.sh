@@ -46,7 +46,7 @@ The module is seven files, and the boundaries between them are arguments rather 
 | `ascii.sysl` | trait `Ascii`, implemented for `u8` **and** `char` | classification, **named for the range it answers over** |
 | `find.sysl` | trait `Search`, implemented for `string` **and** `[]const u8` | everything that makes **no new bytes** |
 | `edit.sysl` | `split`, `fields`, `join`, `repeat`, `replace_all`, `to_upper`, `to_lower` | everything that **does** — so it needs an allocator |
-| `parse.sysl` | `ParseError`, `parse_bool`/`int`/`long`/`uint`/`ulong`/`real` and the `_base` forms | the direction `str(x)` does not go |
+| `parse.sysl` | `ParseError`, `parse_bool`/`int`/`long`/`uint`/`ulong`/`real` and the `_base` forms, each over a `string` and over a `[]const u8` | the direction `str(x)` does not go |
 | `build.sysl` | `StrBuilder`, `CString`, `str_builder_with_capacity` | gathering text, and the copy C reads |
 | `width.sysl` | `char_columns`, `columns` | **data, not algorithm** — 499 ranges of the Unicode Character Database |
 
@@ -656,6 +656,17 @@ parse_real(s: string) -> Result[real, ParseError]
 parse_int_base(s: string, base: int) -> Result[int, ParseError]
 parse_long_base(s: string, base: int) -> Result[long, ParseError]
 parse_ulong_base(s: string, base: int) -> Result[ulong, ParseError]
+
+parse_bool(b: []const u8) -> Result[bool, ParseError]
+parse_int(b: []const u8) -> Result[int, ParseError]
+parse_long(b: []const u8) -> Result[long, ParseError]
+parse_uint(b: []const u8) -> Result[uint, ParseError]
+parse_ulong(b: []const u8) -> Result[ulong, ParseError]
+parse_real(b: []const u8) -> Result[real, ParseError]
+
+parse_int_base(b: []const u8, base: int) -> Result[int, ParseError]
+parse_long_base(b: []const u8, base: int) -> Result[long, ParseError]
+parse_ulong_base(b: []const u8, base: int) -> Result[ulong, ParseError]
 ```
 
 `str(x)` renders and nothing read back, which is a gap a program feels immediately — an argument, a
@@ -741,8 +752,37 @@ read as the policy they are.
 
 `parse_real` goes to C's `strtod` for the reason the float half of `str` goes to `snprintf`:
 correctly rounded decimal-to-binary conversion is hard to get right, easy to get subtly wrong, and
-the two directions must agree or a value will not survive being written and read back. It costs one
-allocation, since C reads a NUL-terminated pointer and a `string` carries a length instead.
+the two directions must agree or a value will not survive being written and read back. It costs a
+copy, since C reads a NUL-terminated pointer and neither a `string` nor a slice carries a
+terminator — onto the stack for any text short enough to fit a buffer there, which is every float
+anybody writes and every float `str` produces, and onto the heap only for a longer run.
+
+### Each of them reads a byte slice too
+
+What a parser holds is bytes and a span, so every one of the family above is declared a second time
+over a `[]const u8`. That form is where the work is and the `string` form is one line over it: going
+the other way cost a `string` built out of the slice, and for a float the terminated copy on top of
+that, neither of which the digits needed. The digits are ASCII, so nothing is lost by reading them
+where they already are.
+
+```sysl
+import sysl.text.{parse_int, parse_int_base, parse_real}
+
+val line = "port=8080 mask=0xff scale=1.5".bytes
+
+print(parse_int(line[5..<9]).unwrap())
+print(parse_int_base(line[17..<19], 16).unwrap())
+print(parse_real(line[26..<29]).unwrap())
+```
+
+```output
+8080
+255
+1.5
+```
+
+A slice that is not a number is refused by exactly the same road, since the checking lives in the
+slice form rather than in the wrapper.
 
 ### A parse in a `Result` is not the value
 
