@@ -81,7 +81,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // one of each being taken and then written over.
     "docs/content/reference/declarations.md"          -> (28, 8, 1),
     "docs/content/reference/patterns.md"              -> (11, 12, 0),
-    "docs/content/reference/memory.md"                -> (30, 21, 0),
+    "docs/content/reference/memory.md"                -> (32, 22, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/reference/arrays.md"                -> (21, 9, 1),

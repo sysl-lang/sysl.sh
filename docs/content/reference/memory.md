@@ -1104,9 +1104,80 @@ print(1)
 type 'Node' contains itself, so it has no finite size
 ```
 
-The rule is **per cycle rather than per field**: a cycle is legal as soon as one edge on it is a `*T`
-or a `&T`, so mutually recursive types work as long as the loop passes through a pointer or a
-reference somewhere.
+The rule is **per cycle rather than per field**: a cycle is legal as soon as one edge on it is a `*T`,
+a `&T` or a `[]T`, so mutually recursive types work as long as the loop passes through one of the
+three somewhere. A slice is on that list because it is a pointer and a length — it *points at* its
+elements rather than holding them — while a fixed array `[4]T` holds them and is not.
+
+```sysl
+struct Node
+    tag: int
+    kids: []Node
+
+var n = Node(1, [])
+
+print(n.tag)
+```
+
+```output
+1
+```
+
+### A type argument is not containment
+
+Whether `Wrap[Node]` contains a `Node` is **`Wrap`'s** business, not something the argument list can
+say. `Buf[T]` reaches its elements through a `[]T`, so a node whose children are a growable sequence
+of itself is finite — and it is the shape a syntax tree has:
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+enum Json
+    Num(v: int)
+    Arr(items: Buf[Json])
+
+total(j: Json) -> int
+    j match
+        Num(v) -> v
+        Arr(items) ->
+            var sum = 0
+
+            for i in 0..<items.len()
+                sum += total(items.at(i))
+
+            sum
+end total
+
+var xs: Buf[Json] = buf()
+
+xs.push(Num(1))
+xs.push(Num(41))
+
+print(total(Arr(xs)))
+```
+
+```output
+42
+```
+
+A generic that holds its parameter **by value** is the other answer, from the same argument list —
+and the refusal names the field that holds it rather than the argument that was passed:
+
+```sysl
+struct Wrap[T]
+    x: T
+
+struct Node
+    w: Wrap[Node]
+
+var n: Node
+
+print(1)
+```
+
+```error
+type 'Node' contains itself, so it has no finite size
+```
 
 ## Slices keep their backing alive
 
