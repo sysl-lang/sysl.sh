@@ -596,6 +596,41 @@ Rust and Swift refuse the same write and each carry a spelling that asks for a m
 `Some(mut n)`, `case .full(var n)`. sysl has none: a `var` taken from the binding is two words, and
 it names the copy, which is the thing the arm is actually holding.
 
+### The rule is about the binding, not about what it can reach
+
+Where the payload is a `&T` the copy is the **reference**, so a store through it reaches the object
+the enum is holding rather than anything arm-local — the same fact
+[refcounts survive destructuring](#refcounts-survive-destructuring) is about. Selection
+dereferences, so `e.value = 99` is a write through the reference and never asks whether the binding
+is writable:
+
+```sysl
+struct Entry
+    value: int
+
+enum Slot
+    Empty
+    Filled(e: &Entry)
+
+var s: Slot = Filled(Entry(1))
+
+s match
+    Filled(e) -> e.value = 99
+    Empty -> print("empty")
+
+s match
+    Filled(e) -> print(e.value)
+    Empty -> print("empty")
+```
+
+```output
+99
+```
+
+The name is written once all the same, so what it may not do is stop naming that object — `e = other`
+in the arm above is the refusal at the top of this section, unchanged by the payload being a
+reference.
+
 ## Guards
 
 An arm may carry an `if` guard, evaluated **after** its pattern matches.

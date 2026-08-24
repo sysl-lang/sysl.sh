@@ -80,9 +80,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
     "docs/content/reference/declarations.md"          -> (28, 9, 1),
-    // One more of each: a binding a match makes is written once, so the page refuses the write and
-    // then runs the 'var' taken from the binding, which is what makes the copy visible.
-    "docs/content/reference/patterns.md"              -> (13, 13, 0),
+    // Two more runnable and one more refusal: a binding a match makes is written once, so the page
+    // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
+    // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
+    "docs/content/reference/patterns.md"              -> (14, 13, 0),
     "docs/content/reference/memory.md"                -> (32, 22, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
