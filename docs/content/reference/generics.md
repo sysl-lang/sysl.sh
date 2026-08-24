@@ -531,6 +531,45 @@ trait, so a type the *implementation* chooses has nothing to be written as. `[S:
 `S::Item` is how a body names one without the caller having to spell it, and `S::Item` is abstract
 there — licensed to do exactly what the trait declared for it, exactly as `S` itself is.
 
+**It stands wherever a type stands, and the position worth showing is a callable's.** A bare arrow is
+sugar for a bound of its own, so `f: S::Item -> N` is a parameter whose type nobody in the program
+writes out: the implementation chose it, the bound reached it, and the closure at the call site is
+monomorphized against it without being boxed.
+
+```sysl
+trait Walk
+    type Item
+
+    step(*self) -> Option[Self::Item]
+
+struct Down
+    n: int
+
+impl Walk for Down
+    type Item = int
+
+    step(*self) -> Option[int]
+        if self.n <= 0 then return None
+
+        self.n -= 1
+        Some(self.n)
+
+first_of[S: Walk, N](s: *S, f: S::Item -> N) -> Option[N] =
+    s.step() match
+        Some(t) -> Some(f(t))
+        None -> None
+
+var d = Down(3)
+
+print(first_of(&d, n -> n * 10).expect("a step"))
+```
+
+```output
+20
+```
+
+`n` is an `int` because `Down` said `type Item = int`, and `first_of` never mentions `int` at all.
+
 ### A trait object satisfies a bound on the trait it dispatches through
 
 A bound asks whether the members it names can be called on the value. A `*Trait` or a `&Trait` has
