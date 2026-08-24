@@ -47,8 +47,16 @@ trait DocsSupport extends Matchers { this: Assertions =>
    *
    * `target` is the machine the block is *about*, from a `target=` on the fence, and is `None` for
    * the ordinary case of a block about the language rather than about a processor.
+   *
+   * `archive` is `build=c` on the fence, and says the block is about the artifact **a C project
+   * links** rather than about a program. It exists because some refusals are properties of *that*
+   * build and of no other: module storage has three ways of being filled, one per kind of build, and
+   * the only one with nowhere to fill it is a C archive on a freestanding target. Compiled as an
+   * ordinary program — which is what every other block here is — such a page would quote a refusal
+   * that never happens, and would fail as an unrefused refusal.
    */
-  case class Snippet(page: String, nth: Int, source: String, claim: Claim, target: Option[String]) {
+  case class Snippet(page: String, nth: Int, source: String, claim: Claim, target: Option[String],
+                     archive: Boolean = false) {
     def display: String = s"$page, sysl block $nth"
   }
 
@@ -105,7 +113,8 @@ trait DocsSupport extends Matchers { this: Assertions =>
       .map { case (f, i) => (f, i) }
       .zipWithIndex
       .map { case ((fence, position), nth) =>
-        Snippet(page, nth + 1, fence.body, claimAfter(fences.drop(position + 1)), fence.options.get("target"))
+        Snippet(page, nth + 1, fence.body, claimAfter(fences.drop(position + 1)),
+                fence.options.get("target"), fence.options.get("build").contains("c"))
       }
   }
 
@@ -163,6 +172,25 @@ trait DocsSupport extends Matchers { this: Assertions =>
    * each one six minutes long.
    */
   protected def check(s: Snippet): Option[String] = s.claim match {
+    case Claim.Prints(_) if s.archive =>
+      // An archive is not something this suite can run: there is no C project here to link it and no
+      // `main` in it to call. A `build=c` block claiming to print would otherwise be checked against
+      // an ordinary program build instead, which is the confusion the option exists to remove rather
+      // than one it may introduce.
+      Some(s"${s.display}: a 'build=c' block cannot have an 'output' under it — there is no C project here to link it")
+
+    case Claim.Fragment if s.archive =>
+      // **A `build=c` fragment is compiled, where an ordinary fragment is not**, and that is the
+      // point of allowing one. The interesting thing a page says about an archive is usually that
+      // some shape *works* there — module storage a constructor fills, for one — and that shape has
+      // no `output` block available to it, because an archive does not run. Left as an ordinary
+      // fragment it would be prose with a picture of a program beside it.
+      refusal(s, Target.default) match {
+        case Right(_) => None
+        case Left(err) =>
+          Some(s"${s.display}: the page shows this as an archive that builds, and it did not:\n$err")
+      }
+
     case _ if s.target.isDefined && !s.claim.isInstanceOf[Claim.Refused] =>
       // A `target=` says "this block is about that machine", and the only honest thing that can be
       // done with a block about another machine is compile it. Running it would need that machine.
@@ -194,7 +222,7 @@ trait DocsSupport extends Matchers { this: Assertions =>
       refusalTarget(s) match {
         case Left(why) => Some(s"${s.display}: $why")
         case Right(target) =>
-          Compiler.compileToLlvm(s.source, target = target) match {
+          refusal(s, target) match {
             case Right(_) =>
               Some(s"${s.display}: the page says the compiler refuses this, and it compiled")
 
@@ -208,6 +236,20 @@ trait DocsSupport extends Matchers { this: Assertions =>
           }
       }
   }
+
+  /** The compilation a refusal is about — an ordinary program, or the artifact a C project links.
+   *
+   * **`entryPoint = false` is the whole of what `build=c` changes**, and it is the switch the driver
+   * itself throws for that command (`Main.cLibrary`). It reaches more than the emitter: it is what
+   * tells the compiler that nothing here is going to run before a C caller does, which is what a
+   * refusal about module storage is asking about.
+   *
+   * Both roads answer the same shape, so `check` reads one result either way.
+   */
+  private def refusal(s: Snippet, target: Target): Either[String, ?] =
+    if s.archive then
+      Compiler.compiledWith(List(Source("<input>", s.source)), Nil, target, entryPoint = false)
+    else Compiler.compileToLlvm(s.source, target = target)
 
   /** The machine a refusal is about: what the fence named, or the one this suite is running on.
    *

@@ -149,8 +149,8 @@ archive, so it is worth being told before you meet it. `--no-std-lib` folds the 
 the object and the archive then stands alone.
 
 Like `build-lib`, this needs an `llvm-ar` as well as a `clang`. [FFI](/reference/ffi/) has `@export`
-itself — what may be exported, what a symbol is named, and why a computed module `val` cannot be
-reached from one.
+itself — what may be exported, what a symbol is named, and how module storage a computed initializer
+fills is filled here, where there is no entry point to fill it in.
 
 ### `emit-header`
 

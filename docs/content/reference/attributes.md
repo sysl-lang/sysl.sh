@@ -550,9 +550,14 @@ refuse a program over a name that was never going to be emitted.
 
 **Read the other way, `sysl test` is the build where such an export *is* a definition**, and it is
 held to every rule on the [FFI page](/reference/ffi/) accordingly — private, variadic, generic, a
-parameter C has no declaration for, two exports claiming one symbol, and an export reaching computed
-module storage. Each of those asks about the symbol table the build in hand emits, so which tree is
-read is the whole of the difference between the two commands.
+parameter C has no declaration for, and two exports claiming one symbol. Each of those asks about the
+symbol table the build in hand emits, so which tree is read is the whole of the difference between
+the two commands.
+
+The one rule on that page a test build is **not** held to is module storage, and for a reason that is
+about the build rather than about the tree: a test binary has an entry point of its own, so it fills
+its own storage before the first test runs. That refusal belongs to the artifact a C project links on
+a freestanding target, which is the one build with nowhere to fill it.
 
 ### `@tests` — a file of scaffolding
 
