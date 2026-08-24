@@ -427,32 +427,51 @@ Every refusal names the shape to write instead, because there always is one — 
 pointer and length C's own buffer functions already take, an array becomes a struct holding it. That
 is what makes the boundary writable rather than merely restricted.
 
-### Module storage, and what fills it
+### Module storage, and who fills it
 
-Module storage is filled before a program's own statements run — and **a C project supplies its own
-`main`**, so nothing sysl emitted would run before the C side called in. An archive answers that with
-a **constructor**: the initializer is emitted as one the platform runs at load time, ahead of `main`,
-so an exported function may reach computed module storage and will find it filled.
+Module storage is filled before a program's own statements run, and **a C project supplies its own
+`main`** — so nothing an archive holds is going to run on the way in. That is a real problem and it
+has a real answer: the archive registers a **constructor** on the platform's own pre-`main` list, and
+the storage is filled before any exported function can be called.
 
-```sysl
+```sysl build=c
 module mylib
 
-counter() -> i32 = 7
+import sysl.buf.{Buf, buf}
 
-val start: i32 = counter()
+val squares: Buf[i32] = fill()
 
-@export
-begin() -> i32 = start
+fill() -> Buf[i32]
+    var b: Buf[i32] = buf()
+
+    for i in 1..<4
+        b.push(i32(i) * i32(i))
+
+    b
+
+@export("mylib_count")
+count() -> i32 = i32(squares.len())
+
+@export("mylib_at")
+at(i: i32) -> i32 = squares[usize(i)]
 ```
 
-A C program that links the archive and calls `begin()` gets `7`. Nothing about the C side has to know
-this happened, which is the point of doing it at load time rather than asking a caller to run an
-initializer first — an API whose contract is *call this before anything else* is one that compiles
-and links whether or not the caller obeyed.
+A C project linking that archive sees `3`, `1`, `4`, `9`. Nothing in the sysl says where the filling
+happens, and nothing needs to — the constructor is `@llvm.global_ctors`, which becomes `.init_array`
+on ELF, `__mod_init_func` on Mach-O and `.CRT$XCU` on COFF. A `.so` loaded with `dlopen` runs it at
+load, which is what makes this work on Android.
 
-**A `val` whose initializer is constant data needs no constructor at all**, because there is nothing
-to run: the constant is written straight into the object file. That is the rule C already has for a
-static-storage initializer.
+**Which build fills it is the whole rule, and there are three of them:**
+
+| build | who fills the module storage |
+|---|---|
+| `sysl build`, `sysl test` | its own entry point, before the first statement |
+| `sysl build-lib` | the **program** that links the artifact, which has an entry point |
+| `sysl build-c` | a constructor the platform runs before the C project's `main` |
+
+**A `val` whose initializer is constant data is not in the question at all**, because nothing runs to
+fill it — the constant is written straight into the object file, which is the rule C already has for
+a static-storage initializer:
 
 ```sysl
 module mylib
@@ -465,10 +484,32 @@ begin() -> i32 = start
 
 A `const` has no storage at all and never arises.
 
-**This was a refusal until 0.0.78**, and a program like the first one above was rejected with a
-diagnostic saying the storage had nowhere to be filled. Anything written against that limit — a
-counter flattened into a bare `var`, a `Buf` hoisted into a caller — can be written the ordinary way
-now.
+#### The one case with nowhere to fill
+
+**A freestanding target has no loader.** Nothing walks `.init_array` on bare metal unless the image's
+own start-up calls `__libc_init_array` — newlib's does, and a hand-written reset vector may not — so
+a constructor emitted there would be a function nobody calls, and the storage would read whatever the
+image left. That is a silent wrong answer rather than a link error, so it is refused instead, and the
+walk is transitive:
+
+```sysl build=c target=thumbv7em-freestanding
+module mylib
+
+counter() -> i32 = 7
+
+val start: i32 = counter()
+
+@export
+begin() -> i32 = start
+```
+
+```error
+'mylib.begin' is exported and reaches 'mylib.start', which is module storage an initializer fills before the program's own statements run. This artifact has no entry point to fill it in, and 'thumbv7em-freestanding' is freestanding — there is no loader to run a constructor either, so the function would read whatever the image left. Build for a hosted target, where the storage is filled before any export can run, or make the initializer constant data, which is laid straight into the object file
+```
+
+`build=c` on that block is not decoration: the refusal is a property of the artifact a **C project**
+links, and the same program built for the same machine as an ordinary program compiles, because a
+program has an entry point to fill the storage in.
 
 ### What the compiler hands the C project
 

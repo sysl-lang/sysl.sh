@@ -134,7 +134,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A struct now names itself in the header: one more runnable, showing that the sysl side is
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
     // typedef and a function, a generic struct, and a private one.
-    "docs/content/reference/ffi.md"                    -> (21, 30, 12),
+    "docs/content/reference/ffi.md"                    -> (21, 31, 12),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
