@@ -413,6 +413,54 @@ arguments, so at a call on a file there would be nothing to say which was meant.
 makes the question go away rather than move it. `Fallible` is on [errors and
 contracts](/reference/errors/), with the reason a stream **latches** instead of returning.
 
+### A specifier is the whole value's field
+
+**A `FormatSpec` describes the field the *whole value* occupies, not the field each of its parts
+does.** `%8s` on a complex number asks for the complex number in eight columns; it does not ask for
+an eight-column real part followed by an eight-column imaginary one.
+
+That is a contract on the implementation rather than something the language enforces, and the
+`Marked` above quietly breaks it. It forwards its `fmt` to all three of its `display_*` calls, which
+is invisible while the spec is neutral — every rendering on this page so far has passed
+`FormatSpec(0, -1, false)` — and is not invisible under a width:
+
+```sysl
+import sysl.buf.byte_sink
+
+struct Marked
+    n: int
+
+impl Display for Marked
+    display(self, out: *Writer, fmt: FormatSpec)
+        display_str("<", out, fmt)
+        display_int(long(self.n), out, fmt)
+        display_str(">", out, fmt)
+
+var sink = byte_sink()
+var out: *Writer = &sink
+
+Marked(3).display(out, FormatSpec(6, -1, false))
+
+putbytes(sink.text())
+prints("|\n")
+```
+
+```output
+     <     3     >|
+```
+
+Eighteen columns where six were asked for, because each part took the field in turn.
+
+**An implementation that renders more than one part therefore has to gather before it pads**: render
+the parts with a neutral spec into a buffer, then hand the finished bytes to `display_pad` once, with
+the spec the caller gave. That needs somewhere to put them, which is why the library supplies a
+gathering sink rather than leaving each program to write one — [`sysl.buf`](/library/buf/) carries
+`ByteSink` and the worked recipe.
+
+**A single-part rendering has nothing to gather**, and passing `fmt` straight through is right for
+it. `Marked` is a three-part rendering wearing a one-part shape, which is the whole of what makes it
+the example rather than the counter-example.
+
 ### The `display_*` family
 
 Every rendering the language does ends up in this family, one function per shape:

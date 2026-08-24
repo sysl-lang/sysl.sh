@@ -265,6 +265,111 @@ promise purely because two names collided.
 **Retrofitting is preserved.** You may `impl` your trait for a type you do not own; you just do it
 explicitly rather than by implicit structural match.
 
+## Reaching a member through its trait
+
+A member declared by a trait is reached **where the trait is**, and the member's own name is not
+enough. That is the ordinary scope rule — a trait is a module member like any other — but it
+surprises, because what is written at the call is the *member's* name while what has to be in scope
+is the *trait's*:
+
+```sysl
+import sysl.seq.Sequence
+
+val a = [1, 2, 3]
+val xs: []const int = a[0..]
+
+print(xs.map(x -> x * 2))
+```
+
+```output
+[2, 4, 6]
+```
+
+Take the import away and the member is not there. The compiler says which trait it came from rather
+than leaving a reader to guess why a slice has a `map` in one file and not the one beside it:
+
+```sysl
+val a = [1, 2, 3]
+val xs: []const int = a[0..]
+
+print(xs.map(x -> x * 2))
+```
+
+```error
+[]const int has 'map' from sysl.seq.Sequence, and that trait is not in scope here — import it to reach the member
+```
+
+An `impl` does not change this. It settles which types are members; it does not put the member's
+name anywhere a file can see without naming the trait that declares it. So **moving a member out of
+a type and into a trait moves an import onto every caller** — including callers that never mention
+the trait — which is a cost worth weighing before making that move.
+
+### Two traits may declare a member of one name
+
+They do not collide by existing, and a type may implement both. What separates them is the type the
+call goes through, so erasing to one trait or the other says which is meant:
+
+```sysl
+trait Weigh
+    size(self) -> int
+
+trait Measure
+    size(self) -> int
+
+struct Box
+end Box
+
+impl Weigh for Box
+    size(self) -> int = 1
+
+impl Measure for Box
+    size(self) -> int = 2
+
+val w: &Weigh = Box()
+val m: &Measure = Box()
+
+print(w.size(), m.size())
+```
+
+```output
+1 2
+```
+
+**Called on the value itself, with both traits in scope, there is nothing to read an intention off:**
+
+```sysl
+trait Weigh
+    size(self) -> int
+
+trait Measure
+    size(self) -> int
+
+struct Box
+end Box
+
+impl Weigh for Box
+    size(self) -> int = 1
+
+impl Measure for Box
+    size(self) -> int = 2
+
+print(Box().size())
+```
+
+```error
+'size' on Box comes from Weigh and Measure, and each is in scope here — nothing in the call says which was meant
+```
+
+Note what the refusal turns on: *each is in scope here*. A file importing one of the two has no
+ambiguity to resolve, which is the ordinary case and the reason this is rarely met.
+
+**Where it cannot be arranged away is a member taking no arguments on a type that is genuinely
+both**, and that is why a question two traits both want is a **required** trait rather than a member
+each declares. `Writer` and `Reader` both need to answer whether a stream has gone wrong, and an open
+file is both — so a `failed` declared by each would be exactly the refusal above, on the one type
+that most needs to be asked. Requiring [`Fallible`](/reference/errors/) from both makes the question
+go away instead of moving it, and the library does that rather than declaring the member twice.
+
 ## The two dispatch strategies
 
 A trait is used two ways, and this is the pivot a programmer faces every time polymorphism comes up.
