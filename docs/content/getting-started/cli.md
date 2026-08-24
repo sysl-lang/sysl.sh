@@ -24,12 +24,18 @@ the path is standing on.
 | `sysl weave <path>` | render a literate source as an HTML document |
 | `sysl tangle <path>` | print the program a literate source holds |
 | `sysl deps <path>` | print the dependency graph the project resolves to |
+| `sysl doc <path>` | generate an API reference from declarations and their doc comments |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is an eleventh, and it has a page of its own — see
+`sysl prove` is a twelfth, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
+
+**`doc` is not built into the compiler**, and neither is anything else you care to add. A word sysl
+does not recognise is looked for on your `PATH` as `sysl-<word>`, the way `git foo` runs `git-foo`,
+so `sysl doc` runs `sysl-doc` — which the release ships beside the compiler. See
+[It is a separate binary](#it-is-a-separate-binary).
 
 ### `run`
 
@@ -331,6 +337,76 @@ the directory is the only thing that says which tree it is.
 The command resolves exactly as a build does, so it fetches what this machine has not got and records
 what it got in `sysl.sum`. It asks nothing of a machine beyond that — no target, no standard module,
 no source is read — so a project that cannot be built here can still be inspected.
+
+### `doc`
+
+An API reference for a tree, generated from its declarations and their
+[doc comments](/reference/lexical/#documentation-comments) — one Markdown page per module.
+
+```
+sysl doc library --out docs/api
+```
+
+```
+sysl-doc: 27 modules -> docs/api
+```
+
+**It writes Markdown rather than a website**, against what scaladoc, javadoc and rustdoc all do, and
+the reason is what a package repository is for. A `docs/` folder of generated Markdown is readable in
+the GitHub UI with no tooling, no hosting and nothing installed; Rust needs docs.rs — an entire
+hosted service — to solve exactly that for crates. It is also diffable, where generated HTML cannot
+be reviewed in a commit.
+
+**The unit is a module**, not a type, because a module is what you import.
+
+| Flag | Means |
+|---|---|
+| `-o`, `--out <dir>` | where the Markdown goes (default `docs/api`) |
+| `-t`, `--title <text>` | the index page's title |
+| `-V`, `--docversion <v>` | the version being documented, shown on the pages |
+| `--private` | include file- and module-private declarations |
+| `--site <dir>` | after writing, build the juicer site rooted at `<dir>` |
+| `--check` | write nothing; exit non-zero if what is committed is stale |
+
+**`--check` is what keeps committed documentation honest.** Generated files that live in a repository
+go stale, so the answer is a job that regenerates and compares:
+
+```
+sysl doc library --out docs/api --check
+```
+
+```
+sysl-doc: docs/api is stale — 2 file(s) differ:
+  sysl-text.md
+  sysl-slices.md
+
+Regenerate with 'sysl doc' and commit the result.
+```
+
+It exits `1` there and `0` when everything matches, so it drops straight into CI and fails a build
+where somebody edited a doc comment and did not regenerate.
+
+**It reads only the syntax.** Nothing is analyzed, so a package whose dependencies are missing — or
+which does not currently compile — still documents, which is exactly when somebody is trying to read
+their way out of trouble.
+
+**A literate source is tangled first**, so a `.lsysl` file's narrative never reaches the generator: that
+prose is an essay about the program and belongs to [`weave`](#weave). A doc comment written *inside*
+its code blocks is read like any other. A literate module whose author explained everything in the
+narrative therefore produces bare signatures here, and that is the honest answer rather than a defect.
+
+#### It is a separate binary
+
+`sysl doc` is not built into the compiler. It runs **`sysl-doc`**, found on your `PATH`, exactly as
+`git foo` runs `git-foo` — and the release tarball ships both, so it works as soon as sysl is
+installed.
+
+The reason is the dependency profile: generating a site means a templating engine, an asset pipeline
+and a web server, and a systems compiler has no business carrying any of that. scaladoc sits beside
+scalac and rustdoc beside rustc for the same reason.
+
+**The general benefit outlives this one command.** Any binary named `sysl-<name>` on your `PATH` is a
+subcommand — no compiler change, no release, no permission.
 
 ### `targets`
 

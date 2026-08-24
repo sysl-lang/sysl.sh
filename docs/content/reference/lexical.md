@@ -157,8 +157,144 @@ print(x)
 3
 ```
 
-There is no documentation-comment form with special syntax. Doc text is an ordinary comment above the
-declaration it describes.
+## Documentation comments
+
+A comment opening `/**` is a **doc comment**: prose about the declaration below it, which `sysl doc`
+reads to generate an API reference.
+
+```sysl
+/** Answers the first element of a slice.
+ *
+ * Traps on an empty slice, as any other subscript does.
+ *
+ * @param xs the slice to read
+ * @return the element at index 0
+ */
+first(xs: []const int) -> int = xs[0]
+
+print(first([7, 8, 9]))
+```
+
+```output
+7
+```
+
+**The delimiter is the whole of what makes one.** An implementation note above a declaration stays an
+implementation note by being written `//`, so nothing has to guess at intent — and a `/* … */` block
+comment is not a doc comment either. `/**/` is an empty block comment rather than a doc comment
+opening.
+
+A `*` down the left margin is optional; where it is written, it and one following space are removed,
+so a fenced block inside a doc comment keeps its own indentation.
+
+**A doc comment is trivia and cannot change what a program means.** Nothing in the analyzer reads
+one, no lowering sees one, and a program compiles identically with every doc comment in it deleted.
+
+### What a doc comment attaches to
+
+The declaration below it. **Annotations and `//` lines may sit between** — which is the ordinary
+shape, since `@test` and `@export` are written directly above what they annotate:
+
+```sysl
+/** Answers twice its argument. */
+@export("twice")
+// An implementation note, which is not part of the documentation.
+twice(n: int) -> int = n * 2
+
+print(twice(21))
+```
+
+```output
+42
+```
+
+**A blank line ends the association.** That is what lets a file open with prose belonging to the
+module rather than to whatever happens to be declared first:
+
+```sysl
+module demo.text
+
+/** Text manipulation over UTF-8.
+ *
+ * This comment documents the module, because the blank line below stops the declaration adopting it.
+ */
+
+/** Answers the length in bytes. */
+byte_length(s: []const u8) -> usize = s.len
+```
+
+### Tags
+
+A tag is `@name` **at the start of a line**, and nowhere else — so an `@` inside a sentence opens
+nothing. Its text runs to the next tag or the end of the comment, and a blank line does not end it,
+because a tag's text is prose and prose has paragraphs.
+
+| Tag | Takes | Means |
+|---|---|---|
+| `@param` | a parameter's name | what that argument is |
+| `@tparam` | a type parameter's name | what that type stands for |
+| `@return` | — | what the result is |
+| `@see` | — | something to read next |
+| `@note` | — | an aside |
+| `@example` | — | a worked use |
+| `@since` | — | the version it appeared in |
+| `@deprecated` | — | what to use instead |
+
+**There is no `@throws`**, and its absence is not an oversight: sysl has no exceptions, and what a
+fallible function answers with is the `E` of its `Result[T, E]` — which `@return` describes, because
+it is part of the return type rather than a second channel out of the function.
+
+### A tag naming the signature is checked; one that does not is prose
+
+`@param` and `@tparam` are the two that can go stale, because a rename leaves the paragraph
+describing something that is no longer there. So one naming a parameter the declaration does not have
+is refused:
+
+```sysl
+/** Adds two numbers.
+ *
+ * @param a the first
+ * @param c the third
+ */
+add(a: int, b: int) -> int = a + b
+
+print(add(1, 2))
+```
+
+```error
+error: 'c' is not a parameter of this declaration — it has a, b
+```
+
+**The check runs in one direction only, and that is deliberate.** A parameter with **no** `@param` is
+not an error and must never become one: documentation is optional, a partial doc comment is better
+than none, and a rule requiring the full set is what makes people write `@param n the n` to silence
+it. Check what is written, never require what is absent — which is also what lets a library be
+converted a file at a time.
+
+A bare `@param` with no name after it is its own mistake and is named as one.
+
+**`@param self` is admitted on a member.** The receiver is not an entry in the parameter list as far
+as the analyzer is concerned, but it is spelled in the declaration, and refusing the one tag a reader
+is most likely to reach for on a method would be pedantry about a real part of the signature. It is
+admitted rather than required, like every other parameter.
+
+### An unrecognised `@name` is prose
+
+`@` is sysl's annotation sigil — `@test`, `@requires`, `@export`, `@no_alloc` — so a doc comment
+discussing one is discussing the language rather than tagging itself. The vocabulary above is closed
+and anything outside it is body text.
+
+What that costs is that a typo is silent: `@parm` is a paragraph beginning with a word, not a tag the
+compiler will complain about.
+
+### The first sentence is the summary
+
+The prose before the first tag is the **body**, and its first sentence is the **summary** — which is
+what an index with one column to spend shows.
+
+A sentence ends at `.`, `!` or `?` **followed by a space or the end of the text**, so a dotted module
+name mid-sentence does not end one: *"Reads a `sysl.text` value and answers it."* is a single
+sentence. Where the body ends no sentence at all, the whole of it is the summary.
 
 ## Identifiers
 
