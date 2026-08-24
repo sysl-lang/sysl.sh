@@ -103,7 +103,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // declare type parameters of its own now, so the pack section's refusal became a program — and
     // the two things that rule costs, the member on an object and an object standing at a bound on
     // its own trait, are each refused by name.
-    "docs/content/reference/generics.md"              -> (29, 16, 0),
+    "docs/content/reference/generics.md"              -> (30, 16, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (17, 13, 10),

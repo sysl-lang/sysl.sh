@@ -301,6 +301,27 @@ print(one(null))
 'null' takes its type from its context, and there is none here
 ```
 
+**A callable waits for the same reason and contributes on the way back.** A closure carries no type of
+its own — its parameters come from the position it is written in — so it is set aside with the rest;
+what it turns out to be then joins the solution, and the callables still waiting are read against it.
+So one arrow's result can be what another arrow takes, and *which of them was declared first is not
+part of the answer*:
+
+```sysl
+forward[T](f: int -> T, g: T -> int) -> int = g(f(0))
+
+backward[T](g: T -> int, f: int -> T) -> int = g(f(0))
+
+print(forward(n -> n + 1, n -> n * 2), backward(n -> n * 2, n -> n + 1))
+```
+
+```output
+2 2
+```
+
+The two declarations differ in nothing but the order of their parameters, and each round reads the
+arguments it *can* — so an argument is waiting on what it needs rather than on its turn.
+
 **A parameter that names no type parameter is not part of the question**, and its argument is checked
 against it exactly as a plain callee's is:
 
