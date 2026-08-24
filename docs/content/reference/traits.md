@@ -1259,6 +1259,50 @@ print(show(Box(3)), show(Box("x")))
 concrete type all the way down, so none of this costs anything at run time — there is no box per
 value and no indirect call.
 
+### A default's callable may name the projection
+
+A [default body](#a-default-may-assume-exactly-what-its-own-trait-declares) is checked once at the
+trait, where `Self` is a parameter, and copied per implementing type, where `Self` is that type. A
+[bare arrow](/reference/generics/#bounds) is sugar
+for a bound rather than a parameter type, so a default taking one over `Self::Item` puts the
+projection somewhere neither half is written out — and each copy binds it to what its own subject
+chose:
+
+```sysl
+trait Mapper
+    type Item
+
+    first(self) -> Self::Item
+    over[N](self, f: Self::Item -> N) -> N = f(self.first())
+
+struct One
+    v: int
+
+impl Mapper for One
+    type Item = int
+    first(self) -> int = self.v
+
+struct Word
+    w: string
+
+impl Mapper for Word
+    type Item = string
+    first(self) -> string = self.w
+
+print(One(20).over(n -> n + 1))
+print(Word("hello").over(s -> s.len))
+```
+
+```output
+21
+5
+```
+
+`n` is an `int` and `s` is a `string`, from one body that names neither. The arrow costs nothing at
+the call — it monomorphizes, so there is no closure on the heap — and it is the member's own type
+parameter `N` that keeps `over` [out of the table](#a-member-with-its-own-type-parameters-leaves-the-table-not-the-trait)
+rather than anything about the projection.
+
 ### `some Trait` — the result read off the body
 
 The type an implementation chooses is often one nobody wants to write. A tree of nested containers is
