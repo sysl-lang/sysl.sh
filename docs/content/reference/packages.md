@@ -544,6 +544,28 @@ under the names their own documentation shows.
 A binding covers the module it names and everything below it, so `sh.sysl.table.Style` reaches the
 same package and keeps its tail.
 
+### Local names are a decision, and the alternative is a real one
+
+**Nothing in an import line names a coordinate**, and that is chosen rather than incidental. The
+alternative — modules qualified by where the package came from, as Go's import paths and Java's
+reverse-DNS packages both do — is a serious design and not a strawman: it makes a collision
+impossible by construction rather than by refusal.
+
+What it costs is that the coordinate then appears in **every import line in every file**, so
+moving a package, forking it, or vendoring it edits every consumer's source instead of one line of
+its manifest. sysl takes the half of that design which pays and leaves the half that does not: the
+reverse-DNS *layout* convention above is what keeps `sh.sysl.table` and `sh.sysl.sdl3` apart, and it
+costs nothing at the import, because the prefix is the module's own name rather than an address.
+
+**What makes a local name safe is the rest of this section.** A collision is refused rather than
+resolved silently; a nearer name wins over a name nobody asked for; and `mount` renames a package
+for the one consumer that needs it. Those are what a global scheme would have bought, obtained a
+different way.
+
+**The cost of the choice is the transitive import**, stated where it arises above: a program may
+import through a package that never promised to keep depending on what it depends on. That is the
+price of not writing addresses down, and it is the one being paid deliberately.
+
 ### Imports are transitive
 
 **A package reached through another is importable too.** Naming one dependency brings its own
