@@ -83,6 +83,20 @@ are variables, and half of `stdio.h` is reached through them; so are `environ`, 
 *same object*, since `fdopen(1, "w")` is a different `FILE` with its own buffer and interleaves
 wrongly with anything already writing to the real one. `environ` has no way round at all.
 
+**The symbol is the platform's, and `stdout` is the example that bites.** An `extern` variable
+resolves the name it is written under unless a link name says otherwise, and a C library is free to
+reach a variable through a macro. Darwin's `<stdio.h>` does exactly that for the three above —
+`stdout` is `#define`d to `__stdoutp` — while glibc has a real symbol called `stdout`. So a bare
+`extern stdout: *FILE` links under one libc and fails under the other with an undefined `_stdout`,
+and naming `__stdoutp` explicitly fixes the first at the cost of writing one implementation's private
+name into a portable file.
+
+Nothing is wrong with the form: `environ`, `optind` and `optarg` are ordinary symbols everywhere and
+this is what reaches them. What the case shows is that a `#define` in front of a variable is still a
+`#define`, and [a macro is one of the three things only C can reach](#a-library-may-carry-c) — so a
+program wanting `stdout` portably reaches it from a line of C beside the module, which is what
+`sysl.posix.tty` does to flush a terminal.
+
 **The type is written and never inferred.** There is no initializer to infer it from, and what the
 other side laid down is not something this compiler can see. Writing the wrong one is the same kind
 of promise a wrong parameter list is. The one type refused is one that occupies nothing, because a
