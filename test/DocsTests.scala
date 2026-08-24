@@ -103,7 +103,14 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // declare type parameters of its own now, so the pack section's refusal became a program — and
     // the two things that rule costs, the member on an object and an object standing at a bound on
     // its own trait, are each refused by name.
-    "docs/content/reference/generics.md"              -> (30, 16, 0),
+    // Two more runnable and one more refusal again: the list is the parameters the author wrote, so
+    // the arrow's own is not among them — shown with a call that writes both of a two-arrow
+    // declaration's, and with the address form, which is refused by name because it has nothing to
+    // read the callable's type off.
+    // And two more runnable for the other half of the same machinery: a callable is held back like a
+    // 'null' and contributes on the way back, so one arrow's result is what another takes — written
+    // both ways round, since neither order is privileged.
+    "docs/content/reference/generics.md"              -> (32, 17, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     "docs/content/reference/modules.md"                -> (17, 13, 10),

@@ -118,11 +118,74 @@ add(xs[..], out[..])
 'W' is in neither the parameters of 'add' nor its result
 ```
 
-**Two things stay inferred.** A **type pack** — `..A` — stands for a list of types rather than one and
-has no expression spelling, so its instantiation is always solved. And an **associated function
+**Three things stay inferred.** A **type pack** — `..A` — stands for a list of types rather than one
+and has no expression spelling, so its instantiation is always solved. An **associated function
 selected from an applied type**, `Box[int].of(1)`, reads its type's parameters and its own from a
 single solve; the annotation on the binding reaches it, and unlike the kernel above there is always
-one, since an associated function has a result.
+one, since an associated function has a result. And a **bare arrow's own parameter**, which is the
+case below.
+
+### A bare arrow is not in the list
+
+`f: T -> U` is sugar for a bounded type parameter — the callable's own type, which the compiler adds
+and no program writes. So a declaration carries more parameters than were written on it, and **the
+list is the ones that were**:
+
+```sysl
+chain[A, B](x: int, f: int -> A, g: A -> B) -> B = g(f(x))
+
+print(chain[int, int](3, n -> n * 2, n -> n + 1))
+```
+
+```output
+7
+```
+
+Two arrows, two added parameters, and `[int, int]` is still `A` and `B`. There is nothing to write for
+the other two: their argument is the closure's own anonymous type, and the name the compiler gave
+them holds a character no identifier may contain.
+
+**Where this is felt is a parameter only a bound mentions**, which inference does not reach and the
+list is the only way in — so a declaration taking a callback needs both halves to work at once:
+
+```sysl
+trait Has[T]
+    get(self) -> T
+
+struct Box
+    v: int
+
+impl Has[int] for Box
+    get(self) -> int = self.v
+
+pick[B: Has[T], T, N](b: B, f: T -> N) -> N = f(b.get())
+
+print(pick[Box, int, int](Box(4), n -> n + 1))
+```
+
+```output
+5
+```
+
+**An address is the one position with no answer.** `&f[…]` has no arguments to read the callable's
+type off, and no way to write it, so a function taking a bare arrow has no address form and is
+refused by name rather than by a count:
+
+```sysl
+chain[A, B](x: int, f: int -> A, g: A -> B) -> B = g(f(x))
+
+val p = &chain[int, int]
+
+print(1)
+```
+
+```error
+'chain' takes a bare arrow, so it is generic in the callable's own type — and an address has no arguments to read that from, nor any way to write it. Declare the parameter as a counted callable, '&Fn(…) -> …', to give it a type that can be named
+```
+
+The [boxed spelling](/reference/types/) is what an address needs: `&Fn(T) -> U` is a type with a name,
+so a function declared with one is an ordinary generic and its address is written as any other.
+
 
 There is also a **hole shared with the address form**: the brackets read the *expression* grammar, so
 a type the two grammars do not spell alike has no form there. `[]int`, `weak T`, `volatile T`,
