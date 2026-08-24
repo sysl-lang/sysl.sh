@@ -368,7 +368,10 @@ that. `pair()` runs one time above however many names come out of it — the `1`
 first line is the count.
 
 A `var` pattern makes every name it binds assignable and a `val` pattern makes each write-once,
-exactly as the single-name forms do. A `_` binds nothing and skips its part.
+exactly as the single-name forms do. A `_` binds nothing and skips its part. Where there is no
+keyword to read — a `match` arm, an `is`, an `@` — the binding
+[is written once](#a-binding-a-match-makes-is-written-once), which is what a name with no `var` in
+front of it means here.
 
 That once-only rule is also what makes the obvious swap correct, since both parts of the right-hand
 side are read before either name is bound:
