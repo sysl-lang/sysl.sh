@@ -39,6 +39,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.time.tzif`](/library/time/#decoding-a-zone) | a zone decoded from the bytes of a TZif file — no copy, no allocator, and no filesystem | — |
 | [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring — the zone it is set to, and the zone database by name | `posix` |
 | [`sysl.env`](/library/env/) | the environment a program was started with — `get`, `get_or`, `is_set`. Reading only | `os` |
+| [`sysl.process`](/library/process/) | starting another program and waiting for it — `run`, `capture`, `Status`, and no shell anywhere in it | `os` |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |

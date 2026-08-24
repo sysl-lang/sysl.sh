@@ -427,12 +427,12 @@ Every refusal names the shape to write instead, because there always is one — 
 pointer and length C's own buffer functions already take, an array becomes a struct holding it. That
 is what makes the boundary writable rather than merely restricted.
 
-### Module storage a C caller cannot fill
+### Module storage, and what fills it
 
-Module storage is filled before a program's own statements run, and **a C project supplies its own
-`main`** — so nothing sysl emitted runs before the C side calls in. An exported function that reached
-storage a computed initializer would have written would read whatever the loader left, so it is
-refused, and the walk is transitive:
+Module storage is filled before a program's own statements run — and **a C project supplies its own
+`main`**, so nothing sysl emitted would run before the C side called in. An archive answers that with
+a **constructor**: the initializer is emitted as one the platform runs at load time, ahead of `main`,
+so an exported function may reach computed module storage and will find it filled.
 
 ```sysl
 module mylib
@@ -445,13 +445,14 @@ val start: i32 = counter()
 begin() -> i32 = start
 ```
 
-```error
-'mylib.begin' is exported and reaches 'mylib.start', which is module storage an initializer fills before the program's own statements run. A C project linking this supplies its own 'main', so nothing fills it and the function would read whatever the loader left. A module 'val' whose initializer is constant data is laid straight into the object file and is fine here — it is a computed one that has nowhere to be computed
-```
+A C program that links the archive and calls `begin()` gets `7`. Nothing about the C side has to know
+this happened, which is the point of doing it at load time rather than asking a caller to run an
+initializer first — an API whose contract is *call this before anything else* is one that compiles
+and links whether or not the caller obeyed.
 
-**A `val` whose initializer is constant data is fine**, because nothing runs to fill it — the
-constant is written straight into the object file. That is the rule C already has for a
-static-storage initializer, which is why this bites so rarely:
+**A `val` whose initializer is constant data needs no constructor at all**, because there is nothing
+to run: the constant is written straight into the object file. That is the rule C already has for a
+static-storage initializer.
 
 ```sysl
 module mylib
@@ -463,6 +464,11 @@ begin() -> i32 = start
 ```
 
 A `const` has no storage at all and never arises.
+
+**This was a refusal until 0.0.78**, and a program like the first one above was rejected with a
+diagnostic saying the storage had nowhere to be filled. Anything written against that limit — a
+counter flattened into a bare `var`, a `Buf` hoisted into a caller — can be written the ordinary way
+now.
 
 ### What the compiler hands the C project
 
