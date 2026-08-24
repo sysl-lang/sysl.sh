@@ -150,7 +150,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/shapes.md"                    -> (0, 0, 0),
     "docs/content/guides/scheduler.md"                 -> (0, 0, 0),
     "docs/content/guides/kernel.md"                    -> (0, 0, 0),
-    "docs/content/guides/matrix.md"                    -> (0, 0, 0),
     "docs/content/guides/ring.md"                      -> (0, 0, 0),
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     "docs/content/guides/lisp.md"                      -> (0, 0, 2),
@@ -170,6 +169,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (23, 10, 3),
     "docs/content/library/complex.md"                   -> (7, 1, 1),
+    "docs/content/library/matrix.md"                    -> (5, 1, 2),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.

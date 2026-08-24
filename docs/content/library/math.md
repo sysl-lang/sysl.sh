@@ -670,7 +670,7 @@ print(largest([3.0, -40.0, 7.0]), largest([3, -40, 7]))
 ```
 
 `largest` names `T::Size` once, in its result, and compares values of it without knowing what one is.
-That is the shape [`guide/matrix`](/guides/matrix/) pivots on: Gaussian elimination chooses the
+That is the shape [`sysl.math.matrix`](/library/matrix/) pivots on: Gaussian elimination chooses the
 largest remaining cell in a column, which is a comparison every element type can answer and `<` is
 not.
 

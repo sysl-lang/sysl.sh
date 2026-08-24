@@ -74,4 +74,4 @@ rather than a run of statements.
 ---
 
 [Source](https://github.com/sysl-lang/sysl/tree/dev/guide/kernel) ·
-Next: [matrix](/guides/matrix/) — an operator whose result is neither operand's type.
+Next: [ring](/guides/ring/) — ranges, attributes, contracts, and invariants.
