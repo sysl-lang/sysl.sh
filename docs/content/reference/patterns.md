@@ -538,6 +538,64 @@ show()
 'a' is named twice in one binding
 ```
 
+## A binding a match makes is written once
+
+At a `val` or a `var` the keyword decides. In a `match` arm, in an `is`, and under `@` there is no
+keyword to read — so a pattern binding takes what a name with no `var` in front of it means
+everywhere else in sysl: **it is written once.** Assignment to one is refused, and so is `&`, for the
+reason a `val`'s is.
+
+The reason is the copy. A pattern hands the arm the part it matched rather than a window onto the
+value it came out of — [a payload binding is a copy](#a-payload-binding-is-a-copy) — so a write to
+the name would land on that copy and be discarded where the arm ends. It would be a line that reads
+as though it changed the value that was matched, and could not have.
+
+```sysl
+enum Cell
+    Empty
+    Full(v: int)
+
+var d: Cell = Full(1)
+
+d match
+    Full(n) -> n = 99
+    Empty -> print("empty")
+```
+
+```error
+a pattern binding is written once, because it holds a copy of what it matched — so assignment would reach that copy rather than the value it came from. Where you mean to change something, take a 'var' from the binding first
+```
+
+A copy that is meant to change says so, and the value that was matched stays where it was:
+
+```sysl
+enum Cell
+    Empty
+    Full(v: int)
+
+var d: Cell = Full(1)
+
+d match
+    Full(n) ->
+        var m = n
+        m = 99
+        print(m)
+    Empty -> print("empty")
+
+d match
+    Full(n) -> print(n)
+    Empty -> print("empty")
+```
+
+```output
+99
+1
+```
+
+Rust and Swift refuse the same write and each carry a spelling that asks for a mutable copy —
+`Some(mut n)`, `case .full(var n)`. sysl has none: a `var` taken from the binding is two words, and
+it names the copy, which is the thing the arm is actually holding.
+
 ## Guards
 
 An arm may carry an `if` guard, evaluated **after** its pattern matches.
@@ -674,8 +732,11 @@ reference to an enum needs the `*`.
 
 The dereference says *which value* is matched. It does not make the names bound inside the arms into
 windows onto the payload: **a payload binding is initialized by copy, and it is the same copy whether
-the match went through a reference or not.** Writing through the binding changes the binding, and the
-enum is untouched.
+the match went through a reference or not.** Changing the copy changes the copy, and the enum is
+untouched.
+
+The binding itself is [written once](#a-binding-a-match-makes-is-written-once), so the change is made
+to a `var` taken from it — which is what makes the copy visible rather than merely true.
 
 ```sysl
 struct Reading
@@ -689,7 +750,9 @@ enum Slot
 var s: &Slot = Full(Reading(1, 10))
 
 *s match
-    Full(r) -> r.value = 99
+    Full(r) ->
+        var mine = r
+        mine.value = 99
     Empty -> print("empty")
 
 *s match
@@ -699,7 +762,9 @@ var s: &Slot = Full(Reading(1, 10))
 var v: Slot = Full(Reading(1, 10))
 
 v match
-    Full(r) -> r.value = 99
+    Full(r) ->
+        var mine = r
+        mine.value = 99
     Empty -> print("empty")
 
 v match
@@ -713,8 +778,8 @@ by value: 10
 ```
 
 **Both readings are the value the enum was built with**, so the two spellings agree and neither
-`r.value = 99` reached the enum. A binding is a local holding a copy of the payload, and the way to
-change what a `&Slot` holds is to assign a variant to it.
+`mine.value = 99` reached the enum. A binding is a local holding a copy of the payload, and the way
+to change what a `&Slot` holds is to assign a variant to it.
 
 The rule matters most where it is least visible: the copy is the whole payload, so matching a
 reference to an enum whose variant carries a large struct copies that struct into the arm. What a
