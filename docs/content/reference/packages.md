@@ -510,6 +510,12 @@ wall of them about packages nobody typed. What is different here is that the ver
 manifest: you wrote one number, the build used another, and nothing in the file you are reading says
 so.
 
+**Where the note does not fire and you want to know anyway, ask**:
+[`sysl deps`](/getting-started/cli/#deps) prints the whole graph — every package, the version settled
+on, and every claim that was made on it, including the ones that lost. That is the only place a
+losing claim survives: selection keeps the maximum and forgets the rest, so once a build is over
+there is nothing left to reconstruct it from.
+
 ## What a dependency's modules are called
 
 A package is a tree of modules, and **its modules come in under their own names**. A module is a

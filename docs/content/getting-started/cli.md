@@ -23,6 +23,7 @@ the path is standing on.
 | `sysl emit-header <path>` | print the C header for what a module exports |
 | `sysl weave <path>` | render a literate source as an HTML document |
 | `sysl tangle <path>` | print the program a literate source holds |
+| `sysl deps <path>` | print the dependency graph the project resolves to |
 | `sysl targets` | list the machines sysl can build for |
 
 `sysl prove` is an eleventh, and it has a page of its own — see
@@ -281,6 +282,55 @@ bug report.
 **The prose is replaced by blank lines rather than removed**, so line 100 of the output is line 100
 of the source. That is what lets a diagnostic about the program point into the document it was
 written in, and it is why the output is not as short as the program looks.
+
+### `deps`
+
+The dependency graph the project resolves to: every package it will be compiled against, the version
+selection settled on, and who asked for that package and at what floor.
+
+```
+sysl deps .
+```
+
+```
+syslui-demo 0.0.1
+
+github.com/sysl-lang/plutovg     0.2.1
+    github.com/sysl-lang/syslui-sdl asks for 0.2.1
+    github.com/sysl-lang/syslui asks for 0.2.1
+github.com/sysl-lang/sdl3        0.3.1
+    github.com/sysl-lang/syslui-sdl asks for 0.3.1
+github.com/sysl-lang/syslui      0.1.0
+    github.com/sysl-lang/syslui-sdl asks for 0.1.0
+github.com/sysl-lang/syslui-sdl  0.1.0
+    syslui-demo asks for 0.1.0
+```
+
+**That project's manifest names one dependency**, which is what makes the command worth having:
+[imports are transitive](/reference/packages/#imports-are-transitive), so three of those four
+packages are ones nobody typed, and nothing in the files in front of you says they are there.
+
+**A coordinate marked `(raised)` is one somebody asked for a lower version of.**
+
+```
+github.com/e/buf  1.4.0  (raised)
+    github.com/e/a asks for 1.2.0
+    github.com/e/b asks for 1.4.0
+```
+
+That is the answer to *why is this version the one I got*, and it is the half a build cannot tell
+you: [selection](/reference/packages/#which-version-you-get) keeps the highest minimum and
+nothing else, so the claim that lost is gone by the time anything could go looking for it. The note a
+build prints covers only the case where *your own* manifest was overtaken; this covers a dependency
+overtaken by its sibling, which is the case where the version you are running is one no file you own
+mentions.
+
+**A path dependency prints its directory** where a coordinate prints a version, since it has none and
+the directory is the only thing that says which tree it is.
+
+The command resolves exactly as a build does, so it fetches what this machine has not got and records
+what it got in `sysl.sum`. It asks nothing of a machine beyond that — no target, no standard module,
+no source is read — so a project that cannot be built here can still be inspected.
 
 ### `targets`
 
