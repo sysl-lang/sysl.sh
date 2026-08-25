@@ -79,6 +79,39 @@ refusal each implementing `Display` buys: a `Result` is printable exactly when i
 nothing here writes a formatter. The three refusals are `NotSquare`, `ShapeMismatch` and `Singular`,
 and they compare with `==` — a bare enum is its discriminant.
 
+### A width is the whole value's field; a precision is each number's
+
+The two halves of a specifier go to different places, and for a numeric aggregate that is the useful
+split rather than a technicality. A **width** describes the field the whole vector or matrix occupies,
+so it pads once around the finished shape and never inside it. A **precision** is read by each
+component's own renderer in its own terms — significant digits for a real, a minimum digit count for
+an integer — so `%.3s` is three digits in every cell rather than the first three bytes of the text.
+
+```sysl
+import sysl.math.matrix.{Vector, Matrix}
+
+var v = Vector.of([1.0 / 3.0, -2.0 / 3.0])
+var m = Matrix.of(2, 2, [1, 2, 3, 4])
+
+print(f"[${Vector.of([1, 2, 3])}%12s]")
+print(f"[${Vector.of([1, 2, 3])}%-12s]")
+print(f"[${v}%.3s]")
+print(f"[${m}%20s]")
+```
+
+```output
+[   (1, 2, 3)]
+[(1, 2, 3)   ]
+[(0.333, -0.667)]
+[      (1, 2); (3, 4)]
+```
+
+That is [`Complex[F]`'s split](/library/complex/) at one more dimension, and it is arrived at the same
+way: the width is learned by rendering once into a [`Counting`](/library/core/) sink that adds up what
+it is handed and keeps none of it, so a padded vector costs a second pass rather than a buffer and an
+unpadded one costs a single pass. **Rendering allocates nothing** — which does not make the module
+allocator-free, since the cells themselves live in a `Buf[T]`.
+
 ## One algebra, every element type
 
 Nothing below is a second implementation. The operators, the elimination and all four of its answers
