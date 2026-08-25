@@ -117,7 +117,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/generics.md"              -> (32, 17, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
-    "docs/content/reference/modules.md"                -> (17, 13, 10),
+    // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no
+    // single block can be — a page block is one file, and the rule is about two.
+    "docs/content/reference/modules.md"                -> (17, 13, 12),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),

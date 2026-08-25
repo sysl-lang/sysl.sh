@@ -359,7 +359,8 @@ Because the module is the directory and the capability is a property of the modu
 must appear consistently in every file of the module** — a module whose files disagree is rejected.
 The redundancy buys local legibility: you can never open a file in a `@no_alloc` module and fail to
 see that it is one. A file that declares no module may still carry one, since the anonymous root
-module is a module like any other.
+module is a module like any other. A [`@tests` file](#a-tests-file-states-its-own-capabilities) is
+the one file this does not reach, for the reason it is dropped by every build but `sysl test`.
 
 The other direction is `@requires(...)`, which takes a **list** because a module often needs more
 than one capability at once — the POSIX regex binding is `@requires(heap, posix)`, since a `regex_t`
@@ -411,6 +412,68 @@ Two of the capabilities are checked differently, and the difference is worth kno
   what the language allows. The edge the rule is stated over is the **reference** graph rather than
   the import graph, which is load-bearing: a qualified path reaches another module with no import at
   all, so a rule about imports would have missed the shorter of the two ways to write the mistake.
+
+### A `@tests` file states its own capabilities
+
+A [`@tests` file](/reference/attributes/) is scaffolding: `sysl test` keeps it and every other build
+drops it, so nothing it declares reaches a program that links this module. The module's clause is a
+promise about what **ships**, and it was therefore never a promise about that file — so **the
+agreement above stops at the header `@tests`, and such a file states what the module's *tests* need.**
+
+```sysl
+module oskit.digest
+@no_alloc
+
+// Everything here answers a fixed-size array and writes into slices the caller owns.
+sum(bytes: []u8) -> [4]u8 = [0, 0, 0, 0]
+```
+
+```sysl
+module oskit.digest
+@tests
+@requires(heap)
+
+import sysl.encoding.hex_string
+
+// Checking it against the published vectors means rendering a digest as text, and rendering
+// allocates. The module still ships allocating nowhere.
+@test
+matches_the_vector() =
+    assert(hex_string(sum([1, 2, 3])[0..<4]) == "00000000")
+```
+
+Without this the clause was unavailable to exactly the modules that most wanted it. Testing an
+allocation-free primitive means rendering what it produced and building inputs of a chosen length,
+and both allocate — so a module could have the promise or have tests, and not both.
+
+**What a `@tests` file writes is an override of its module's, per capability, not a set of its own.**
+A file that writes no clause is held to the module's, which is what every one of them meant before
+there was another answer:
+
+```text
+error: a reference needs an allocator, and this module declared '@no_alloc' — it may hold and
+release storage made elsewhere, and may make none of its own
+```
+
+A file that writes one hears about its own instead, since that is the line to go and read:
+
+```text
+error: a reference needs an allocator, and this module's '@tests' file declared '@no_alloc' — it may
+hold and release storage made elsewhere, and may make none of its own
+```
+
+**A test is scaffolding wherever it is written.** A `@test` function written beside what it tests, in
+an ordinary file, answers to the `@tests` file's clause too — the alternative puts a seam through the
+middle of one module's tests. And a module's `@tests` files are held to agreeing with **each other**,
+for the reason its shipping files are: a module has one answer to what its tests may do.
+
+**Only the module's half of the two-level rule moves.** A `@tests` file may take back a promise the
+module made about what ships; it cannot take back a facility the machine does not have. On a target
+whose `package.hocon` says `heap = false`, a test that allocates is refused whatever its header says
+— which is what keeps a run from reporting that vectors passed on a machine that could not have run
+them. For the same reason the `@requires` on a `@tests` file refuses nothing on its own: an ordinary
+`sysl build` analyzes that file and then discards it, so a requirement checked against the target
+would refuse a build over a facility only the discarded file ever wanted.
 
 ### The target's half needs no clause at all
 

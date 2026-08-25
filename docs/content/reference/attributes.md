@@ -506,8 +506,10 @@ adds_two()
 ### What is dropped, and when
 
 `sysl run`, `sysl build` and `sysl emit-llvm` drop the tests — and drop them **after** analysis. So a
-`@test` that does not compile is an error in a build that would never have run it, and a module's
-capability clause reaches its tests like any other member.
+`@test` that does not compile is an error in a build that would never have run it, and the module's
+capability rules reach its tests like they reach any other member — with the one difference that a
+[`@tests` file states its own](/reference/modules/#a-tests-file-states-its-own-capabilities), since
+that file is what these builds are dropping.
 
 That ordering is what lets a test sit beside what it tests: a program's tests do not run when it
 runs, and they do not stop being checked.
