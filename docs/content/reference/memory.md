@@ -1160,6 +1160,35 @@ print(total(Arr(xs)))
 42
 ```
 
+**Two types reaching each other is the same rule, and the loop may pass through a third type's
+argument list.** A real document has objects in it, so `Json` needs a member — and a member holds a
+`Json` by value, which closes a cycle that goes `Json` → `Buf[Member]` → `[]Member` → `Member` →
+`Json`. The `[]Member` inside `Buf` is the edge that makes it finite, exactly as the `[]Json` above
+was. **Which of the two is written first decides nothing**: declaration order has never meant
+anything in sysl and it does not start meaning something here.
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+struct Member
+    key: string
+    value: Json
+
+enum Json
+    Null
+    Num(v: int)
+    Obj(members: Buf[Member])
+
+var members: Buf[Member] = buf()
+
+members.push(Member("answer", Num(42)))
+print(members.at(0).key)
+```
+
+```output
+answer
+```
+
 A generic that holds its parameter **by value** is the other answer, from the same argument list —
 and the refusal names the field that holds it rather than the argument that was passed:
 

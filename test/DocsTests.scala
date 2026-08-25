@@ -85,7 +85,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
     "docs/content/reference/patterns.md"              -> (14, 13, 0),
-    "docs/content/reference/memory.md"                -> (32, 22, 0),
+    "docs/content/reference/memory.md"                -> (33, 22, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/reference/arrays.md"                -> (21, 9, 1),
