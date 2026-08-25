@@ -1,12 +1,12 @@
 ---
 title: Guide Programs
-summary: Twelve real programs written to force a language decision — what each one owns, and what writing it found.
+summary: Ten real programs written to force a language decision — what each one owns, and what writing it found.
 weight: 50
 ---
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-twelve programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
+ten programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
 to **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,
@@ -31,14 +31,13 @@ own file records what it found in the place the code that provoked it lives, whi
 somebody reading the program and useless for somebody wondering **why the language is shaped this
 way**. These pages pull each finding out and link it to the rule it produced.
 
-## The twelve, and the axis each owns
+## The ten, and the axis each owns
 
 In the order they were written, which matters — a finding must be discharged before the next program
 starts, so each one is written on top of what the last one settled.
 
 | program | the axis it owns |
 |---|---|
-| [json](/guides/json/) | recursive ownership — a value that contains itself through `&T` |
 | [bytecode](/guides/bytecode/) | the module system, and the set's one end-to-end assertion |
 | [png](/guides/png/) | the byte level — endianness, bit streams, checksums, somebody else's format |
 | [fft](/guides/fft/) | an algorithm checked against its own definition |
@@ -62,7 +61,7 @@ Each directory is a **project root**, so the files in it are the anonymous root 
 subdirectory is a module named by its path:
 
 ```
-sbt "syslJVM/run run guide/json"
+sbt "syslJVM/run run guide/bytecode"
 ```
 
 **Each program checks itself.** Every line it prints is either a `--` section header or `ok`
@@ -90,5 +89,5 @@ difference between them is the contract.
 
 ---
 
-Next: [json](/guides/json/) — the first of the set, and the one that found the language had no way
-to build a string.
+Next: [bytecode](/guides/bytecode/) — the first of the set, and the only one whose assertion runs
+end to end.

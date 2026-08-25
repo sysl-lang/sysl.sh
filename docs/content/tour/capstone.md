@@ -167,8 +167,9 @@ You have seen the whole language. What is left is depth:
   [modules](/tour/modules/) named, one page each, down to what a `no alloc` program may reach.
 - **The [reference](/reference/)** is the specification — every rule in this tour is stated there in
   full, with its edges shown as programs rather than described.
-- **The [guide programs](/guides/)** are twelve complete programs at the size where the choices
-  start to matter — a JSON parser, a scheduler, SHA-2, a slab allocator, a ring buffer, a Lisp —
+- **The [guide programs](/guides/)** are ten complete programs at the size where the choices
+  start to matter — a bytecode compiler, a PNG decoder, a scheduler, a slab allocator, a ring
+  buffer, a Lisp —
   each written to force a language decision rather than to demonstrate a finished
   one. The
   pages say what each found, which is most of the reason the language is shaped the way it is.

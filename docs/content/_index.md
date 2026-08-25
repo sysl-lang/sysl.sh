@@ -44,9 +44,9 @@ about it: every construct in its own place, with the rules complete. The
 [standard library](/library/) is documented apart from it, because none of what ships beside the
 compiler is a language feature.
 
-The [guide programs](/guides/) are the evidence: twelve real programs — a JSON parser, a scheduler,
-a slab allocator, SHA-2, a Lisp — each written to force a language decision, with what it found
-written down.
+The [guide programs](/guides/) are the evidence: ten real programs — a bytecode compiler, a PNG
+decoder, a scheduler, a slab allocator, a Lisp — each written to force a language decision, with
+what it found written down.
 Most of the features documented above exist because one of them could not be written without.
 
 The [reference](/reference/) is the other kind of document — every construct written down once, in

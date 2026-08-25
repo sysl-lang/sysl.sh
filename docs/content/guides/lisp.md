@@ -18,7 +18,8 @@ tangle` prints just the program. See [the CLI](/getting-started/cli/#weave).
 than checking borrows, and the honest cost of that choice is a cycle — an island of objects that all
 point at each other, that nothing outside can reach, and whose counts therefore never reach zero.
 [`weak T`](/reference/memory/) exists in the language for this and no other reason, and until this
-program nothing in the set showed why anyone would reach for it. [json](/guides/json/) is a *tree*;
+program nothing in the set showed why anyone would reach for it. [bytecode](/guides/bytecode/)
+parses into a *tree*;
 [scheduler](/guides/scheduler/)'s graphs are mutated but acyclic in the direction that matters; and
 [kernel](/guides/kernel/) sidesteps the question entirely by giving objects indices instead of
 references.

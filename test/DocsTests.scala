@@ -146,7 +146,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
-    "docs/content/guides/json.md"                      -> (0, 0, 1),
     "docs/content/guides/bytecode.md"                  -> (0, 0, 0),
     "docs/content/guides/png.md"                       -> (0, 0, 0),
     "docs/content/guides/fft.md"                       -> (0, 0, 0),
