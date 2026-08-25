@@ -47,6 +47,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.slices`](/library/slices/) | what a program does *to* a `[]T` — searching, comparing, `reverse`, two sorts that neither allocate, `binary_search`, and `as_ptr` for a C binding | — |
 | [`sysl.seq`](/library/seq/) | what a program asks *of* a sequence — `map`, `filter`, `fold`, `any`, `all`, `find`, `position`, `count_where`, `each`, `flat_map`, on a slice or a `Buf` alike | — |
 | [`sysl.encoding`](/library/encoding/) | hexadecimal and base64 both ways, fixed-width integers to and from bytes at either byte order, and `DecodeError` | — |
+| [`sysl.crypto`](/library/crypto/) | the SHA-2 family and HMAC over any of it — digests as bytes, a hasher that streams, and no allocator | — |
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
 | [`sysl.posix.rand`](/library/rand/#taking-a-seed-from-the-host-sysl-posix-rand) | `seed_from_os`, kept apart so the generator stays freestanding | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |

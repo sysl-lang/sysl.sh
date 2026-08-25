@@ -150,7 +150,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/bytecode.md"                  -> (0, 0, 0),
     "docs/content/guides/png.md"                       -> (0, 0, 0),
     "docs/content/guides/fft.md"                       -> (0, 0, 0),
-    "docs/content/guides/sha2.md"                      -> (0, 0, 0),
     "docs/content/guides/shapes.md"                    -> (0, 0, 0),
     "docs/content/guides/scheduler.md"                 -> (0, 0, 0),
     "docs/content/guides/kernel.md"                    -> (0, 0, 0),
@@ -201,6 +200,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // replaced.
     "docs/content/library/seq.md"                         -> (10, 2, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
+    "docs/content/library/crypto.md"                   -> (6, 0, 0),
     "docs/content/library/rand.md"                        -> (5, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),
     // The four runnable ones are real suites whose report is checked to the byte, which is possible

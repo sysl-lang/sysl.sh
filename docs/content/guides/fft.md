@@ -62,4 +62,4 @@ over types it did not write will meet — not this one.
 ---
 
 [Source](https://github.com/sysl-lang/sysl/tree/dev/guide/fft) ·
-Next: [sha2](/guides/sha2/) — one algorithm at two widths.
+Next: [shapes](/guides/shapes/) — the dynamic half of the trait system.
