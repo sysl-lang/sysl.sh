@@ -415,13 +415,20 @@ as text: (3, 4) padded:     (3, 4)
 ```
 
 Note the shape of the signature: a value renders itself **into a `*Writer`** rather than returning a
-string. That is what makes rendering allocation-free — a program in a kernel supplies its own sink
+string. That is what lets rendering cost no allocation — a program in a kernel supplies its own sink
 with an ordinary `impl` — and `str(x)` is then the same rendering aimed at a buffer.
 
-`Writer` is the first trait the language itself forms objects of, and `display_pad` is where every
-implementation ends up: it applies the `FormatSpec` to the finished bytes, which is why the parts are
-gathered before anything is padded. A specifier describes the field the *whole* value occupies, so
-`%10s` on a point pads the point and not its first number.
+`Writer` is the first trait the language itself forms objects of, and `display_pad` is where an
+implementation ends up: it applies the `FormatSpec` **once, to the whole value**. That is the rule,
+and it is the only one — a specifier describes the field the whole value occupies, so the `%10s`
+above padded the point rather than its first number.
+
+Gathering the parts into a string first, as this one does, is the shortest way to obey that rule and
+it is not how the library obeys it. `Counting` is a `Writer` that keeps the *length* of what it is
+handed and drops the bytes, so an implementation can measure what its parts came to, pad once, and
+then write them straight through — two passes and nothing allocated. That is what `[]T`, `Option`,
+`Result` and `Complex[F]` all do, and [the library's own page](/library/core/) shows the two shapes
+beside each other.
 
 ---
 
