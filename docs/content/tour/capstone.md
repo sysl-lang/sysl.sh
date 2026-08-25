@@ -159,14 +159,13 @@ ordinary sysl, and nothing in the middle had to be told which.
 
 You have seen the whole language. What is left is depth:
 
-- **The [reference](/reference/)** is this same material in the other shape: every construct written
-  down once, in its own place, with the rules complete rather than the beginner's subset. The tour
-  teaches in the order things make sense to learn; the reference answers a lookup — what may follow
-  `for`, what `?` does to a `&T` payload, which slice forms exist.
+- **The [reference](/reference/)** is the specification, and it is this same material in the other
+  shape: every construct written down once, in its own place, with the rules complete rather than the
+  beginner's subset, and every edge shown as a program rather than described. The tour teaches in the
+  order things make sense to learn; the reference answers a lookup — what may follow `for`, what `?`
+  does to a `&T` payload, which slice forms exist.
 - **The [library](/library/)** documents each module the table in
   [modules](/tour/modules/) named, one page each, down to what a `no alloc` program may reach.
-- **The [reference](/reference/)** is the specification — every rule in this tour is stated there in
-  full, with its edges shown as programs rather than described.
 - **The [guide programs](/guides/)** are ten complete programs at the size where the choices
   start to matter — a bytecode compiler, a PNG decoder, a scheduler, a slab allocator, a ring
   buffer, a Lisp —
