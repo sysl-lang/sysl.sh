@@ -1343,7 +1343,7 @@ print(sum([1, 2, 3]), sum(none), sum([1.5, 2.5]) == 4.0)
 ```
 
 **A constrained subtype is deliberately not a member, and it is the one place a value parts company
-with an operation.** [`16 §3`](/reference/types/) gives a subtype every operation its base has,
+with an operation.** [A derivation](/reference/errors/) gives a subtype every operation its base has,
 because narrowing which values a type holds does not narrow what can be done with them. An identity
 is not an operation: a range written to exclude zero has not got one, so the membership stops at the
 integer types themselves. A **vector** is left out for a related reason — `<4>i32` has four lanes and

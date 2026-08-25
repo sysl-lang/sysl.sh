@@ -81,8 +81,9 @@ what is wrong. `sdl3` is the live example: v0.2.6 writes a bare `None` as a meth
 needs 0.0.62, and a consumer on 0.0.61 gets a type-inference error inside `video.sysl`.
 
 It is a **version** like every other version here — three numbers, no range and no pre-release, which
-is `§ 4`'s rule and not a second one. A range would be a claim about compilers that do not exist yet,
-and the field is a floor precisely because nobody can make that claim.
+is [the version rule](#the-major-version-rides-in-the-coordinate) and not a second one. A range would
+be a claim about compilers that do not exist yet, and the field is a floor precisely because nobody
+can make that claim.
 
 **Both kinds of manifest are held to it**: the project being built, and every package it depends on.
 Saying nothing is the ordinary case and is never an error.
