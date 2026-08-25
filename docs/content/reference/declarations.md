@@ -750,8 +750,55 @@ separate constructor declaration to write or to keep in step.
 builds the value, not by the field — and the compiler says so rather than leaving a `= v` after a
 field to fail as whatever the grammar happened to want there.
 
+### A property
+
 **A property is a method with the parameter list left off** — `perimeter -> int`, called as
 `r.perimeter` with no parentheses. It takes the same body forms a method does.
+
+**The parentheses are the whole of the difference at the call, and the declaration is what decides
+them.** A member declaring a parameter list is called with one; a member declaring none is read
+without one. The two are not interchangeable in either direction, so the declaration settles how
+every call site reads:
+
+```sysl
+struct R
+    w: int
+
+    area(self) -> int = self.w * self.w
+
+    perimeter -> int = self.w * 4
+
+var r = R(3)
+
+print(r.area(), r.perimeter)
+```
+
+```output
+9 12
+```
+
+```sysl
+struct R
+    w: int
+
+    perimeter -> int = self.w * 4
+
+var r = R(3)
+
+print(r.perimeter())
+```
+
+```error
+'perimeter' is a property of 'R' — read it as 'value.perimeter', without '()'
+```
+
+**That is what makes the choice a piece of documentation rather than a preference.** A property reads
+as though it were a field, so it should cost what a field costs; a member that walks, allocates, or
+can fail takes the list, and its parentheses are the warning. Note that `self` is what makes a member
+a *method* at all — a parameter list with no receiver in it declares an **associated function**,
+reached through the type rather than through a value.
+
+### A property may be settable
 
 **A property may be written as well as read**, by declaring a setter beside it. `set` is a contextual
 word — an ordinary identifier everywhere else — and the parameter carries no type, because a setter's
