@@ -160,7 +160,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/simd.md"                      -> (0, 0, 3),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (26, 4, 11),
+    "docs/content/library/core.md"                     -> (27, 4, 11),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (9, 6, 3),
@@ -172,7 +172,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (23, 10, 3),
-    "docs/content/library/complex.md"                   -> (7, 1, 1),
+    "docs/content/library/complex.md"                   -> (8, 1, 1),
     "docs/content/library/matrix.md"                    -> (5, 1, 2),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section

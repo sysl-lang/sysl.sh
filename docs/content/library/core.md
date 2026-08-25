@@ -33,7 +33,7 @@ print(maybe.unwrap_or(0), "— and not one import above this line")
 | stopping | `panic`, `assert`, `exit` | below, and [attributes](/reference/attributes/) for `@test` |
 | rendering to standard output | `print`-family: `prints`, `printi`, `printu`, `printr`, `printb`, `printc`, `putbytes`, `encode_utf8`; the sink itself, `Stdout` and `stdout` | below |
 | rendering to standard error | `eprints`, `eputbytes`; the sink itself, `Stderr` and `stderr` | below |
-| rendering to a sink | `Display`, `FormatSpec`, `Writer`, the `display_*` family | below |
+| rendering to a sink | `Display`, `FormatSpec`, `Writer`, `Counting`, the `display_*` family | below |
 | hashing | `Hash`, `hash_u64`, `hash_u128`, `hash_bool`, `hash_str` | below |
 | destruction | `Drop` | [the memory model](/reference/memory/) |
 | operators | `Add`, `Sub`, `Mul`, `Div`, `Rem`, `BitAnd`, `BitOr`, `BitXor`, `Shl`, `Shr`, `Neg`, `Not`, `Eq`, `Ord` | [expressions](/reference/expressions/) |
@@ -451,11 +451,69 @@ prints("|\n")
 
 Eighteen columns where six were asked for, because each part took the field in turn.
 
-**An implementation that renders more than one part therefore has to gather before it pads**: render
-the parts with a neutral spec into a buffer, then hand the finished bytes to `display_pad` once, with
-the spec the caller gave. That needs somewhere to put them, which is why the library supplies a
-gathering sink rather than leaving each program to write one — [`sysl.buf`](/library/buf/) carries
-`ByteSink` and the worked recipe.
+**An implementation that renders more than one part therefore has to know what those parts came to
+before it can pad**: render them with a neutral spec, find the width they occupied, pad once with the
+spec the caller gave, and render for real. The library supplies two ways to find that width, and they
+are not interchangeable.
+
+#### `Counting` — the width without the bytes
+
+`Counting` is a `Writer` that keeps the length of what it is handed and drops it. Running the parts
+through one answers *how wide did this come out* and stores nothing, so the rendering costs a second
+pass and no allocation — which is what every multi-part `Display` in the library does, `[]T`,
+`Option`, `Result` and `Complex[F]` alike. `Marked` written properly:
+
+```sysl
+struct Marked
+    n: int
+
+render_marked(m: Marked, out: *Writer)
+    display_str("<", out, FormatSpec(0, -1, false))
+    display_int(long(m.n), out, FormatSpec(0, -1, false))
+    display_str(">", out, FormatSpec(0, -1, false))
+
+impl Display for Marked
+    display(self, out: *Writer, fmt: FormatSpec)
+        var pad = 0
+
+        if fmt.width > 0
+            var count = Counting(0)
+            var sink: *Writer = &count
+
+            render_marked(self, sink)
+            pad = fmt.width - int(count.n)
+
+            if pad < 0 then pad = 0
+
+        if !fmt.left then display_fill(out, 32, pad)
+
+        render_marked(self, out)
+
+        if fmt.left then display_fill(out, 32, pad)
+    end display
+
+print(Marked(3))
+print(f"[${Marked(3)}%6s]")
+print(f"[${Marked(3)}%-6s]")
+```
+
+```output
+<3>
+[   <3>]
+[<3>   ]
+```
+
+**Note what the parts are handed and what they are not.** `render_marked` gives each piece the
+neutral `FormatSpec(0, -1, false)`; `fmt` is read by `display` alone, and only for its width and its
+justification. The `if fmt.width > 0` is why an ordinary `print` still costs one pass — nothing is
+measured when nobody asked for a field.
+
+#### `ByteSink` — when the bytes themselves are wanted
+
+[`sysl.buf`](/library/buf/) carries `ByteSink`, which keeps what is written into it. That is the
+answer when the rendering has to go somewhere that is not a stream — handed back as a `string`,
+compared, stored. It costs an allocation, so it is not the one to reach for when all that was needed
+was a width.
 
 **A single-part rendering has nothing to gather**, and passing `fmt` straight through is right for
 it. `Marked` is a three-part rendering wearing a one-part shape, which is the whole of what makes it
@@ -606,13 +664,20 @@ print(f"[${p}%-10s]")
 [(3, 4)    ]
 ```
 
-**The parts are gathered before anything is padded, and that is the rule rather than the style.** A
-specifier describes the field the *whole value* occupies — so `%10s` on a point pads the point, not
-its first number. An implementation that rendered parts and forwarded `fmt` down to each of them
-would pad the `3` to ten columns and then the `4`, which is not what anybody asking for `%10s` meant.
+**Padding once is the rule rather than the style.** A specifier describes the field the *whole value*
+occupies — so `%10s` on a point pads the point, not its first number. An implementation that rendered
+parts and forwarded `fmt` down to each of them would pad the `3` to ten columns and then the `4`,
+which is not what anybody asking for `%10s` meant.
 
 Forwarding `fmt` straight down is right in exactly one case: when the part being rendered **is** the
 whole rendering, as for a wrapper around a single field.
+
+**Gathering the parts into a string is the shortest way to pad them once and not the cheapest** — it
+is four allocations here, three of them thrown away as soon as they are joined. `Counting`, above,
+gets the same width by rendering the parts into a sink that keeps their length and drops them — which
+is what the library's own multi-part renderings do, and what a `Point` printed in a loop would want.
+This recipe is the one to start from; that one is what to reach for when the rendering is hot, or the
+module has no allocator.
 
 A type with no `Display` cannot be printed, and the diagnostic says what to write:
 

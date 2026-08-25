@@ -443,7 +443,7 @@ if r.failed() then print("input ended badly")
 
 `stdin()` names the descriptor a program is started with, so a caller does not have to know it is
 zero, and `fd_reader(fd)` takes any other. `FdReader` is the **only** reader the library supplies —
-the mirror of [`ByteSink`](/library/buf/) being the only writer.
+the mirror of [`ByteSink`](/library/buf/) being the only writer that keeps what it is given.
 
 **That symmetry is what makes the freestanding story two functions long.** The seams a target with no
 C library replaces are exactly `putbytes`' body and `FdReader.read`'s. Swap those two for a `write`

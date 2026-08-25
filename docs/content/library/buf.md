@@ -1,6 +1,6 @@
 ---
 title: The buf module
-summary: "`sysl.buf` — `Buf[T]`, the growable sequence written in ordinary sysl, and `ByteSink`, the one `Writer` the library supplies."
+summary: "`sysl.buf` — `Buf[T]`, the growable sequence written in ordinary sysl, and `ByteSink`, the `Writer` that keeps what is written into it."
 weight: 30
 ---
 
@@ -398,9 +398,10 @@ impl Writer for ByteSink
     write(*self, bytes: []const u8) = self.bytes.extend(bytes)
 ```
 
-That is the entire type. It is **one of the two `Writer`s the library supplies** — the other is
+That is the entire type. It is **one of the three `Writer`s the library supplies** — the others are
 [`Stdout`](/reference/declarations/), which stands for standard output, holds no state at all, and
-is therefore a struct with no fields. The buffer `str` and an `f"…"` hole render into is still the
+is therefore a struct with no fields, and `Counting`, which keeps the *length* of what it is handed
+and throws the bytes away. The buffer `str` and an `f"…"` hole render into is still the
 compiler's, since a growable byte array is not something it can name at the layer it needs one.
 
 `impl Fallible for ByteSink` has no block, and does not need one: every member of `Fallible` has a
@@ -429,10 +430,15 @@ false 9
 
 ### Why it is in the library rather than in each program
 
-Because **an implementation that renders more than one part cannot honour its specifier without
-one.** A format specifier describes the field the *whole value* occupies, so a rendering of `1`, `+`,
-`2`, `i` has to pad what those four came to rather than each of them; padding needs the finished
-bytes; and the finished bytes need somewhere to land.
+Because a rendering sometimes has to end up somewhere that is not a stream — handed back as a
+`string`, compared against another, kept. Writing a growable byte array per program to do that is
+writing `Buf[u8]` again.
+
+**It is not because a multi-part `Display` needs one.** A format specifier describes the field the
+*whole value* occupies, so a rendering of `1`, `+`, `2`, `i` has to pad what those four came to
+rather than each of them — but padding needs their *width*, which `Counting` answers without keeping
+a byte, and that is what [`sysl`'s own multi-part renderings](/library/core/) do. Gathering is the
+shorter way to write it and costs an allocation the other does not:
 
 ```sysl
 import sysl.buf.byte_sink
@@ -470,10 +476,13 @@ plainly — and only `display_pad` at the end sees `fmt`. An implementation that
 to each part would pad the `1` to eight columns and then the `2`, which is not what `%8s` on a
 complex number meant.
 
-Every such implementation would write the same dozen lines, which is the definition of something that
-belongs in the library. What a program still writes for itself is an ordinary `impl Writer for
-MyThing` — a counter, a device, a bounded buffer that latches — and that remains the case the trait
-exists for.
+**The `Complex` above is this page's own, and the library's is not written this way** —
+[`sysl.math.complex`](/library/complex/) measures with `Counting` and allocates nothing, which is why
+an allocator-free program can print one. The struct here is the gathering shape, kept because it is
+the shorter one and because it is what a first `Display` looks like.
+
+What a program still writes for itself is an ordinary `impl Writer for MyThing` — a device, a bounded
+buffer that latches, a checksum — and that remains the case the trait exists for.
 
 ### A `Writer` may not keep what it is written
 

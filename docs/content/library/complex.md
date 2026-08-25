@@ -9,10 +9,31 @@ weight: 62
 and because `sysl.math` is mathematics *on* the floating-point types — which is not a sentence a type
 belongs in.
 
-It requires no capability, so a freestanding target has it. **The arithmetic is reachable under
-`no alloc`; rendering one is not** — a specifier describes the field the *whole* value lands in, so
-the three pieces have to be gathered before the padding is applied, and gathering means a string. An
-allocator-free program computes with a `Complex` and prints its parts.
+It requires no capability, so a freestanding target has it — and **rendering one allocates nothing
+either**, which used to be the exception here. A specifier describes the field the *whole* value
+lands in, so the four pieces of `a+bi` are padded once between them rather than each in turn; but the
+width they came to is *measured* with [`Counting`](/library/core/) and never gathered into a string.
+An allocator-free program prints a `Complex` rather than printing its parts one at a time:
+
+```sysl
+@no_alloc
+
+import sysl.math.complex.Complex
+
+var a = Complex(3.0, 4.0)
+
+print(a, a * a, a.abs())
+```
+
+```output
+3+4i -7+24i 5
+```
+
+**The module itself still does not declare `no alloc`, and that is a fact about the clause rather
+than about rendering.** A call through `*Writer` is judged against every `impl Writer` linked into
+the program, and [`ByteSink`](/library/buf/) allocates — so writing into a sink at all is refused
+under the clause wherever a growable buffer is anywhere in the program. The block above compiles
+because it links none.
 
 ```sysl
 import sysl.math.complex.Complex
