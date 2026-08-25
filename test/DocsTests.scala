@@ -180,6 +180,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // does — which is what a fixed offset, or one read out of a captured table, is written as.
     "docs/content/library/time.md"                       -> (20, 4, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
+    "docs/content/library/process.md"                    -> (5, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.
