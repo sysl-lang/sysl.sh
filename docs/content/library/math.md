@@ -4,6 +4,8 @@ summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits
 weight: 60
 ---
 
+**Every declaration in `sysl.math`, with its signature:** [the generated API page](/api/sysl-math/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.math` is five files and four traits, and the interesting thing about it is that **no two of
 them are written the same way** — because the types they cover are different shapes, and the shape of
 the family is what decides how a trait can reach it.

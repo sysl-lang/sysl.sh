@@ -4,6 +4,8 @@ summary: Atomics, the five memory orderings, and a spinlock — the concurrency 
 weight: 70
 ---
 
+**Every declaration in `sysl.sync`, with its signature:** [the generated API page](/api/sysl-sync/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.sync` is two types and five names, and the most important thing about it is what it does
 **not** require. There is no `requires` clause on the module at all, so a program that has given up
 its allocator and its operating system can still reach every name in it:

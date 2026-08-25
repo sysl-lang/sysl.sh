@@ -4,6 +4,8 @@ summary: The escape sequences a terminal understands — colour, emphasis, and t
 weight: 85
 ---
 
+**Every declaration in `sysl.term`, with its signature:** [the generated API page](/api/sysl-term/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.term` is forty-odd `const string`s and nothing else. Each one is an ANSI escape sequence, and
 writing one into the output stream is how a terminal is told to change colour, start underlining, or
 clear itself.

@@ -4,6 +4,8 @@ summary: "`sysl.crypto` — the SHA-2 family and HMAC, written in sysl, answerin
 weight: 59
 ---
 
+**Every declaration in `sysl.crypto`, with its signature:** [the generated API page](/api/sysl-crypto/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.crypto` is SHA-224, SHA-256, SHA-384 and SHA-512, and HMAC over any of them. It is written in
 sysl rather than bound to a C library, it needs no allocator, and it builds for a freestanding target
 along with the rest of the standard module.

@@ -4,6 +4,8 @@ summary: "`sysl.process` — starting another program and waiting for it: `run`,
 weight: 74
 ---
 
+**Every declaration in `sysl.process`, with its signature:** [the generated API page](/api/sysl-process/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.process` starts another program and waits for what it does. Two functions: `run`, which lets
 the child share this program's streams, and `capture`, which collects what it wrote.
 

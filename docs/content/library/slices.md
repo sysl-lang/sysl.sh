@@ -4,6 +4,8 @@ summary: "`sysl.slices` — the operations over a built-in slice: searching, com
 weight: 55
 ---
 
+**Every declaration in `sysl.slices`, with its signature:** [the generated API page](/api/sysl-slices/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.slices` is what a program does *to* a `[]T` once it has one. Everything here is a **free
 function** rather than a member of anything, which is the same call [`sysl.math`](/library/math/)
 made for `min`: a built-in slice is indexed by the compiler walking to an address, so none of this

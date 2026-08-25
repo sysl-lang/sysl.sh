@@ -4,6 +4,8 @@ summary: "`sysl.seq` — `map`, `filter`, `fold` and the seven questions beside 
 weight: 56
 ---
 
+**Every declaration in `sysl.seq`, with its signature:** [the generated API page](/api/sysl-seq/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.seq` is what a program asks *of* a sequence of values: transform every element, keep the ones
 satisfying a predicate, carry a running value across the lot. It is a single trait, `Sequence[T]`,
 and the library implements it twice — for a built-in slice and for a

@@ -4,6 +4,8 @@ summary: "`sysl.regex` — POSIX Extended Regular Expressions, matched by a Pike
 weight: 25
 ---
 
+**Every declaration in `sysl.regex`, with its signature:** [the generated API page](/api/sysl-regex/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.regex` compiles a POSIX Extended Regular Expression and matches it against text. Two types are
 the whole of the surface: a `Regex`, which is a compiled pattern, and a `Match`, which is what one
 found.

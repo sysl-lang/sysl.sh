@@ -4,6 +4,8 @@ summary: "`sysl.rand` — PCG32, seeded by the caller and reproducible; a bounde
 weight: 62
 ---
 
+**Every declaration in `sysl.rand`, with its signature:** [the generated API page](/api/sysl-rand/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.rand` is a named, seedable, reproducible pseudo-random generator and the distributions that are
 easy to get wrong.
 
