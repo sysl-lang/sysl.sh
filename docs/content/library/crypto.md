@@ -42,8 +42,8 @@ never pays for it.
 
 ## A hash in progress is a value
 
-`Sha[T]` is an ordinary struct, so a hasher is a value and **copying it is starting another from the
-same point**. `update` takes any slice of bytes and may be called as often as you like; `finish`
+`Sha224`, `Sha256`, `Sha384` and `Sha512` are ordinary structs, so a hasher is a value and **copying
+one is starting another from the same point**. `update` takes any slice of bytes and may be called as often as you like; `finish`
 writes into storage the caller owns.
 
 ```sysl
@@ -88,8 +88,13 @@ true
 
 The four digests are **two** algorithms. SHA-224 and SHA-256 are the same 32-bit compression started
 from different initial values and truncated differently; SHA-384 and SHA-512 are the same 64-bit one.
-So the width is what a type parameter carries, and `Sha[T]` is written once over a `Word` bound that
-`u32` and `u64` both implement.
+So the width is what a type parameter carries, and the compression is written **once** over a bound
+that `u32` and `u64` both satisfy.
+
+**That genericity does not reach this page's surface, and that is deliberate.** The four hashers are
+four ordinary types; the trait behind them is private to the module. A public generic would have
+dragged its bound out with it, and a bound declaring `bits`, `rounds` and `k` is the standard library
+claiming names general enough that the next program to want one would collide with it.
 
 That is why the truncated pair are not prefixes of the untruncated ones — the published initial
 values for SHA-224 and SHA-384 are chosen so that they cannot be.
