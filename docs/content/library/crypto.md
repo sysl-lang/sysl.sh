@@ -137,7 +137,50 @@ a package rather than part of the standard module, because a crypto library has 
 fix on its own schedule. SHA-2 is here instead of there because it is a frozen standard with no
 upstream to track, and because monocypher does not implement it.
 
-**No constant-time comparison.** Comparing a tag you computed against one that arrived with `==` is a
-timing oracle, and sysl has no way to *state* that a comparison is constant-time, let alone check it.
-Monocypher's `equal` is the instrument for that and this module does not have one. Verifying a MAC is
-the case to be careful about; comparing two digests of public data is not.
+## Comparing a tag: use `verify`, not `==`
+
+**`==` on two tags is a timing oracle.** A natural comparison walks left to right and stops at the
+first difference, so a tag whose first byte is wrong is rejected fractionally sooner than one whose
+first three bytes are right. An attacker who can submit guesses and time the rejections recovers the
+tag a byte at a time — turning an impossible search into an afternoon's work. It is the defect that
+bit Keyczar in 2009, and why Java documents `Arrays.equals` as unsuitable for the same job.
+
+`verify` reads **every** byte and asks the question once, at the end.
+
+```sysl
+import sysl.crypto.{hmac256, verify}
+
+val key = "Jefe".bytes
+val msg = "what do ya want for nothing?".bytes
+val tag = hmac256(key, msg)
+
+print(verify(tag, hmac256(key, msg)), verify(tag, hmac256(key, "something else".bytes)))
+```
+
+```output
+true false
+```
+
+The **length** is compared first, and that comparison does branch — which costs nothing, since how
+long a SHA-256 tag is was never a secret. What must not leak is *where* two tags of the same length
+diverge.
+
+**Reach for it wherever one side is a secret somebody supplied** — a message authentication code, a
+session token, a password digest. For two digests of public data `==` is fine and says so more
+plainly.
+
+### What is promised, and what is not
+
+**Promised**: `verify` reads every byte of both inputs and takes no branch on their contents. That is
+a property of the emitted code, and it is pinned by a test — a change that introduced an early exit
+fails a build rather than shipping quietly.
+
+**Not promised**: that the machine executes it in constant time. sysl has no way to *state* that
+requirement — there is no annotation for it and no check — so nothing stops a future optimizer, or a
+processor with a data-dependent instruction, from reintroducing a signal. The emitted code was read
+at 0.0.79 on aarch64: the loop is branchless and the verdict is a conditional set.
+
+Where a **hardware-backed** guarantee is the requirement rather than a careful implementation, the
+instruments are the processor's own — AArch64's `DIT`, x86's `DOITM` — and a vetted C implementation
+such as [Monocypher](https://github.com/sysl-lang/monocypher)'s `crypto_verify*`, which the org binds
+as a package.
