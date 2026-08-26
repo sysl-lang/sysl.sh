@@ -168,6 +168,9 @@ When a struct cannot be updated one field at a time, there are three answers and
 3. **Otherwise assign the whole struct**, and know the price — restating the whole value to move two
    bytes makes a container's own update cost the size of the container.
 
+A function says the same kind of thing about itself. `require` states what it needs of its arguments
+and `ensure` what it promises of its result:
+
 ```sysl
 half(x: int) -> int
     require x >= 0, "a half of a negative is not what this means"
