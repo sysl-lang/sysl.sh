@@ -180,7 +180,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),
-    "docs/content/library/slices.md"                      -> (7, 0, 0),
+    "docs/content/library/slices.md"                      -> (8, 0, 0),
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.

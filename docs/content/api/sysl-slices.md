@@ -23,7 +23,7 @@ trade. Sorting is in `sort.sysl` beside this file and holds to the same rule.
 
 ## Index
 
-[`INSERTION_LIMIT`](#insertion_limit) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
+[`INSERTION_LIMIT`](#insertion_limit) [`align_up`](#align_up) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`is_aligned`](#is_aligned) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
 
 ## Constants
 
@@ -37,6 +37,33 @@ Below this many elements, insertion sort. It is where the recursion bottoms out 
 quadratic sort genuinely wins -- the constant factor is small and the data is in cache.
 
 ## Functions
+
+### `align_up`
+
+```sysl
+align_up[T](p: *T, alignment: usize) -> *T
+```
+
+The first address at or after `p` that `alignment` divides.
+
+**This is what a binding needs to place a C struct in storage the caller supplied.** A `[]u8`
+promises nothing about its own address, while the struct C is about to read wants its natural
+alignment -- so a caller over-sizes its storage by `alignment - 1` and puts the state at the first
+aligned address inside it. `miniz` is the package that does this, and it wrote the arithmetic in C
+because a comment there says sysl has no pointer-to-integer cast. It has one: an address read as a
+`usize` is an ordinary conversion (`reference/memory.md`), and reading it back is `ptr_cast`, so
+this needs no C at all.
+
+The alignment a type wants is `alignof(T)`, which is a compile-time constant, so the usual call
+spells it rather than repeating a number the C header already knows.
+
+**A pointer that is already aligned is answered unchanged**, which is what makes it safe to call
+on storage that happens to be aligned already -- the common case on a 64-bit machine, and the one
+that hides a missing call until the day it does not.
+
+**`alignment` must be a power of two and nothing checks it.** The mask this is computed with means
+something only for a power of two; any other value silently answers an address that is not aligned
+to anything. It is the caller's to get right, exactly as it is in C.
 
 ### `as_mut_ptr`
 
@@ -151,6 +178,19 @@ Where a value first appears, or `None`.
 **`Option[usize]` rather than a sentinel index.** A library answering `-1` for absence hands back a
 number that indexes when it should not, and `usize` has no negative to spare in any case. The
 absence is in the type, where a caller has to look at it.
+
+### `is_aligned`
+
+```sysl
+is_aligned[T](p: *T, alignment: usize) -> bool
+```
+
+Whether an address is already a multiple of `alignment`.
+
+The question `align_up` answers by construction, asked on its own -- for an assertion in a binding's
+raw layer, or to find out whether over-sizing the storage was needed at all. **A power of two is
+assumed here too**, though this one is a remainder rather than a mask, so a value that is not one
+answers a real question about divisibility rather than nonsense.
 
 ### `is_sorted`
 

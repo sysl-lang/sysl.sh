@@ -224,3 +224,43 @@ The cost, said plainly: ISO C leaves passing a null pointer to `memcpy` undefine
 zero, and a small number of libraries assert non-null on entry. Every real interface takes the pair
 `(null, 0)`, and the length is what says not to look — but a binding whose C asserts otherwise must
 pass storage it owns rather than an empty slice.
+
+## Placing a C struct in storage you supplied
+
+A binding that hands C a slice to keep its state in has a second problem after the pointer: a `[]u8`
+promises nothing about its own address, and the struct C is about to read wants its natural
+alignment. `align_up` answers the first address at or after a pointer that a given alignment divides,
+and `is_aligned` asks whether one already is. Neither needs C — an address read as a `usize` is an
+ordinary conversion, and `ptr_cast` reads it back.
+
+```sysl
+import sysl.slices.align_up
+import sysl.slices.is_aligned
+import sysl.slices.as_mut_ptr
+
+var storage: [sizeof(u64) + alignof(u64) - 1]u8 = [0; sizeof(u64) + alignof(u64) - 1]
+
+val state: *u64 = ptr_cast(align_up(as_mut_ptr(storage[..]), alignof(u64)))
+
+*state = 42
+
+print(is_aligned(state, alignof(u64)))
+print(*state)
+```
+
+```output
+true
+42
+```
+
+The storage is over-sized by `alignment - 1`, which is the most the rounding can ever cost, so the
+value fits wherever the slice happens to start. `alignof(T)` is a compile-time constant, so the call
+asks for what the type wants rather than repeating a number.
+
+**A pointer that is already aligned is answered unchanged.** On a 64-bit machine storage usually is
+aligned already, which is what makes a missing call so easy to ship: it works until the day the
+storage does not start on a boundary.
+
+**`alignment` must be a power of two and nothing checks it.** The arithmetic is a mask, and a mask
+means something only for a power of two — any other value quietly answers an address that is aligned
+to nothing. It is the caller's to get right, exactly as it is in C.
