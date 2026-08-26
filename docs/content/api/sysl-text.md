@@ -673,7 +673,7 @@ observable changing, which is the reason to say so here rather than in each body
 | `view` | `view(self) -> []const u8` | The bytes to look at. |
 | `slice` | `slice(self, lo: usize, hi: usize) -> Self` | A piece of the receiver, as the receiver's own type -- what lets a trim answer with a view rather than a copy, and what a default cannot do for itself because it does not know how to build a `Self`. |
 | `is_empty` | `is_empty(self) -> bool` | There is deliberately no `len` here: both implementations already have one the compiler provides, and a trait member of that name would hide it rather than agree with it. |
-| `starts_with` | `starts_with(self, prefix: Self) -> bool` | The empty prefix is a prefix of everything, which falls out of the loop rather than being said: there is nothing to disagree about. |
+| `starts_with` | `starts_with(self, prefix: Self) -> bool` | The empty prefix is a prefix of everything, which falls out of the comparison rather than being said: two slices of no elements are equal. |
 | `ends_with` | `ends_with(self, suffix: Self) -> bool` |  |
 | `index_of` | `index_of(self, needle: Self) -> Option[usize]` | Where the first occurrence starts, or `None`. |
 | `last_index_of` | `last_index_of(self, needle: Self) -> Option[usize]` | The empty needle is found at the end here rather than at 0, which is the same convention read from the other side: the last place it occurs. |

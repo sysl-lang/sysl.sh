@@ -25,7 +25,7 @@ came back and neither of these comes back.
 
 ## Index
 
-[`assert`](#assert) [`assert_eq`](#assert_eq) [`assert_slice_eq`](#assert_slice_eq) [`display_bool`](#display_bool) [`display_char`](#display_char) [`display_digits`](#display_digits) [`display_fill`](#display_fill) [`display_int`](#display_int) [`display_pad`](#display_pad) [`display_real`](#display_real) [`display_str`](#display_str) [`display_uint`](#display_uint) [`encode_utf8`](#encode_utf8) [`eprints`](#eprints) [`eputbytes`](#eputbytes) [`hash_bool`](#hash_bool) [`hash_str`](#hash_str) [`hash_u128`](#hash_u128) [`hash_u64`](#hash_u64) [`panic`](#panic) [`printb`](#printb) [`printc`](#printc) [`printi`](#printi) [`printr`](#printr) [`prints`](#prints) [`printu`](#printu) [`putbytes`](#putbytes) [`stderr`](#stderr) [`stdout`](#stdout) [`Counting`](#counting) [`FormatSpec`](#formatspec) [`Option`](#option) [`Range`](#range) [`Result`](#result) [`Stderr`](#stderr-1) [`Stdout`](#stdout-1) [`Add`](#add) [`BitAnd`](#bitand) [`BitOr`](#bitor) [`BitXor`](#bitxor) [`Display`](#display) [`Div`](#div) [`Drop`](#drop) [`Eq`](#eq) [`Fallible`](#fallible) [`Fn0`](#fn0) [`Fn1`](#fn1) [`Fn2`](#fn2) [`Fn3`](#fn3) [`Fn4`](#fn4) [`Hash`](#hash) [`Index`](#index) [`IndexSet`](#indexset) [`Integer`](#integer) [`Iterate`](#iterate) [`Mul`](#mul) [`Neg`](#neg) [`Not`](#not) [`One`](#one) [`Ord`](#ord) [`Rem`](#rem) [`Shl`](#shl) [`Shr`](#shr) [`Sub`](#sub) [`Writer`](#writer) [`Zero`](#zero) [Display for (..A)](#display-for-a) [Display for []T](#display-for-t) [Display for [N]T](#display-for-nt) [Display for bool](#display-for-bool) [Display for char](#display-for-char) [Display for f32](#display-for-f32) [Display for Option[T]](#display-for-optiont) [Display for real](#display-for-real) [Display for Result[T, E]](#display-for-resultt-e) [Display for string](#display-for-string) [Display for T](#display-for-t-1) [Eq for (..A)](#eq-for-a) [Eq for Option[T]](#eq-for-optiont) [Eq for Result[T, E]](#eq-for-resultt-e) [Fallible for Counting](#fallible-for-counting) [Fallible for Stderr](#fallible-for-stderr) [Fallible for Stdout](#fallible-for-stdout) [Hash for (..A)](#hash-for-a) [Hash for bool](#hash-for-bool) [Hash for char](#hash-for-char) [Hash for string](#hash-for-string) [Hash for T](#hash-for-t) [Iterate for Range[T]](#iterate-for-ranget) [One for f32](#one-for-f32) [One for real](#one-for-real) [Ord for (..A)](#ord-for-a) [Writer for Counting](#writer-for-counting) [Writer for Stderr](#writer-for-stderr) [Writer for Stdout](#writer-for-stdout) [Zero for f32](#zero-for-f32) [Zero for real](#zero-for-real)
+[`assert`](#assert) [`assert_eq`](#assert_eq) [`assert_slice_eq`](#assert_slice_eq) [`display_bool`](#display_bool) [`display_char`](#display_char) [`display_digits`](#display_digits) [`display_fill`](#display_fill) [`display_int`](#display_int) [`display_pad`](#display_pad) [`display_real`](#display_real) [`display_str`](#display_str) [`display_uint`](#display_uint) [`encode_utf8`](#encode_utf8) [`eprints`](#eprints) [`eputbytes`](#eputbytes) [`hash_bool`](#hash_bool) [`hash_str`](#hash_str) [`hash_u128`](#hash_u128) [`hash_u64`](#hash_u64) [`panic`](#panic) [`printb`](#printb) [`printc`](#printc) [`printi`](#printi) [`printr`](#printr) [`prints`](#prints) [`printu`](#printu) [`putbytes`](#putbytes) [`stderr`](#stderr) [`stdout`](#stdout) [`Counting`](#counting) [`FormatSpec`](#formatspec) [`Option`](#option) [`Range`](#range) [`Result`](#result) [`Stderr`](#stderr-1) [`Stdout`](#stdout-1) [`Add`](#add) [`BitAnd`](#bitand) [`BitOr`](#bitor) [`BitXor`](#bitxor) [`Display`](#display) [`Div`](#div) [`Drop`](#drop) [`Eq`](#eq) [`Fallible`](#fallible) [`Fn0`](#fn0) [`Fn1`](#fn1) [`Fn2`](#fn2) [`Fn3`](#fn3) [`Fn4`](#fn4) [`Hash`](#hash) [`Index`](#index) [`IndexSet`](#indexset) [`Integer`](#integer) [`Iterate`](#iterate) [`Mul`](#mul) [`Neg`](#neg) [`Not`](#not) [`One`](#one) [`Ord`](#ord) [`Rem`](#rem) [`Shl`](#shl) [`Shr`](#shr) [`Sub`](#sub) [`Writer`](#writer) [`Zero`](#zero) [Display for (..A)](#display-for-a) [Display for []T](#display-for-t) [Display for [N]T](#display-for-nt) [Display for bool](#display-for-bool) [Display for char](#display-for-char) [Display for f32](#display-for-f32) [Display for Option[T]](#display-for-optiont) [Display for real](#display-for-real) [Display for Result[T, E]](#display-for-resultt-e) [Display for string](#display-for-string) [Display for T](#display-for-t-1) [Eq for (..A)](#eq-for-a) [Eq for []T](#eq-for-t) [Eq for [N]T](#eq-for-nt) [Eq for Option[T]](#eq-for-optiont) [Eq for Result[T, E]](#eq-for-resultt-e) [Fallible for Counting](#fallible-for-counting) [Fallible for Stderr](#fallible-for-stderr) [Fallible for Stdout](#fallible-for-stdout) [Hash for (..A)](#hash-for-a) [Hash for bool](#hash-for-bool) [Hash for char](#hash-for-char) [Hash for string](#hash-for-string) [Hash for T](#hash-for-t) [Iterate for Range[T]](#iterate-for-ranget) [One for f32](#one-for-f32) [One for real](#one-for-real) [Ord for (..A)](#ord-for-a) [Writer for Counting](#writer-for-counting) [Writer for Stderr](#writer-for-stderr) [Writer for Stdout](#writer-for-stdout) [Zero for f32](#zero-for-f32) [Zero for real](#zero-for-real)
 
 ## Functions
 
@@ -935,8 +935,8 @@ parameter (`reference/generics.md § A parameter may stand for a value`) and so 
 shape rather than part of it. Before that, one `impl` per length was the only way to write this
 and no library could write them all.
 
-The whole-array view is the elements a slice would have walked, so the block above renders it and
-this one is a delegation rather than a second copy of the padding.
+The whole-array view is the elements a slice would have walked, so `Display for []T` renders it
+and this one is a delegation rather than a second copy of the padding.
 
 ### Display for bool
 
@@ -987,7 +987,7 @@ impl[T: Display, E: Display] Display for Result[T, E]
 
 A result renders as it is written -- `Ok(3)` or `Err(NotFound)` -- which is what makes a failed
 `assert_eq` on one readable. `assert_eq` is bounded over `Eq + Display`, so this is not a
-convenience beside the block above: without it a comparable result is still refused, and the
+convenience beside `Eq for Result[T, E]`: without it a comparable result is still refused, and the
 refusal talks about `Display` rather than about the comparison.
 
 The width is honoured by rendering twice into a counter first, exactly as a slice does: a field is
@@ -1011,6 +1011,33 @@ impl[T: Integer] Display for T
 ```sysl
 impl[A: Eq] Eq for (..A)
 ```
+
+### Eq for []T
+
+```sysl
+impl[T: Eq] Eq for []T
+```
+
+Same length, same elements, same order -- which is the equality a sequence has when its elements
+have one, and the reason it is written here rather than left to each caller.
+
+`sysl.slices.equal` answers the same question and stays: it is a free function over `[]const T`
+for a caller that has one, and the module it lives in is `@no_alloc` and reachable from a
+freestanding target. What the block adds is `==` itself, and with it every generic bounded by
+`Eq` -- `assert_eq` above all, which is where the absence was found, since a bare `bool` says a
+comparison failed and neither of the two sequences that disagreed.
+
+The length test comes first, so the common refusal costs nothing.
+
+### Eq for [N]T
+
+```sysl
+impl[const N: usize, T: Eq] Eq for [N]T
+```
+
+Every array of an equatable element, at every length -- the whole-array view is the elements a
+slice would have walked, so this is a delegation rather than a second copy of the loop, exactly as
+`Display for [N]T` delegates to `Display for []T`.
 
 ### Eq for Option[T]
 

@@ -293,6 +293,72 @@ with no `*T` in it cannot fault, so the old storage stays until the last view of
 What `v` does *not* do is grow with the buffer. It is a view of some elements and it has the length it
 was made with. Take it again to see more.
 
+## It compares and renders as the sequence it holds
+
+A `Buf[T]` is the growable form of a `[]T`, so it answers `==` and `print` the way one does — both
+by delegating to `view()`, which is the elements it actually has:
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+var b: Buf[int] = buf()
+var c: Buf[int] = buf()
+
+for i in 1..3
+    b.push(i)
+    c.push(i)
+
+for i in 0..<9 do c.push(i)
+
+c.truncate(3)
+
+print(b)
+print(b == c, b.cap() == c.cap())
+print(f"[${b}%13s]")
+```
+
+```output
+[1, 2, 3]
+true false
+[    [1, 2, 3]]
+```
+
+**The spare capacity is not part of the value**, which is what the second line is there to show: `c`
+grew to sixteen slots and was shortened back to three, so it holds the same three elements as `b` and
+a different amount of storage. `==` sees the first and not the second.
+
+`Eq` asks the element type for its own `==` and `Display` asks it for its own rendering, so a buffer
+of a type you wrote works the moment that type does — the two blocks are
+[the slice's](/library/core/#a-slice-or-an-array-of-anything-equatable), reached one delegation away,
+which is also why a width pads the whole rendering rather than each element.
+
+**A `&Buf` is a different question and answers a different one.** References
+[compare by address](/reference/memory/#t-counted-references) and a `&T` implements nothing its referent implements, so
+`==` between two of them asks whether they are the same buffer, and `print` on one is refused. The
+deref is the way to the value:
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+var b: &Buf[int] = buf()
+var c: &Buf[int] = buf()
+
+for i in 1..3
+    b.push(i)
+    c.push(i)
+
+print(b == c, *b == *c)
+print(*b)
+```
+
+```output
+false true
+[1, 2, 3]
+```
+
+That is not a rule about buffers — it is true of every `&T` whose referent is `Eq` — but a `Buf` is
+usually held by reference, so it is where the question comes up.
+
 ## How a push is seen follows from how the `Buf` is held
 
 sysl does not have to choose here, and that is the point:

@@ -15,7 +15,7 @@ sink is `str(x)`, and that goes through storage the compiler lays out rather tha
 
 ## Index
 
-[`buf`](#buf) [`buf_with_capacity`](#buf_with_capacity) [`byte_sink`](#byte_sink) [`Buf`](#buf-1) [`ByteSink`](#bytesink) [Fallible for ByteSink](#fallible-for-bytesink) [Index for Buf[T]](#index-for-buft) [IndexSet for Buf[T]](#indexset-for-buft) [Writer for ByteSink](#writer-for-bytesink)
+[`buf`](#buf) [`buf_with_capacity`](#buf_with_capacity) [`byte_sink`](#byte_sink) [`Buf`](#buf-1) [`ByteSink`](#bytesink) [Display for Buf[T]](#display-for-buft) [Eq for Buf[T]](#eq-for-buft) [Fallible for ByteSink](#fallible-for-bytesink) [Index for Buf[T]](#index-for-buft) [IndexSet for Buf[T]](#indexset-for-buft) [Writer for ByteSink](#writer-for-bytesink)
 
 ## Functions
 
@@ -103,6 +103,32 @@ stands for standard output and holds no state at all.
 | `text` | `text(self) -> []u8` |  |
 
 ## Implementations
+
+### Display for Buf[T]
+
+```sysl
+impl[T: Display] Display for Buf[T]
+```
+
+A buffer renders as the sequence it holds, which is `view()` -- the same delegation its equality
+goes through, and for the same reason.
+
+What the delegation buys here beyond agreement is the padding: a specifier describes the field the
+whole value occupies, and `[]T`'s own block already measures a rendering before it pads one, so a
+width on a `Buf` pads the whole sequence rather than being worked out a second time.
+
+### Eq for Buf[T]
+
+```sysl
+impl[T: Eq] Eq for Buf[T]
+```
+
+A buffer compares as the sequence it holds, which is `view()` -- the elements it actually has,
+rather than the backing slice, whose slots past `count` were never written.
+
+**The delegation is on purpose.** A `Buf[T]` is the growable form of a `[]T` and the two would be
+hard to explain if either answered differently, so the loop is written once, over the slice, and
+this is the growable sequence saying it is the same sequence.
 
 ### Fallible for ByteSink
 

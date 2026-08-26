@@ -152,10 +152,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (27, 4, 11),
+    "docs/content/library/core.md"                     -> (30, 6, 11),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
-    "docs/content/library/buf.md"                       -> (9, 6, 3),
+    "docs/content/library/buf.md"                       -> (11, 6, 3),
     "docs/content/library/container.md"                -> (5, 0, 3),
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.

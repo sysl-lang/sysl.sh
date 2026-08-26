@@ -166,9 +166,20 @@ through [`Display`](/library/core/) into the output costs neither.
 **One function rather than one per type.** `Eq` says the comparison means something and `Display`
 says the value can be shown, which together are the whole of what a report needs.
 
-`assert_slice_eq` earns a name of its own because a report saying two slices differ sends you to
-find out *where*. It checks the lengths first — a length mismatch explains every index after the
-shorter one — and otherwise names the first index the two disagree at, with both elements at it:
+`assert_slice_eq` earns a name of its own, and it is worth being exact about what for now that
+[a slice is `Eq` and `Display`](#a-slice-or-an-array-of-anything-equatable) and so reaches
+`assert_eq` like anything else. Both work; they answer differently:
+
+```
+panic: got [1, 2, 4], want [1, 2, 3] (main.sysl:9)
+panic: got 4, want 3 at index 2 (main.sysl:9)
+```
+
+The first is `assert_eq` — the two sequences. The second is `assert_slice_eq` — where they part.
+Reach for `assert_eq` where the sequences are short enough to read side by side, and for
+`assert_slice_eq` where they are not: it checks the lengths first — a length mismatch explains every
+index after the shorter one — and otherwise names the first index the two disagree at, with both
+elements at it:
 
 ```
 panic: got 2 elements, want 3 (main.sysl:4)
@@ -737,6 +748,119 @@ the one thing printing does not have — so a slice prints under `@no_alloc` exa
 That leaves the width, which has to be known before the first byte goes out. It is learned by
 rendering once into a sink that adds up what it is given and keeps none of it, so the cost of a
 padded slice is a second pass rather than a buffer, and an unpadded one is a single pass.
+
+### A slice or an array of anything equatable
+
+`impl[T: Eq] Eq for []T` is the same shape as the block above, one trait over: same length, same
+elements, same order.
+
+```sysl
+var a = [1, 2, 3]
+var b = [1, 2, 3]
+var c = [1, 2, 4]
+
+print(a == b, a == c, a[0..<2] == c[0..<2])
+print(a[0..<2] == a[..])
+```
+
+```output
+true false true
+false
+```
+
+The length is tested first, so two sequences of different lengths cost one comparison rather than a
+walk of the shorter one.
+
+**A fixed-size array compares by one block per shape too** — `impl[const N: usize, T: Eq] Eq for
+[N]T`, delegating to `self[..]` exactly as its `Display` does, so `a == b` and `a[..] == b[..]` are
+the same question asked twice.
+
+**The element's own `==` is what runs**, and nothing here knows how it decides. A slice of a type you
+wrote compares the moment that type does:
+
+```sysl
+struct Rect
+    w: int
+    h: int
+
+impl Eq for Rect
+    eq(self, rhs: Rect) -> bool = self.w * self.h == rhs.w * rhs.h
+
+var rs = [Rect(3, 4), Rect(2, 6)]
+var ss = [Rect(6, 2), Rect(4, 3)]
+
+print(rs == ss)
+```
+
+```output
+true
+```
+
+**A program wanting its own `==` for a slice of its type says `override`**, exactly as it does for
+the rendering — the section below is about `Display` and the bargain is the same one. A blanket is an
+implementation, so a second block for a narrower slice is the ordinary duplicate until the keyword
+says the replacement was meant:
+
+```sysl
+struct N
+    v: int
+
+impl Eq for []N
+    eq(self, rhs: Self) -> bool = self.len == rhs.len
+
+print(1)
+```
+
+```error
+every slice already implements 'sysl.Eq', so '[]N' has an implementation and cannot be given a second one — write 'override impl' to say that replacing it for this one type is what was meant
+```
+
+Say it and the block is yours, for `[]N` and for nothing else:
+
+```sysl
+struct N
+    v: int
+
+override impl Eq for []N
+    eq(self, rhs: Self) -> bool = self.len == rhs.len
+
+var a = [N(1), N(2)]
+var b = [N(3), N(4)]
+var c = [N(5)]
+
+print(a[0..] == b[0..])
+print(a[0..] == c[0..])
+```
+
+```output
+true
+false
+```
+
+`N` itself never became `Eq`, which is the point of the shape: the block is written for the slice,
+so it decides what two of them mean without the element having an opinion. The
+[section below](#saying-how-a-slice-of-your-type-renders) is the same keyword doing the same job for
+the rendering, and says what it deliberately does not let you do.
+
+**There is no `Ord`.** Lexicographic ordering is a separate claim from element-wise equality, and it
+is left out rather than pending — the same independence
+[the two traits have everywhere](#operators-are-here-and-are-documented-elsewhere):
+
+```sysl
+var a = [1, 2]
+
+print(a[..] < a[..])
+```
+
+```error
+'<' is not defined for []int
+```
+
+[`sysl.slices.equal`](/library/slices/#comparing-and-rearranging) answers the same question as a free function and is not
+going anywhere: it takes `[]const T`, it lives in an `@no_alloc` module a freestanding target can
+reach, and a caller holding two slices that wants a `bool` still wants it. What `==` adds is every
+generic bounded by `Eq` — [`assert_eq`](#assert-eq-the-assertion-that-says-what-the-values-were)
+above all, which prints both sequences when they disagree where a bare `bool` prints neither.
 
 ### Saying how a slice of *your* type renders
 

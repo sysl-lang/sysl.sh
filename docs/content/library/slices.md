@@ -87,6 +87,16 @@ true true
 [7, 7, 7, 7]
 ```
 
+**`equal` is not the only way to ask that any more.** A slice is
+[`Eq` when its elements are](/library/core/#a-slice-or-an-array-of-anything-equatable), so `a == b`
+answers the same question, and `assert_eq` takes two slices and prints both when they disagree.
+
+What `equal` still has is its **signature and its module**: it takes `[]const T` and it lives here,
+under `@no_alloc`, reachable from a freestanding target — so a caller holding two slices and wanting
+a `bool` loses nothing by keeping it, and a binding that must not acquire an allocator has it
+whatever the core module gains. `starts_with` and `ends_with` are the same story one step along:
+both are `equal` over a sub-slice, and both stay for the same reason.
+
 ## Two sorts, and neither of them allocates
 
 `sort` is **unstable**, works in the slice it was given, and uses no extra storage. It is an
