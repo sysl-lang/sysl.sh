@@ -1,5 +1,6 @@
 ---
 title: "Library API"
+weight: 45
 layout: api-index
 headingShift: 0
 slugStyle: github

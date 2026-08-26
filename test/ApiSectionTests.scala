@@ -56,6 +56,18 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
    */
   private val Title = "Library API"
 
+  /** Where the generated section sits in the navigation, passed to the generator like the two above.
+   *
+   * **45 puts the signatures directly after the prose that explains them** — `library` is 40 and
+   * `guides` is 50 — which is the relationship the note already describes: start with the written
+   * section to learn a module, come here when you know what you want.
+   *
+   * It was the only section index on the site with no `weight` at all, so its place was whatever the
+   * unweighted default happened to be. That is plausibly why the duplicate title read as a duplicate:
+   * the generated section landed beside the hand-written one it shares a subject with.
+   */
+  private val Weight = 45
+
   private val Note =
     "These pages are generated from the library's own doc comments: every declaration, with its " +
       "signature and nothing else. The [written library section]" +
@@ -74,7 +86,12 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
 
     parsed.collectFirst { case Left(ds) => ds } shouldBe None
 
-    MarkdownWriter.pages(ApiModel.build(parsed.collect { case Right(p) => p }), Title, note = Some(Note))
+    MarkdownWriter.pages(
+      ApiModel.build(parsed.collect { case Right(p) => p }),
+      Title,
+      note = Some(Note),
+      weight = Some(Weight),
+    )
   }
 
   "the generated API section" - {
@@ -125,6 +142,20 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
           text should include("headingShift: 0")
           text should include("slugStyle: github")
         }
+    }
+
+    "weighs its index and nothing else" in {
+      // A weight orders sections against each other, and the module pages are inside one — a weight
+      // on each of them would order them against their own index. Checked over the committed files
+      // because that is what the site reads, and because the key's absence is the easy half to lose:
+      // regenerating with `weight = None` would quietly drop it and break nothing else here.
+      assume(isDirectory(Out), "the API section is not present")
+
+      readFile(s"$Out/_index.md") should include(s"weight: $Weight")
+
+      for
+        f <- listFiles(Out).toList.filter(_.endsWith(".md")).filterNot(_.endsWith("_index.md"))
+      do withClue(s"$f: ") { readFile(f) should not include "weight:" }
     }
   }
 }
