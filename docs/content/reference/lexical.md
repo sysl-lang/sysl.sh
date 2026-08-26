@@ -362,7 +362,7 @@ lets the `iN` / `uN` / `fN` families stay open: `u12` and `i5` are types you may
 lexer having heard of them, and no list of widths has to be maintained anywhere.
 
 A few words are **contextual** — special only where the grammar expects one, and ordinary identifiers
-everywhere else: `is`, `not`, `end`, `opaque`, `deriving`, `invariant`, `new`, `set`, `some`,
+everywhere else: `is`, `not`, `end`, `opaque`, `derives`, `invariant`, `new`, `set`, `some`,
 `with`, `within`, `where`, and the `c` of a [`c const` or `c type`](/reference/ffi/) block. You may name a
 variable `where`; you may not name one `while`.
 

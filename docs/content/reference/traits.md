@@ -841,10 +841,10 @@ Writing them out is the most mechanical code a program contains, and it is code 
 quietly — a field added to a struct and forgotten in its `eq` is a comparison that silently stops
 looking at it.
 
-A **`deriving` clause** on a `struct` or an `enum` asks for them:
+A **`derives` clause** on a `struct` or an `enum` asks for them:
 
 ```sysl
-struct Size deriving Eq, Ord, Hash, Display
+struct Size derives Eq, Ord, Hash, Display
     w: int
     h: int
 
@@ -886,7 +886,7 @@ a `(int, int)` compare and order alike, and render alike but for the name in fro
 trait Show
     show(self) -> string
 
-struct P deriving Show
+struct P derives Show
     x: int
 ```
 
@@ -901,7 +901,7 @@ one a tuple already has. That makes the order fields are written in part of what
 which it already was for layout: a struct's fields are laid out in the order they are written.
 
 ```sysl
-struct Version deriving Ord, Display
+struct Version derives Ord, Display
     major: int
     minor: int
 
@@ -922,7 +922,7 @@ Every type parameter gains the derived trait as a bound, which is exactly
 of something unequatable is not, and neither needs saying.
 
 ```sysl
-struct Box[T] deriving Eq, Display
+struct Box[T] derives Eq, Display
     v: T
 
 print(Box(1) == Box(1), Box(1) == Box(2), Box("x"))
@@ -941,7 +941,7 @@ A variant renders under **its own** name, which is how it is written. Comparison
 in declaration order, and then field by field within the variant.
 
 ```sysl
-enum Shape deriving Eq, Ord, Display
+enum Shape derives Eq, Ord, Display
     Circle(r: int)
     Rect(w: int, h: int)
     Empty
@@ -962,7 +962,7 @@ A **simple** enum — one where no variant carries anything — is already `Eq` 
 value *is* its discriminant. The clause says so rather than letting the block be refused further in:
 
 ```sysl
-enum Colour deriving Eq
+enum Colour derives Eq
     Red
     Green
 ```
@@ -974,7 +974,7 @@ a simple enum is already 'Eq'
 Its `Ord` is its discriminants' order, so a simple enum still has three worth deriving:
 
 ```sysl
-enum Colour deriving Ord, Hash, Display
+enum Colour derives Ord, Hash, Display
     Red
     Green
     Blue
@@ -993,7 +993,7 @@ general block for a derived one to outrank; where one is ever needed, an
 [`override impl`](#override-when-the-overlap-is-deliberate) is written by hand and the two forms do
 not have to compose.
 
-And deriving is **all or nothing per trait**. There is no writing the block and then replacing one
+And derivation is **all or nothing per trait**. There is no writing the block and then replacing one
 method of it, and a derived block beside a hand-written one for the same trait is the duplicate
 implementation it looks like.
 
@@ -1002,7 +1002,7 @@ incomplete type — the storage belongs to whoever allocated it and nothing here
 derived `Eq` over no fields at all would answer `true` for every pair with nothing to say it had:
 
 ```sysl
-opaque struct Handle deriving Eq
+opaque struct Handle derives Eq
 ```
 
 ```error

@@ -86,11 +86,17 @@ through the slice would change a value that had already been checked. Copying is
 validation mean anything afterwards, and it is why that entry requires an allocator.
 
 **The division of labour is the reason `from_utf8` is not built in.** The compiler supplies exactly
-one primitive — `from_utf8_unchecked`, which is a `[]u8` taken as a `string` with nothing looked at —
-and the validator on top of it is ordinary sysl in [`sysl.text`](/library/text/). What no sysl body
-could do is that last line, because every safe route to a `string` already carries the guarantee.
+one primitive — `str_cast`, which is a `[]u8` taken as a `string` with nothing looked at — and
+everything on top of it is ordinary sysl in [`sysl.text`](/library/text/), `from_utf8_unchecked`
+included. What no sysl body could do is that last line, because every safe route to a `string`
+already carries the guarantee.
+
+**So the unchecked conversion is imported like any other function**, as of 0.0.82. It was a compiler
+form in scope everywhere before that, which is why older code calls it with nothing imported.
 
 ```sysl
+import sysl.text.from_utf8_unchecked
+
 var bytes: [3]u8 = [104, 105, 33]
 
 print(from_utf8_unchecked(bytes))

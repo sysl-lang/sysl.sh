@@ -205,10 +205,14 @@ struct Utf8Error
     truncated: bool
 ```
 
-**The compiler supplies exactly one primitive here — `from_utf8_unchecked`, which takes a `[]u8` as a
-`string` with nothing looked at — and the validator on top of it is ordinary sysl.** Nothing in a
-byte-by-byte scan needs anything the language does not already offer. What no sysl body can write is
-the last line, because every *safe* route to a `string` already carries the guarantee.
+**The compiler supplies exactly one primitive here — `str_cast`, which takes a `[]u8` as a `string`
+with nothing looked at — and everything on top of it is ordinary sysl.** Nothing in a byte-by-byte
+scan needs anything the language does not already offer. What no sysl body can write is the last
+line, because every *safe* route to a `string` already carries the guarantee.
+
+`from_utf8_unchecked` is that primitive's public name and is an ordinary function of this module —
+one line, `str_cast(b)` — so the pair a caller chooses between sits together here. It was a compiler
+form in scope everywhere until 0.0.82, which is why older code calls it with no import.
 
 The validator is Unicode's well-formedness table rather than a decode-then-range-check, and the
 difference shows in what it costs to be right: in the table the **lead** byte fixes the legal range

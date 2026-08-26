@@ -24,7 +24,7 @@ validates.
 
 ## Index
 
-[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`columns`](#columns) [`cstring`](#cstring) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
+[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`columns`](#columns) [`cstring`](#cstring) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`from_utf8_unchecked`](#from_utf8_unchecked) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
 
 ## Functions
 
@@ -129,7 +129,7 @@ from_utf8(b: []const u8) -> Result[string, Utf8Error]
 
 The one direction a `string` could not otherwise be reached from, and it is written here rather
 than in the compiler because only its last line needs to be: validation is ordinary sysl over a
-`[]u8`, and the compiler supplies just `from_utf8_unchecked`, the primitive that says "these bytes
+`[]u8`, and the compiler supplies just `str_cast`, the raw-tier primitive that says "these bytes
 are a string now".
 
 The validation is `scan_at` below, which is also what the lossy form walks -- one table, so that
@@ -156,6 +156,26 @@ and not two.
 
 Valid input costs one walk and no allocation at all -- the bytes are handed over as they are, which
 is the case a caller who cannot know has most of the time.
+
+### `from_utf8_unchecked`
+
+```sysl
+from_utf8_unchecked(b: []const u8) -> string
+```
+
+The same conversion with the validation left out -- the bytes become a `string` and nothing looks
+at them.
+
+**It is here so that a reader meets it beside `from_utf8`**, which is the whole of what one has to
+choose between. It was a compiler form until 0.0.82 and so belonged to no module: in scope
+everywhere, importable from nowhere, and absent from the page where somebody comparing the two
+would look. What could not move is the *operation* -- every safe route to a `string` carries the
+UTF-8 guarantee, so setting it aside comes from underneath the language -- and that is `str_cast`,
+in the raw tier beside `ptr_cast`, which this is one line over.
+
+**The caller owes the guarantee the compiler would otherwise have.** A `string` holding bytes that
+are not UTF-8 breaks `char` downstream of it, which is why the name is long and greppable and why
+`from_utf8` is the one to reach for on anything that came from outside the program.
 
 ### `is_char_boundary`
 
