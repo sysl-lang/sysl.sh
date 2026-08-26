@@ -49,7 +49,12 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
    * The note's link is anchored, and at a heading that exists: `library/_index.md` has no `Modules`
    * section, and an anchor that lands nowhere is what `AnchorTests` is for.
    */
-  private val Title = "Standard library"
+  /** **Not "Standard library", which is what `docs/content/library/` is called.** Two sections of
+   * that name is what the nav showed, differing only in a capital L — and the generated one is not a
+   * second copy of the written one, it is the signatures. The note below says as much in prose; the
+   * title has to say it in the one place a reader looks first.
+   */
+  private val Title = "Library API"
 
   private val Note =
     "These pages are generated from the library's own doc comments: every declaration, with its " +

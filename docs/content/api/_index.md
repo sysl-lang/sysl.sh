@@ -1,5 +1,5 @@
 ---
-title: "Standard library"
+title: "Library API"
 layout: api-index
 headingShift: 0
 slugStyle: github
