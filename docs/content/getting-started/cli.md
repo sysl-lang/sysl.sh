@@ -239,7 +239,7 @@ toolchain is needed for it.
 ### `weave`
 
 ```bash
-sysl weave guide/lisp/lisp.lsysl -o lisp.html
+sysl weave guide/slab/slab.lsysl -o slab.html
 sysl weave library/sysl/regex -o documents/
 ```
 
@@ -273,8 +273,8 @@ there is nothing for such a thing to read, and `doc` is left unclaimed for the d
 ### `tangle`
 
 ```bash
-sysl tangle guide/lisp/lisp.lsysl
-sysl tangle guide/lisp/lisp.lsysl -o lisp.sysl
+sysl tangle guide/slab/slab.lsysl
+sysl tangle guide/slab/slab.lsysl -o slab.sysl
 ```
 
 The other half of a literate system: the program, with the prose stripped. A build tangles anyway —

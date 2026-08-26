@@ -8,14 +8,11 @@ A bounded ring buffer: fixed storage, indices that cannot leave it, and the whol
 is consistent" means written into the types and the contracts rather than into the checks.
 
 **The axis: the constrained-subtype surface** — `within` ranges, the `::` attributes they expose,
-`require`/`ensure`/`old`, and struct invariants. [kernel](/guides/kernel/) gives its tables bounded
-identities and then never asks one a question; until this program nothing in the set had read an
-attribute or written a contract at all. A ring buffer is the smallest subject needing all of them at
-once, because every bug a ring buffer has is an index that went somewhere it should not have — and
-those are the bugs a range type exists to make unwritable.
+`require`/`ensure`/`old`, and struct invariants. A ring buffer is the smallest subject needing all of
+them at once, because every bug a ring buffer has is an index that went somewhere it should not
+have — and those are the bugs a range type exists to make unwritable.
 
-Like [kernel](/guides/kernel/) against [scheduler](/guides/scheduler/), it is **written to be
-compared**: two buffers under the same scenarios, one keeping the fact of where the ring ends once and
+It is **written to be compared**: two buffers under the same scenarios, one keeping the fact of where the ring ends once and
 the other keeping it twice. Every check runs both and asserts they agree, so the difference between
 the two implementations is the measurement.
 

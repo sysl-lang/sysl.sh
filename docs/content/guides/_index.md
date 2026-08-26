@@ -1,12 +1,12 @@
 ---
 title: Guide Programs
-summary: Ten real programs written to force a language decision — what each one owns, and what writing it found.
+summary: Two real programs written to force a language decision — what each one owns, and what writing it found.
 weight: 50
 ---
 
 The [tour](/tour/) teaches the language, the [reference](/reference/) says what the rules are, and
 the [library](/library/) says what ships beside them. This section is about something else: the
-ten programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
+programs in [`guide/`](https://github.com/sysl-lang/sysl/tree/dev/guide) that were written
 to **force a language decision**.
 
 They are not demonstrations of a finished language. That distinction is the whole of why they exist,
@@ -31,29 +31,33 @@ own file records what it found in the place the code that provoked it lives, whi
 somebody reading the program and useless for somebody wondering **why the language is shaped this
 way**. These pages pull each finding out and link it to the rule it produced.
 
-## The ten, and the axis each owns
+## The set is smaller than it was, on purpose
 
-In the order they were written, which matters — a finding must be discharged before the next program
-starts, so each one is written on top of what the last one settled.
+A guide program is scaffolding for a decision, not a permanent exhibit. Once its findings are
+discharged and its subject has a better home — a package somebody can depend on, a module in the
+standard library, or a rule written down in the reference — the program has stopped teaching anything
+and is only a tree to keep green. Most of the set has been retired that way. What it decided is in
+the [reference](/reference/); what it was useful for lives on as
+[packages](https://github.com/sysl-lang).
+
+Two of them are worth following, because both had to *change* to be depended on, which is the
+difference between a program written to find something out and one written to be used.
+[`fft`](https://github.com/sysl-lang/fft) is generic over its float width where the guide program was
+fixed at one. [`png`](https://github.com/sysl-lang/png) had to take its CRC table out of module
+storage: a derived table needs an initializer run before anything else, which a `build-c` archive on
+a freestanding target has nothing to run — so the guide's shape was correct for a program and wrong
+for a package, and nothing said so until somebody tried to put it on a board.
+
+## The two, and the axis each owns
 
 | program | the axis it owns |
 |---|---|
-| [bytecode](/guides/bytecode/) | the module system, and the set's one end-to-end assertion |
-| [png](/guides/png/) | the byte level — endianness, bit streams, checksums, somebody else's format |
-| [fft](/guides/fft/) | an algorithm checked against its own definition |
-| [shapes](/guides/shapes/) | dynamic dispatch — a collection whose element types are forgotten |
-| [scheduler](/guides/scheduler/) | OS shapes — a run queue, blocking and waking, `&T` graphs mutated through references |
-| [kernel](/guides/kernel/) | the same scheduler with **no heap** — a fixed table, indices for identity |
 | [ring](/guides/ring/) | the constrained-subtype surface — ranges, `::` attributes, contracts, invariants |
 | [slab](/guides/slab/) | raw storage — reinterpreting bytes, `sizeof`/`alignof`, an intrusive free list |
-| [lisp](/guides/lisp/) | the reference cycle — the shape a count cannot reclaim, and `weak T` as the instrument that measures it |
-| [simd](/guides/simd/) | the register width as the variable — one solver body instantiated at four lanes and at eight, from a lane count that is an ordinary value parameter |
 
-**Two pairs are written to be compared**, and the comparison is the measurement:
-[scheduler](/guides/scheduler/) against [kernel](/guides/kernel/) is what reference counting was
-buying, since the two produce byte-identical schedules from opposite implementations; and inside
-[ring](/guides/ring/), one buffer keeps the fact of where the ring ends once and the other keeps it
-twice.
+Inside [ring](/guides/ring/), two implementations are **written to be compared** and the comparison
+is the measurement: one buffer keeps the fact of where the ring ends once and the other keeps it
+twice, and every check runs both and requires them to agree.
 
 ## Running one
 
@@ -61,7 +65,7 @@ Each directory is a **project root**, so the files in it are the anonymous root 
 subdirectory is a module named by its path:
 
 ```
-sbt "syslJVM/run run guide/bytecode"
+sbt "syslJVM/run run guide/ring"
 ```
 
 **Each program checks itself.** Every line it prints is either a `--` section header or `ok`
@@ -89,5 +93,4 @@ difference between them is the contract.
 
 ---
 
-Next: [bytecode](/guides/bytecode/) — the first of the set, and the only one whose assertion runs
-end to end.
+Next: [ring](/guides/ring/) — bounded indices, and an invariant that found a redundant field.

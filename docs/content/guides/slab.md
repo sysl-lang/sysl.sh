@@ -15,9 +15,9 @@ program the compiler reads out of it. See [the CLI](/getting-started/cli/#weave)
 
 **The axis: raw storage** — reinterpreting bytes as a typed pointer, asking what a type's storage
 costs, and the address arithmetic between the two. Nothing else in the set touches any of it.
-[kernel](/guides/kernel/) is allocator-free but never *makes* storage; it is handed three fixed tables
-and indexes them. This is the other side of that: the thing a program with no allocator would have to
-write before it could have one, which is why it is written with no allocator itself.
+A program with no allocator is ordinarily handed its storage — a fixed table it indexes, and nothing
+that ever *makes* one. This is the other side of that: the thing such a program would have to write
+before it could have an allocator, which is why it is written with no allocator itself.
 
 It is **generic in what it holds**, and that is the point rather than a flourish. A slab over one
 hardcoded struct needs no `sizeof` at all — a literal block size would do — so the generic form is
@@ -81,9 +81,9 @@ stays in the raw tier, which is where a caller reaching for one already is.
 
 **It is allocator-free and still cannot say so** — but not for the reason first recorded. `no alloc`
 has shipped; what keeps it out of this directory is the clause's own shape, since a capability is a
-property of the module and the checks next door render a `str` on nearly every line.
-[bytecode](/guides/bytecode/) is the program that got to carry it, and the difference is only that its
-machine already lived in a module of its own.
+property of the module and the checks next door render a `str` on nearly every line. What would
+carry the clause is the allocator living in a module of its own — a subdirectory holding it and
+nothing that renders.
 
 ## Deliberately not modelled
 

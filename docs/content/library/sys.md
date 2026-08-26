@@ -102,7 +102,7 @@ hi
 
 Those three names are the program's, bound to the same three symbols the library is bound to, and
 nothing collides. Spending seven ordinary words out of every program's namespace would have bought
-nothing, and `guide/fft` had already declared its own `sqrt` before there was a module to ask.
+nothing, and programs had already declared their own `sqrt` before there was a module to ask.
 
 ## The two halves
 

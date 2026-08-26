@@ -148,16 +148,8 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
-    "docs/content/guides/bytecode.md"                  -> (0, 0, 0),
-    "docs/content/guides/png.md"                       -> (0, 0, 0),
-    "docs/content/guides/fft.md"                       -> (0, 0, 0),
-    "docs/content/guides/shapes.md"                    -> (0, 0, 0),
-    "docs/content/guides/scheduler.md"                 -> (0, 0, 0),
-    "docs/content/guides/kernel.md"                    -> (0, 0, 0),
     "docs/content/guides/ring.md"                      -> (0, 0, 0),
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
-    "docs/content/guides/lisp.md"                      -> (0, 0, 2),
-    "docs/content/guides/simd.md"                      -> (0, 0, 3),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/core.md"                     -> (27, 4, 11),

@@ -94,7 +94,7 @@ working on the compiler.
 ### Check it
 
 ```bash
-sbt "syslJVM/run run guide/bytecode"
+sbt "syslJVM/run run guide/ring"
 ```
 
 That compiles one of the guide programs all the way to a native binary and runs it. Each guide

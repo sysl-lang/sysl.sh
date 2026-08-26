@@ -44,10 +44,12 @@ about it: every construct in its own place, with the rules complete. The
 [standard library](/library/) is documented apart from it, because none of what ships beside the
 compiler is a language feature.
 
-The [guide programs](/guides/) are the evidence: ten real programs — a bytecode compiler, a PNG
-decoder, a scheduler, a slab allocator, a Lisp — each written to force a language decision, with
-what it found written down.
-Most of the features documented above exist because one of them could not be written without.
+The [guide programs](/guides/) are the evidence: real programs at the size where the choices start
+to matter — a ring buffer whose every index is a range type, a slab allocator that makes its own
+storage — each written to force a language decision, with what it found written down. Most of the
+features documented above exist because one of them could not be written without. Most of the set
+has since been retired into [packages](https://github.com/sysl-lang) — a PNG reader, a fast Fourier
+transform, a JSON reader — which is what a guide program earns by discharging its findings.
 
 The [reference](/reference/) is the other kind of document — every construct written down once, in
 its own place, with the rules complete rather than the ones a beginner needs first. It is the
