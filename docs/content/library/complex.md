@@ -4,6 +4,8 @@ summary: "`sysl.math.complex` — `Complex[F: Float]`, generic over both float w
 weight: 62
 ---
 
+**Every declaration in `sysl.math.complex`, with its signature:** [the generated API page](/api/sysl-math-complex/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.math.complex` is one type. It is a **submodule** rather than part of
 [`sysl.math`](/library/math/) because `Complex` is not a name every numeric program wants in scope,
 and because `sysl.math` is mathematics *on* the floating-point types — which is not a sentence a type

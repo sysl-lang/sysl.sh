@@ -4,6 +4,8 @@ summary: "`sysl.harness` — a test framework that runs on the target: named tes
 weight: 95
 ---
 
+**Every declaration in `sysl.harness`, with its signature:** [the generated API page](/api/sysl-harness/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.harness` is how a program checks itself **on the machine it was built for**. It is the same
 shape as C's [Unity](https://www.throwtheswitch.org/unity), and it exists for the same reason: the
 host's test runner cannot follow the code onto a board.

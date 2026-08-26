@@ -3,6 +3,8 @@ package sh.sysl
 import io.github.edadma.cross_platform.*
 import io.github.edadma.markdown.{EmojiConfig, MarkdownConfig, parseDocumentContent}
 
+import sh.sysl.doc.MarkdownWriter
+
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -79,7 +81,97 @@ class AnchorTests extends AnyFreeSpec with Matchers with DocsSupport {
     * would have to be taught about — a link to it would otherwise be reported as broken.
     */
   private def headingIds(source: String): Set[String] =
-    parseDocumentContent(body(source), config).headings.flatMap(_.attrs.flatMap(_.id)).toSet
+    deduped(parseDocumentContent(body(source), configFor(source)).headings.flatMap(_.attrs.flatMap(_.id)))
+
+  /** The site builder gives a repeated heading id a numeric suffix, and so must this.
+    *
+    * Two headings with the same text slug the same, and two elements sharing an `id` is invalid
+    * HTML — the second is unreachable — so juicer's `dedupeHeadingIds` renames it the way GitHub
+    * does: the first `Buf` keeps `buf`, the second becomes `buf-1`. **Ids are assigned at parse time
+    * and that pass runs afterwards**, so reading them straight off the parsed document gives the
+    * pre-dedup set, in which `buf` appears twice and `buf-1` not at all.
+    *
+    * It went unnoticed until the generated API section, because a page needs two headings with the
+    * same slug for the two answers to differ, and the hand-written pages have none — where a
+    * *generated* one has them by construction: a type and the function that constructs it
+    * conventionally share a name, which is `buf()` beside `Buf` and `map()` beside `Map`. The
+    * suffixed link was correct on the site the whole time; it was this suite that could not see the
+    * heading it named.
+    *
+    * Walking forward past an existing suffix rather than taking `id-1` outright is juicer's rule and
+    * matters for the same reason it does there: a document carrying `buf` twice *and* a literal
+    * `buf-1` must not hand out `buf-1` to both.
+    */
+  private def deduped(ids: List[String]): Set[String] = {
+    val seen = scala.collection.mutable.HashMap.empty[String, Int]
+    val out  = Set.newBuilder[String]
+
+    for id <- ids do
+      seen.get(id) match {
+        case None => seen(id) = 0; out += id
+        case Some(n) =>
+          var next = n + 1
+
+          while seen.contains(s"$id-$next") do next += 1
+
+          seen(id) = next
+          seen(s"$id-$next") = 0
+          out += s"$id-$next"
+      }
+
+    out.result()
+  }
+
+  /** The settings one page is rendered with, which is `config` plus whatever its frontmatter says.
+    *
+    * **A page may name its own slug algorithm, and this suite has to slug the way that page is
+    * slugged or it is checking a scheme nothing emits.** juicer's `slugStyle` is a per-page
+    * frontmatter key as of 0.4.1, and the generated API section under `content/api/` sets it to
+    * `github` on every page — because the same Markdown is read here and in the repository the
+    * library lives in, and a symbol index that links to its own headings is dead in one of the two
+    * if they disagree.
+    *
+    * **Note there is no `slugStyle` field to look for in `MarkdownConfig`.** The mechanism is
+    * `slugify`, a function; juicer's key selects which one is passed in. Anybody grepping this file
+    * for `slugStyle` before this existed found nothing and concluded there was no problem.
+    *
+    * **Calling `MarkdownWriter.slug` avoids writing a THIRD copy of the algorithm, and no more than
+    * that — be precise about which agreement it buys.** It is the function the *generator* used to
+    * write the anchors being checked, so the suite agrees with the links. What a reader needs is
+    * agreement with the *renderer*, which is juicer's own `githubSlugify`, and that is a separate
+    * implementation in a separate repository on a separate release cycle.
+    *
+    * **The two are identical today, condition for condition, and nothing reconciles them** — checked
+    * by reading both, which is the `config` val's relationship with the site's settings rather than
+    * `GrammarTests`' with `SyslLexical`. `GrammarTests` reconciles; this agrees by inspection. The
+    * same is true a second time for the `-1` numbering below, which `MarkdownWriter` implements and
+    * juicer's dedup pass implements again.
+    *
+    * If either copy moves, this suite follows the compiler's and the site does something else — and
+    * it is green while the pages are wrong. `sysl.sh` cannot call juicer's copy today, since it
+    * depends on the compiler and not on juicer-core; whoever next touches either algorithm owes the
+    * other one a look.
+    */
+  private def configFor(source: String): MarkdownConfig =
+    if slugStyleOf(source).contains("github") then config.copy(slugify = MarkdownWriter.slug)
+    else config
+
+  /** A page's `slugStyle`, if its frontmatter names one.
+    *
+    * Read with a line match rather than a YAML parser, because the frontmatter here is flat and one
+    * key deep — the same reason `body` below reads it by fences.
+    */
+  private def slugStyleOf(source: String): Option[String] = {
+    val lines = source.linesIterator.toList
+
+    if !lines.headOption.contains("---") then None
+    else
+      lines.tail
+        .takeWhile(_ != "---")
+        .collectFirst { case l if l.startsWith("slugStyle:") =>
+          l.stripPrefix("slugStyle:").trim.stripPrefix("\"").stripSuffix("\"")
+        }
+  }
 
   /** A page without its frontmatter.
     *

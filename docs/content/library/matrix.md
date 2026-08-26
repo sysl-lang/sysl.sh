@@ -4,6 +4,8 @@ summary: "`sysl.math.matrix` — vectors and matrices over any element type that
 weight: 63
 ---
 
+**Every declaration in `sysl.math.matrix`, with its signature:** [the generated API page](/api/sysl-math-matrix/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.math.matrix` is linear algebra over an element type the module never names. A `Vector[T]` and a
 `Matrix[T]` hold anything that implements [`Scalar`](#what-an-element-has-to-be) — the two float
 widths, [`Complex[F]`](/library/complex/) at either of them, and the integers — and every operator,

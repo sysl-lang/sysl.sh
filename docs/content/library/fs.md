@@ -4,6 +4,8 @@ summary: "`sysl.fs` — files and paths, in three tiers; `IoError` and why it is
 weight: 50
 ---
 
+**Every declaration in `sysl.fs`, with its signature:** [the generated API page](/api/sysl-fs/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.fs` is the first module in this section that a target may simply **not have**. Its files open
 with two lines rather than one:
 

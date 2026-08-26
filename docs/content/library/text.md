@@ -4,6 +4,8 @@ summary: "`sysl.text` — validating bytes into text, walking it by character, s
 weight: 20
 ---
 
+**Every declaration in `sysl.text`, with its signature:** [the generated API page](/api/sysl-text/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 A `string` is [an immutable, validated `[]u8`](/reference/types/), and the language gives it a few
 things directly: its length, its bytes, a boundary-checked substring, and a cursor over its
 characters. Everything a program then *does* with text — validate, classify, search, trim, split,

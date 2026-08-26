@@ -4,6 +4,8 @@ summary: "`sysl.time` — `Instant` and `Duration` kept apart, the proleptic Gre
 weight: 65
 ---
 
+**Every declaration in `sysl.time`, with its signature:** [the generated API page](/api/sysl-time/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.time` is arithmetic on dates and lengths of time. It is three files and seven types, and almost
 everything worth saying about it is a **distinction the type system holds for you** — a point on the
 timeline is not a length of one, and a reading on a wall clock is neither. Every library that blurs

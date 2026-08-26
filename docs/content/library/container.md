@@ -4,6 +4,8 @@ summary: "`sysl.container` — `Map` and `Set` over one flat probe table, `Deque
 weight: 32
 ---
 
+**Every declaration in `sysl.container`, with its signature:** [the generated API page](/api/sysl-container/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 One module, `sysl.container`, holding five types. A program names the ones it wants and gets nothing
 else — what a program does not import, it does not link.
 

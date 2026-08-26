@@ -22,7 +22,14 @@ favicon = "favicon.svg"
 # the wordmark already says "sysl" and the two sat side by side.
 customCSS = ["site.css"]
 
-theme = "juicerdocs"
+# Two themes rather than one, and juicerapi is first because a nearer theme
+# wins. It inherits juicerdocs — the topbar, sidebar, search, palette and
+# typography are the same objects rather than a matching set, which is what
+# keeps the generated API section and the hand-written pages reading as one
+# site. It overrides no default layout: its `api-module` and `api-index`
+# templates are reached by `layout:` frontmatter, which only the pages under
+# `content/api/` carry, so nothing already here renders differently.
+theme = ["juicerapi", "juicerdocs"]
 
 # The numbered specification used to sit at `docs/design/` and had to be
 # excluded here, because juicer would otherwise walk it as content and

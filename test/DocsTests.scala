@@ -218,7 +218,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A new page with no entry is not a failure of that page — it is a page nobody decided the
     // shape of, and the decision is the point. Left to default, an unlisted page would contribute
     // its programs to the run and none of the counts that keep them honest.
-    pages.toSet shouldBe expected.keySet
+    written.toSet shouldBe expected.keySet
   }
 
   /** One test per **program**, rather than one test over every page — which is what lets the suite
@@ -243,7 +243,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
    * it is the same one the census counts in, so it says which block without anyone counting fences.
    */
   for
-    page <- if isDirectory("docs/content") then pages else Nil
+    page <- if isDirectory("docs/content") then written else Nil
     s    <- snippets(page)
   do
     s"${s.page} program ${s.nth} does what the page says" in {
@@ -255,7 +255,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
   "each page carries the programs it is supposed to" in {
     assume(isDirectory("docs/content"), "the docs tree is not reachable from the working directory")
 
-    val counted = pages.map { page =>
+    val counted = written.map { page =>
       val found = snippets(page)
 
       page -> (

@@ -4,6 +4,8 @@ summary: "`sysl.encoding` — hexadecimal and base64 in both directions, fixed-w
 weight: 58
 ---
 
+**Every declaration in `sysl.encoding`, with its signature:** [the generated API page](/api/sysl-encoding/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.encoding` turns bytes into text and back, and integers into bytes and back. Three files, one
 error type, and no allocator required for any of the core surface.
 

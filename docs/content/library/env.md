@@ -4,6 +4,8 @@ summary: "`sysl.env` — reading the environment a program was started with: `ge
 weight: 72
 ---
 
+**Every declaration in `sysl.env`, with its signature:** [the generated API page](/api/sysl-env/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.env` reads the environment a program was started with. It is three functions and no state.
 
 ```sysl

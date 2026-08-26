@@ -4,6 +4,8 @@ summary: "`sysl.buf` — `Buf[T]`, the growable sequence written in ordinary sys
 weight: 30
 ---
 
+**Every declaration in `sysl.buf`, with its signature:** [the generated API page](/api/sysl-buf/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.buf` holds two types and three functions, and the interesting thing about the larger of them is
 what it is *not*: **`Buf[T]` is not a type the compiler knows.** It is a `[]T` field for the storage,
 a `usize` for how much of it is live, and a dozen members — ordinary sysl, in a file a program could

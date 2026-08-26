@@ -4,6 +4,8 @@ summary: Starting a thread, waiting for one, and the mutex above the spinlock â€
 weight: 80
 ---
 
+**Every declaration in `sysl.posix.threads`, with its signature:** [the generated API page](/api/sysl-posix-threads/#index). This page is the argument â€” what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.posix.threads` is where the capability lands. Everything on the [`sysl.sync`](/library/sync/) page is
 reachable from a module that has given up its allocator and its operating system; nothing here is,
 because creating a thread needs a scheduler underneath it.

@@ -4,6 +4,8 @@ summary: "`sysl` itself — the names every program has without asking: renderin
 weight: 10
 ---
 
+**Every declaration in `sysl`, with its signature:** [the generated API page](/api/sysl/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl` is the one module a program does not import. Every other module in this section — `sysl.buf`,
 `sysl.text`, `sysl.io` and the rest — is an offer, reached by name or by an `import`. The core is
 what arrives unasked-for, and the reason it does is narrow: **a program cannot avoid needing what the

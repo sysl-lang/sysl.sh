@@ -4,6 +4,8 @@ summary: "`sysl.io` — `Reader`, the one trait input travels through; `FdReader
 weight: 40
 ---
 
+**Every declaration in `sysl.io`, with its signature:** [the generated API page](/api/sysl-io/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.io` is the **input** half of the byte surface. It is a module rather than part of the core for a
 reason that reads as an asymmetry and is not: `print` is a keyword, so what it desugars onto cannot be
 behind an import a program has not written — while **nothing in the language desugars onto reading**.

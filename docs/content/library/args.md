@@ -4,6 +4,8 @@ summary: How argc and argv become a []string, and the two layers that read optio
 weight: 90
 ---
 
+**Every declaration in `sysl.args`, with its signature:** [the generated API page](/api/sysl-args/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
+
 `sysl.args` is three things, in the order a program meets them:
 
 - **`args_of`** turns what the platform hands an entry point into a `[]string`. Almost no program
