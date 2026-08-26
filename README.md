@@ -98,5 +98,5 @@ be a set of numbered design chapters in the compiler's repository, and those wer
 stale, and this one has a test suite behind it. They are in that repository's history if the argument
 for a rule is what you are after.
 
-The **guide programs** stay there too, in `guide/` and `examples/`, where they are gated against the
-compiler's dev branch rather than against a release.
+The **guide programs** stay there too, in `guide/`, where they are gated against the compiler's dev
+branch rather than against a release.

@@ -94,23 +94,18 @@ working on the compiler.
 ### Check it
 
 ```bash
-./run-example.sh
+sbt "syslJVM/run run guide/bytecode"
 ```
 
-That compiles `examples/hello.sysl` all the way to a native binary and runs it. If you see
-`Hello, sysl!` followed by a page of output, everything is in place.
+That compiles one of the guide programs all the way to a native binary and runs it. Each guide
+program checks itself, so what you should see is a run of `-- section` headers and `ok` lines and
+nothing saying `FAIL` — at which point everything is in place.
 
-To run a different file, name it — and anything after a `--` goes to the program rather than to
-sysl:
-
-```bash
-./run-example.sh examples/args.sysl -- -n one two
-```
-
-Under the script is the CLI, which you can call directly:
+Any of the directories in `guide/` works the same way. Where a program declares
+`main(args: []string)`, anything after a `--` goes to it rather than to sysl:
 
 ```bash
-sbt "syslJVM/run run examples/hello.sysl"
+sbt "syslJVM/run run <program> -- one two"
 ```
 
 ## The standard library
