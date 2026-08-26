@@ -203,8 +203,8 @@ print(z.magnitude(), z.magnitude() > w.magnitude())
 ```
 
 It is the type's own `abs` and nothing more. What the trait adds is that a generic body can *ask*:
-[`sysl.math.matrix`](/library/matrix/) pivots on exactly this, which is what lets one Gaussian
-elimination run over the reals and over the plane.
+the `sh.sysl.linalg` package pivots on exactly this, which is what lets one Gaussian elimination run over the
+reals and over the plane.
 
 **There is no scalar on the left.** `2.0 * z` would need an `impl Mul[Complex[F]] for F`, which is an
 implementation of a library trait for a built-in written by a module that owns neither — and it could

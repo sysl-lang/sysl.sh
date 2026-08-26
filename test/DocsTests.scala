@@ -72,7 +72,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And one more of each again for ranges: a range with both ends written is a value now, so the
     // section shows one bound, passed and returned, and refuses the two readings that have no value
     // — bounds that disagree, and an end left open.
-    "docs/content/reference/expressions.md"           -> (38, 21, 0),
+    "docs/content/reference/expressions.md"           -> (39, 21, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -173,7 +173,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (23, 10, 3),
     "docs/content/library/complex.md"                   -> (8, 1, 1),
-    "docs/content/library/matrix.md"                    -> (6, 1, 2),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
