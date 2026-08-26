@@ -95,6 +95,42 @@ type, signed or not.
 Integer arithmetic **wraps** at the declared width; see [types](/reference/types/). Integer division
 by zero traps.
 
+### Shifting by the width or more
+
+**A shift amount at or past the operand's width is defined**, and answers what shifting all the way
+answers: zero for `<<` and for an unsigned `>>`, and the **sign** for a signed `>>`, since an
+arithmetic right shift fills from the top. That is Go's rule and Swift's.
+
+The width is the **operand's own** rather than the machine's, so a `u8` reaches this case at 8 —
+where the bare instruction masks the amount to five or six bits and would shift by something else
+entirely.
+
+```sysl
+var u: usize = 11
+var neg: int = -8
+var pos: int = 8
+var b: u8 = 0b1011
+
+print(u >> 64, u << 64, u >> 65)
+print(neg >> 64, pos >> 64)
+print(b >> 8, b << 8, b >> 200)
+```
+
+```output
+0 0 0
+-1 0
+0 0 0
+```
+
+It follows from the decision that makes integer arithmetic wrap rather than trap: plain arithmetic is
+total, and `within` is where checking is opted into, so a plain over-width shift has to be *defined*
+— trapping would put a trap on a type whose whole contract is that it has none. **A `within`-typed
+left shift is the exception and does trap**, on its own terms and not the shift operator's; see
+[errors](/reference/errors/#the-operations-are-the-base-s-their-overflow-is-not).
+
+**Masking** the amount — C's rule, Java's, and what the instruction does unaided — is what this is
+not. It makes `x >> 64` be `x`, which is never what anybody means.
+
 ### Equality reaches further than ordering
 
 `==` and `!=` are defined wherever `<` is, and additionally on `bool` and on the two pointer-shaped

@@ -776,7 +776,10 @@ the base width cannot hold, `+`, `-` and `*` are overflow-detecting and trap.** 
 that its results always fit stays on the plain instruction, so a counter, an index and an `x + 1`
 cost exactly what they did before. A left shift is checked on its own terms — it has no overflow
 intrinsic, so a bit pushed out of the top is caught by shifting back, and a shift amount at or past
-the width traps rather than being undefined. Arithmetic on a type with **no** range still wraps.
+the width traps. **That trap is this section's and not the shift operator's** — a plain shift by the
+width or more is *defined*, and answers zero or the sign; see
+[expressions](/reference/expressions/#shifting-by-the-width-or-more). Arithmetic on a type with
+**no** range still wraps.
 
 For a **transparent** subtype the arithmetic happens at the base and yields a base value, so a
 literal beside one is an ordinary base value and what has to be in range is only what is stored:
