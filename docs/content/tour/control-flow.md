@@ -39,8 +39,6 @@ excellent fine scraped it no
 An `if` being *used* for its value needs an `else`. Without one the open branch has no value to
 give, and the compiler says so rather than inventing a zero.
 
-## `match` picks an arm
-
 Arms match a literal, a `|`-separated set of alternatives, a range, or fall through to `else`:
 
 ```sysl
@@ -102,33 +100,8 @@ t minus 1
 go
 ```
 
-When the body has to run before anything is asked, put the test at the foot with `do … while`:
-
-```sysl
-digits(n: int) -> string
-    var rest = n
-    var s = ""
-
-    do
-        s = str(rest % 10) + s
-        rest /= 10
-    while rest > 0
-
-    s
-
-print(digits(0), digits(4071))
-```
-
-```output
-0 4071
-```
-
-Written as a `while`, that prints nothing at all for `0`, and the usual patch is a special case
-above the loop. The test at the foot is the fix. The one-line form is `do rest /= 10 while rest > 0`.
-
-`continue` in a `do … while` runs the **test**, which is why the loop is worth having rather than
-writing `loop` with `if !cond then break` at the bottom: that shape has no test for a `continue` to
-reach, so the first one added to it skips the exit and the loop never finishes.
+A `do … while` puts the test at the foot, for a body that has to run before anything is asked, and
+a `continue` in one reaches that test — [the reference](/reference/statements/) has both.
 
 A loop with nothing to test is written `loop`, which is what `while true` was always being used to
 say:
@@ -146,8 +119,6 @@ print("stopped at", n)
 ```output
 stopped at 4
 ```
-
-## Loops yield values too
 
 This is the part worth slowing down for, because it replaces a pattern that is otherwise written
 with a flag variable. `break` carries a value out, and an `else` block — after the body, as in
@@ -176,8 +147,6 @@ the last thing a function owing a value does, with nothing after it to supply th
 true` cannot say this — a condition is an expression the compiler does not evaluate, so a loop
 written that way looks like one that might finish and the code after it looks reachable.
 
-## Iterating over things
-
 A `for` walks a collection directly:
 
 ```sysl
@@ -193,24 +162,8 @@ print("count:", primes.len, "total:", total)
 count: 5 total: 28
 ```
 
-And when the stepping is something a range cannot describe, the three-clause form is there:
-
-```sysl
-var n = 0
-
-for var i = 1; i < 100; i *= 2
-    n += 1
-
-print("doublings under 100:", n)
-```
-
-```output
-doublings under 100: 7
-```
-
-The `;` in that header is the only place in the language it appears. It is deliberately not a
-statement terminator — a line ends a statement, and a token that could also end one would give the
-language two answers to the same question.
+Where the stepping is something a range cannot describe there is a three-clause `for`, whose `;` is
+the only place in the language that token appears; [the reference](/reference/statements/) has it.
 
 ---
 

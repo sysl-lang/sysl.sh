@@ -32,8 +32,6 @@ Nothing can name it, so its declarations are visible to its own files and to not
 the right way round for the place a program starts, and it is why a one-file program's names sit
 exactly where they always did.
 
-## Where a program starts
-
 A top-level *statement* is not a declaration. A declaration is hoisted and belongs to the module as a
 whole; a statement runs, and running happens in an order — so **one file of a program carries the
 statements it runs**, and a second that carries any is an error naming both.
@@ -59,93 +57,6 @@ not a call and has no parameter list.
 A program in which no file carries a statement is a complete program that does nothing. That is what
 a tree of pure declarations compiles to, which is what it should compile to — a library is not an
 error.
-
-## Visibility
-
-A top-level declaration is **public by default**. Two modifiers restrict it, and they are one keyword
-with an optional scope:
-
-| form | visible to |
-|---|---|
-| `private` | this file |
-| `private[own_module]` | every file of this module |
-| `private[ancestor]` | the named ancestor module and its whole subtree |
-| *(unmarked)* | any module that imports it |
-
-```sysl
-module oskit.arch
-
-exported() -> int = 42
-
-private lookup(fd: int) -> int = fd
-
-private[arch] reset(c: int) = print("reset", c)
-```
-
-The bare form being **file**-scoped is a deliberate divergence from Scala, and it costs nothing:
-module-private is exactly `private[own_module]`, the degenerate case of the scoped form. What it buys
-is the one level that provably never crosses a file boundary, which is the level at which a
-declaration can be fully inferred and given internal linkage.
-
-The honest cost is that the everyday module-internal helper is now the wordier `private[arch]` rather
-than a bare `private`. The alternative spends a whole keyword to save a bracket.
-
-**A restriction is about naming, not existence.** A file-private declaration still belongs to its
-module and still spends its name there, so a sibling file cannot declare something else of that name.
-
-### Hiding the shape is a different axis
-
-Visibility decides who may say a **name**. It does nothing about a type's **layout**: a `private`
-field still occupies its place, counts toward the size, shifts the fields after it, and takes part in
-the ABI. Anyone who can name the type can still be built against its shape.
-
-`opaque` is the other axis. Inside the declaring module the struct is ordinary:
-
-```sysl
-opaque struct Conn
-    fd: int
-    live: bool
-
-open(n: int) -> Conn = Conn(n, true)
-
-describe(c: *Conn) -> string = "fd " + str(c.fd)
-
-var c = open(7)
-
-print(describe(&c), c.live)
-```
-
-```output
-fd 7 true
-```
-
-Outside it, the type is **incomplete** — the same thing C's `struct foo;` is — and the only thing
-anyone may say about it is `*Conn`:
-
-```sysl
-import net.Conn
-
-var c: Conn        // refused: no size out here
-var p: *Conn       // fine — a pointer needs no shape
-```
-
-Everything refused outside is refused for one reason: constructing, reading a field, taking an
-element, a by-value parameter or result, `sizeof`, `alignof`, `offsetof`, a by-value `self` method.
-Each needs a size or an offset, and the size is exactly what is being withheld — so it is one rule
-rather than fifteen.
-
-The by-value `self` method is the case worth pointing at, because it looks like an ordinary call and
-is not. The *function* was compiled by the library, but what crosses the boundary is the **caller's
-copy**, laid out as the fields stood when that caller was built — so adding a field would break it
-silently, which is the failure the modifier exists to prevent. `*self` and `&self` need no shape, and
-are what an opaque type's methods use.
-
-A struct may also be opaque with **no body at all**, which is how a C handle is bound: nothing in
-sysl lays a `Dir` out, and the storage is libc's.
-
-The payoff is that a field may move with nothing downstream recompiled. The reach is the declaring
-module exactly — not a subtree, the way `private[M]` widens — because the files of a module already
-share one scope and are already the unit that recompiles together.
 
 ## Imports
 
@@ -202,64 +113,6 @@ use of it an error naming both — including when one of them is the standard li
 auto-imported into every file. That is deliberate: the alternative is a precedence tier that makes the
 library quietly lose to whatever a program imported, which is the silent capture the error exists to
 prevent.
-
-## Capabilities ride along
-
-A capability clause narrows a module, and it is written in the header on a line of its own:
-
-```sysl
-module oskit.arch
-@no_alloc
-
-halt()
-    print("halted")
-```
-
-Because the module is the directory, the clause is a property of the directory — so it must appear in
-**every** file of the module, and the compiler rejects a module whose files disagree. The redundancy
-is the point: you can never open a file in a `no alloc` module and fail to see that it is.
-
-The other direction is `requires`, and the standard library uses it: `sysl.fs` is `requires os`,
-because a filesystem is something the environment either has or does not, and everything under
-`sysl.posix` — threads, `tty`, `rand` — is `requires posix`, because pthreads, `termios` and
-`getentropy` are what those modules are made of. A freestanding target importing either is told so at
-the import, and the namespace is that same fact put where a reader meets it first.
-
-That is also why the atomics live apart from the threads. `sysl.sync` requires **nothing**, so a
-module that has given up both its allocator and its operating system can still import it — which is
-the point, since a spinlock and an atomic counter are what a kernel has before it has anything else.
-A module's requirement is module-wide, so one type in there needing a scheduler would have taken the
-whole module out of the kernel's reach.
-
-Propagation is over the module graph, which is acyclic — so a module's effective requirement is
-computed in a single sweep rather than an iterated fixpoint, and a `no alloc` module importing one
-that requires an allocator is an error **at the import**, not deep in code generation.
-
-## Naming a library the linker needs
-
-The header has one other inhabitant. An `extern` says which symbol it wants and never where that
-symbol lives, so a module binding a C library says it with `link`:
-
-```sysl
-module image.png
-@link("png")
-@link("z")
-
-extern "png_create_read_struct" create(ver: *u8, err: *u8, fn: *u8) -> *u8
-```
-
-**A directive names a library, never a flag**, and that is the whole design. Where a library lives is
-a property of the machine being built for: the mathematics is a separate file on Linux, part of
-`libSystem` on macOS, inside the CRT on Windows, and absent entirely from a freestanding target that
-has no libc to hold it. A directive spelling `-lm` would be right on one of those and wrong on three,
-and the author could not be told so by any compiler running on the machine that wrote it — the link
-that fails is somewhere else. So the file names `m` and the driver decides what that becomes,
-including deciding it becomes nothing.
-
-Unlike a capability, `link` is **not** required to agree across a module's files, because it
-describes something narrower: a capability is a property of the whole module, while a link
-requirement belongs to the `extern`s in one file — and a module that keeps its foreign declarations
-together has nothing for its other files to repeat.
 
 ## The standard library
 
@@ -320,7 +173,13 @@ Nothing there is a language feature. `Buf` is ordinary sysl over a slice it repl
 out; `StrBuilder` is ordinary sysl over a `Buf[u8]`; and both are importable rather than free because
 a program that wants neither should link neither.
 
-### Reading input
+A module may also narrow itself. `@no_alloc` in the header says the module reaches no allocator, and
+`requires os` says it needs one — `sysl.fs` is `requires os` because a filesystem is something the
+environment either has or does not, and everything under `sysl.posix` requires posix. The atomics
+live apart from the threads for exactly this reason: `sysl.sync` requires **nothing**, so a kernel
+that has given up both its allocator and its operating system can still import a spinlock. A
+freestanding target importing one of the others is told so **at the import** rather than deep in code
+generation. [The reference](/reference/modules/) has the clause and how it propagates.
 
 `sysl.io` is the one that needs a word, because it is where the iteration protocol earns its keep:
 
@@ -337,8 +196,6 @@ for line in lines(&src)
 line at a time out of a 4 KiB chunk rather than pulling the file into memory. A `Reader` is a trait
 with one method, so the same loop reads a socket, a ring buffer, or a test fixture, and a freestanding
 target substitutes one body.
-
-## Separate compilation
 
 A module is compiled once and linked, which is what the acyclic import graph buys. The standard
 library itself is an artifact — a real `ar` archive — and the compiler builds it for you when nothing

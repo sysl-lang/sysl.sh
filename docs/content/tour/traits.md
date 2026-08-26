@@ -50,8 +50,6 @@ That is not a restriction bolted on — it is what a default is, since the body 
 implementing type and the trait is all they have in common. It is checked once, at the trait, even
 when nothing implements the trait at all.
 
-## Any type may carry an `impl`
-
 Including the built-ins, which is not a convenience but a requirement — a `Show` that cannot cover
 `int` is a `Show` no library can be written against:
 
@@ -113,8 +111,6 @@ Type arguments are inferred, and from two directions — from the arguments (`Pa
 parameter that neither direction determines is an error asking for an annotation, never a silent
 default.
 
-## A bound is a trait
-
 What an unbounded `T` may **not** do is anything that assumes structure: no operator, no method call,
 no field access, no subscript. Each of those is a capability some types have and others do not, so
 each needs a bound that guarantees it:
@@ -162,8 +158,6 @@ that would allow it, because that is the diagnostic's whole job. A field names n
 through a generic means going through a member the bound declares, which is also what lets two types
 satisfy one bound while storing the value differently.
 
-## Operators are trait methods
-
 Which is why a bound is all it takes to write arithmetic over a parameter:
 
 ```sysl
@@ -188,8 +182,6 @@ to the promise, and lets its members be checked at their definitions rather than
 
 A bound is declared **once**, at the type, and is in force everywhere its parameters appear: a
 member's signature and body, a field's type, a variant's payload. It is not restated per member.
-
-## Monomorphization
 
 Each distinct set of type arguments produces its own specialized function or aggregate. `sum` called
 at `int` and at `real` emits two functions; `Pair[int, string]` and `Pair[int, int]` are two layouts.
@@ -265,16 +257,12 @@ as readily as it takes a `Rect`, with an indirect call where the other gets a di
 between static and dynamic is about what the *caller* holds, not about which functions it can reach,
 and a library written against bounds is not closed to a program that erased.
 
-### Object safety
-
 Erasure forgets the type, so a member may promise nothing that depends on knowing it. A trait can be
 made into an object when every member has a receiver and mentions `Self` nowhere but there.
 
 That second rule excludes **every trait in the operator catalogue** — `add(self, rhs: Self) -> Self`
 first among them — and that is the right answer rather than a limitation. An operator over two values
 of one type is a question about types known while compiling, so those traits are for bounds.
-
-## A trait may require another
 
 `trait Reader: Fallible` says that implementing `Reader` obliges implementing `Fallible` too. The
 requirement is checked **at the `impl`**, not at the bound — so `[T: Reader]` gets both traits'
@@ -314,81 +302,9 @@ That is the shape the standard library's byte surface uses: `Reader` and `Writer
 `Fallible`, so a type that is **both** carries one `failed` rather than two that nothing at a call
 site could tell apart.
 
-## A trait may take type arguments
-
-Every trait so far has been a property of one type — a `Cat` greets, a `Rect` has an area. A trait
-with **parameters** says something about a *relation* between types instead: what a sink accepts,
-what a conversion converts from, what an iterator yields.
-
-The arguments are written in the same place wherever the trait is named — `impl Sink[int] for Buffer`,
-a bound `[X: Sink[int]]`, an object `&Sink[int]` — and they mean the same thing in each. What that
-buys is the rule underneath: **a type implements a parameterized trait once at each argument list**,
-so two implementations on one type are ordinary rather than a conflict:
-
-```sysl
-trait From[T]
-    from(x: T) -> Self
-
-struct Temp
-    tenths: int
-
-impl From[int] for Temp
-    from(x: int) -> Temp = Temp(x * 10)
-
-impl From[real] for Temp
-    from(x: real) -> Temp = Temp(int(x * 10.0))
-
-var a = Temp.from(21)
-var b = Temp.from(21.5)
-
-print(a.tenths, b.tenths)
-```
-
-```output
-210 215
-```
-
-`Temp` has two members called `from`, and what says which a call means is the **argument list**. The
-resolution is *determined*, not preferred: a call is answered by the one implementation whose
-parameters match the types the arguments have, and nothing ranks two candidates — so a call matching
-none of them is reported rather than resolved to the nearest.
-
-Which is exactly why the arguments have to appear where they can be *seen* at a call. A trait
-parameter that shows up only in a **return** type leaves the call with nothing to select on:
-
-```sysl
-trait Into[T]
-    into(self) -> T
-
-struct Reading
-    raw: int
-
-impl Into[real] for Reading
-    into(self) -> real = f64(self.raw) / 10.0
-
-impl Into[string] for Reading
-    into(self) -> string = "raw " + str(self.raw)
-
-var r = Reading(215)
-
-var celsius: real = r.into()
-
-print(celsius)
-```
-
-```error
-'into' comes from 2 implementations of one trait on Reading, and the arguments do not say which was meant
-```
-
-Rust answers that one with turbofish and inference from the expected type. sysl's own written type
-arguments do not reach it: `x.into[Celsius]()` would name a **member's own** parameters, and what is
-ambiguous here belongs to the implementation rather than to `into`. Writing the conversion as
-`From[T]` — where the thing being converted is an argument — is the shape that needs no such
-machinery at all.
-
-This is also the mechanism the [error handling](/tour/errors/) chapter points at. A `?` that converts
-a callee's error into the caller's needs an `AppError` that is `From[IoError]` **and**
-`From[ParseError]`, and those are two argument lists rather than two implementations of one thing.
+A trait may also take **type arguments** — `impl From[int] for Temp` beside `impl From[real] for
+Temp` — so one type implements it once at each argument list. That is what a conversion surface is
+built out of, and [the reference](/reference/traits/) has it.
 
 ## Implementing `Display`
 

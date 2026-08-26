@@ -41,38 +41,12 @@ Two variants may not stand for one value, however the collision arises. A simple
 its identity, so two names for one number would be one value with two spellings, and the second one's
 `match` arm could never run. Deliberately naming a value twice is what a `const` is for.
 
-## Pinning the width
-
-C leaves an enum's underlying integer type implementation-defined, which makes it useless for the two
-things a systems programmer most wants it for: a struct field of known width, and a value read off a
-wire. sysl lets you say:
-
-```sysl
-enum Pin: u8
-    A0
-    A1
-    A2
-
-print(Pin::Image(A1), Pin::Pos(A2), int(Pin::Last))
-```
-
-```output
-A1 2 2
-```
-
-The type after the `:` may be any integer type, including an arbitrary-width one like `u4` — which
-turns a simple enum into a usable tool for packed hardware-register fields. Unspecified, it is `int`.
-
-Those `::` names are a fixed set of questions the enum's own name answers, kept out of the member
-namespace so they can never collide with a variant. `Image` gives a variant's name as a string,
-`Pos` gives its 0-based position in the declaration, `Val` goes back the other way, `First`/`Last`
-are the ends and `Succ`/`Pred` the neighbours.
-
-**Position is not the discriminant**, and that is why both exist: discriminants may be explicit,
-non-contiguous and not zero-based, so an ordinal has to be looked up rather than computed. A value's
-discriminant is `int(c)`; its position is `Pos`.
-
-## Coming from an integer
+A simple enum's underlying integer is `int` unless you say otherwise, and you can: `enum Pin: u8`
+takes any integer type, including an arbitrary-width one like `u4` — which is what makes an enum
+usable for a packed hardware-register field rather than only for a set of names. The enum's own name
+also answers a small fixed set of questions written with `::` — `Pin::Image(A1)` is a variant's name
+as a string, `Pin::Pos` its position, `Pin::First`/`Last` the ends — kept out of the member namespace
+so they can never collide with a variant. [The reference](/reference/attributes/) has all of them.
 
 Going *to* the underlying integer is total — every enum value is a valid integer. Coming *from* one
 has two spellings, chosen by how much you trust the value:
@@ -136,8 +110,6 @@ The payload really is one region, not one field per variant. A four-variant enum
 each is one integer wide, so a table of two hundred of them costs what you would expect rather than
 four times that.
 
-## The check that makes it worth having
-
 A `match` on a data enum must cover every value, and the diagnostic names what is missing:
 
 ```sysl
@@ -165,8 +137,6 @@ between them though no single arm covers a variant on its own — while `Some(0)
 A guarded arm never discharges a variant's obligation, since the compiler cannot prove a guard holds.
 That is what keeps exhaustiveness a real guarantee instead of a formality.
 
-## `Option` and `Result` are just enums
-
 Nothing above is special-cased for them. They are ordinary generic declarations in the library:
 
 ```sysl
@@ -190,39 +160,6 @@ found: 6
 That is worth knowing early, because it means everything this chapter says about matching, binding
 and exhaustiveness is what you already know about `Option` — and everything you learn about `Option`
 transfers to an enum you write yourself.
-
-## Leaving the type off
-
-A variant is written with its enum's name in front of it wherever the context does not already say
-which enum is meant. Where the context *does* say — an argument, an annotated binding, a `return`,
-the operand beside a `==` — the name can be dropped and a leading dot left in its place.
-
-```sysl
-enum Colour
-    Red
-    Green
-    Blue
-
-paint(c: Colour) -> string
-    c match
-        Red   -> "red"
-        Green -> "green"
-        Blue  -> "blue"
-
-val wall: Colour = .Green
-
-print(paint(wall), paint(.Blue), wall == .Green)
-```
-
-```output
-green blue true
-```
-
-This is not special to enums, and not special to variants: `.name` is `Type.name` with the type left
-off, so an associated function is reached the same way. The whole rule is on the
-[expressions](/reference/expressions/#a-leading-dot-the-qualifier-the-context-already-knows) page.
-A pattern needs none of it — the arms above are already matching against a `Colour`, which is why
-they write `Red` and not `Colour.Red`.
 
 ## What a pattern can be
 
@@ -254,66 +191,6 @@ The `else` arm carries no `->`. The arrow separates a pattern from what to do wh
 Ranges are limited to the numeric types and `char`, where a contiguous interval means something.
 Literals work on anything `==` can test, including `string` and `bool` — so matching a boolean with
 `true ->` and `false ->` arms is exhaustive with no catch-all needed.
-
-## Destructuring a struct
-
-Two forms, and they are a division of labour rather than two spellings of one thing:
-
-```sysl
-struct Point
-    x: int
-    y: int
-
-locate(p: Point) -> string
-    p match
-        Point(0, 0) -> "origin"
-        Point{x: 0} -> "on the y axis"
-        Point{y: 0} -> "on the x axis"
-        else           "somewhere"
-
-print(locate(Point(0, 0)), locate(Point(0, 5)), locate(Point(5, 0)), locate(Point(1, 1)))
-```
-
-```output
-origin on the y axis on the x axis somewhere
-```
-
-**Positional is total.** It mirrors construction, and it must name every field — so adding a field to
-the struct turns each positional pattern into a checked arity error, exactly as a new enum variant
-does. This is the handle-everything tool.
-
-**Named-field is partial.** It binds by name, so it survives a field reorder, it can rename
-(`{x: a}`), and any field left out is simply unconstrained. Adding a field never breaks one. This is
-the grab-what-I-need tool.
-
-Both nest inside each other and inside variant patterns — `Some(Point{x})`, `Wrap(Point(a, b))` — and
-every sub-pattern is itself any pattern in this section.
-
-## The bare-name trap, closed
-
-A bare identifier in a pattern is a nullary-variant pattern when it names one, and a binding
-otherwise. The dangerous middle case is a name that *is* a variant but carries data, and it is a hard
-error rather than a silent catch-all:
-
-```sysl
-enum Shape
-    Circle(radius: int)
-    Empty
-
-describe(s: Shape) -> string
-    s match
-        Circle -> "circle"
-        Empty  -> "empty"
-```
-
-```error
-variant 'Circle' carries data — match it as 'Circle(…)'
-```
-
-Without that rule, `Circle` would have quietly become a binding that matched everything, and the
-`Empty` arm below it would have been dead code the compiler was happy with.
-
-## Matching through a reference
 
 Field selection dereferences one level on its own, but `match` does not. Matching a `&Enum` is
 written `match *e`, which keeps "am I matching the reference or the thing" a visible question:

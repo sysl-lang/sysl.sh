@@ -52,8 +52,6 @@ Type arguments come from inference, including the cases with nothing to infer fr
 bare `None` takes its `T` from context, and `Ok(n)` inside a `Result[int, string]`-returning function
 takes its `E` from the return type.
 
-## `?`
-
 Matching every call gets old fast, and `?` is sugar for the match you would have written: **unwrap
 the success, or early-return the failure.**
 
@@ -119,76 +117,15 @@ count(n: int) -> int
 '?' may only be used in a function returning sysl.Result, not int
 ```
 
-The error types must match **exactly**, too. There is no implicit widening, so a function whose own
-error type differs from a callee's converts at the call site:
+The error types must match **exactly** — there is no implicit widening, so a function whose own error
+type differs from a callee's converts at the call site. That is a real ergonomic cost and it is the
+shipping behaviour rather than the end state; [the reference](/reference/errors/) has where it is
+going.
 
-```sysl
-struct IoError
-    code: int
-
-struct AppError
-    why: string
-
-read_it(n: int) -> Result[int, IoError]
-    if n > 0 then Ok(n)
-    else Err(IoError(5))
-
-run(n: int) -> Result[int, AppError]
-    var v = read_it(n)?
-
-    Ok(v)
-
-print(run(1).is_ok())
-```
-
-```error
-'?' propagates a IoError error, but this function returns AppError
-```
-
-That is a real ergonomic cost, and it is the shipping behaviour rather than the end state: the
-intended answer is a `From`-style conversion, where `?` converts the callee's error to the caller's
-whenever a conversion trait connects the two, as Rust's `?` calls `From::from`. Writing that trait is
-possible today — `impl From[IoError] for AppError` and `impl From[ParseError] for AppError` are two
-different argument lists, and a type may implement a parameterized trait once at each of them (see
-the [reference](/reference/traits/)). What is left is teaching `?` to look for one.
-
-## The combinators
-
-The conveniences on both types are **ordinary members in the library**, not compiler knowledge. The
-total ones ask a question or supply a fallback:
-
-```sysl
-find(xs: []const int, target: int) -> Option[usize]
-    for i in 0..<xs.len
-        if xs[i] == target then return Some(i)
-
-    None
-
-var data = [4, 5, 6]
-
-print(find(data, 5).is_some(), find(data, 9).is_none())
-print("fallback:", find(data, 9).unwrap_or(99))
-```
-
-```output
-true true
-fallback: 99
-```
-
-`Result` has the matching pair `is_ok()` and `is_err()`, plus `unwrap_err()` for reaching the reason.
-
-The **forcing** ones hand over the payload and stop the program when there is none — `unwrap()`, and
-`expect(msg)` which says why you thought there would be one:
-
-```sysl
-var got: Option[int] = Some(7)
-
-print(got.unwrap(), got.expect("a value was put here two lines ago"))
-```
-
-```output
-7 7
-```
+The conveniences on both types are **ordinary members in the library**, not compiler knowledge:
+`is_some`, `is_none` and `unwrap_or` on an `Option`, `is_ok`, `is_err` and `unwrap_err` on a
+`Result`, and the forcing `unwrap()` and `expect(msg)` that hand over the payload and stop the
+program when there is none. [`library/core`](/library/core/) lists them.
 
 That these are written in sysl rather than built in is the part worth pausing on, because it is what
 keeps "a bug stops the program" from meaning "the compiler has to know the name of every way to
@@ -320,8 +257,6 @@ What a trap *does* is an environment fact rather than a language one. A hosted p
 diagnostic and exits non-zero; a kernel installs its own panic handler and enters that. The decision
 to stop is the language's; the action on stopping is the environment's.
 
-## Turning a trap back into a value
-
 There is no `panic` you can recover from, so a program that wants to survive bad input must **not do
 the trapping thing** — check the bound, validate before dividing, and use the fallible constructor
 rather than the checked cast. That is the move to make wherever untrusted input enters:
@@ -355,15 +290,11 @@ byte 9 is not a Color
 reason, and the byte off the wire stops being a bug in the program and starts being a value it
 handles — which is the whole of the policy in one function.
 
-## What is deliberately absent
-
 - **No exceptions.** Recoverable failure is a returned value and a bug is an abort. There is no
   third, invisible control-flow channel.
 - **No error return codes by convention.** The failure is in the type and it is checked, not an
   `int` a caller might forget to inspect.
 - **No panic that unwinds.** A trap is terminal.
-
-## `?` and the memory model
 
 `?` obeys ARC with no special rule, which matters most here because it is the operator most likely to
 carry a heap payload across a function boundary.

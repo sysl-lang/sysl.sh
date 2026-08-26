@@ -36,39 +36,8 @@ print(classify(60), classify(3))
 big small
 ```
 
-An optional `end` marker closes a declaration and names it. It is worth writing on anything long
-enough that the closing indentation is off the screen:
-
-```sysl
-factorial(n: int) -> int
-    var acc = 1
-
-    for i in 2..n do acc *= i
-
-    acc
-end factorial
-
-print(factorial(10))
-```
-
-```output
-3628800
-```
-
-A function that returns nothing simply says nothing:
-
-```sysl
-announce(what: string)
-    print("***", what, "***")
-
-announce("no return type")
-```
-
-```output
-*** no return type ***
-```
-
-## Defaults, and names at the call site
+An optional `end` marker closes a long declaration and names it — worth writing when the closing
+indentation is off the screen. A function that returns nothing simply says no return type.
 
 A parameter may carry a default, and defaults fill from the right — so what a call writes decides
 how many are taken:
@@ -101,8 +70,6 @@ print(window(width = 132, y = 10))
 ```
 
 A positional argument may not follow a named one — once a call starts naming, it names.
-
-## One name, several functions
 
 A name may be declared more than once. Which declaration a call means is decided by the arguments it
 passes — how many, and what type each is:
@@ -155,8 +122,6 @@ print(apply(x -> x * factor, 5))
 ```output
 50
 ```
-
-## What capture does, exactly
 
 This is the one place closures will surprise you if you arrive from Kotlin, Swift or JavaScript, so
 it is worth meeting now rather than in a debugger. **Capturing a value copies it in.** The closure

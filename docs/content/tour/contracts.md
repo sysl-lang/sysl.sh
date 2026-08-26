@@ -115,104 +115,12 @@ makes is passing one where another was wanted. Three `new u8`s with three ranges
 error instead of a plausible-looking wrong answer. It is an argument about **types**, not about
 checking.
 
-### A derivation inherits its base's behaviour and may replace none of it
-
-A `new` type over a scalar arrives with everything the scalar could do — `==`, `<`, `+`, `str` and the
-rest — working at itself and producing itself. And almost no `impl` may replace or extend any of it.
-
-Inheriting is right because a derivation does not change what the values *are*: a `Slot` is some of
-the `u8`s, not a different set of things stored in a byte. Refusing to replace is the harder call. If
-`Stamp` could redefine `<`, then `Stamp` would be a set of `i64`s that do not order the way `i64`s
-order, and every fact the base guarantees would hold only until somebody looked.
-
-**Rendering is the exception, and the reason says where the line is.** How a value prints is not a
-fact the base guarantees about the value — a `Stamp` printing as `#7` is the same `i64` it was — so a
-derivation may take that one row back with an
-[`override impl Display`](/reference/errors/#except-rendering-which-a-derivation-may-take-back).
-Ordering and arithmetic it may not.
-
-So the answer to "I want my own `+`" is that you do not want a derivation, you want a **struct**:
-
-| | a `new` derivation | a one-field struct |
-|---|---|---|
-| distinct type | yes | yes |
-| the base's catalogue | free; only `Display` is replaceable | nothing, write it all |
-| an operation the base does not have | impossible | ordinary |
-| an operation the base has that is now nonsense | present anyway | absent |
-| rendering as something other than the base | `override impl Display` | ordinary |
-
-Use a derivation for an **identity** — a slot number, a handle, a unit-tagged measurement. Use a
-struct for a **quantity with an algebra of its own**: an instant plus a duration is an instant, an
-instant plus an instant is nonsense, and no derived scalar can be told the difference.
-
-## Where a constraint is checked
-
-At every point a value of the type is **produced**, and nowhere else. That is not a list of syntactic
-forms to memorize — a value comes to have the type wherever it flows into a slot the type is written
-on: an initializer, an assignment, an argument, a returned value, a cast, a struct field, an array
-element, an enum payload, an item entering a generic container instantiated at the type.
-
-A value that already has the type is not re-checked when it is merely read, passed along or copied.
-It could not have got there unchecked.
-
-One site is closed by not existing. A constrained subtype has **no zero value**, whether or not its
-range contains zero:
-
-```sysl
-type Age = int within 0..150
-
-var a: Age
-
-print(a)
-```
-
-```error
-Age has no zero value, so 'a' needs an initial value
-```
-
-Making that the *type's* rule rather than the range's means widening a range never silently changes
-whether a declaration compiles somewhere else.
-
-A violated check **traps**. It is not an error value and it is not catchable, and there is
-deliberately no `try` form returning an `Option`: a constrained type states something its values are,
-so a value that is not one of them is a bug in the code that made it rather than a condition to
-handle.
-
-## Asking instead of trapping
-
-Which is what the type's own name is for. A constrained type answers a small closed set of
-**attributes**, written with `::` so they stay out of the member namespace and no `impl` can shadow
-one:
-
-```sysl
-type Slot = new u8 within 0..<8
-
-print(u8(Slot::First), u8(Slot::Last), Slot::Valid(3), Slot::Valid(200))
-
-var total = 0
-
-for s in Slot::Range do total += int(u8(s))
-
-print("sum of every slot:", total)
-```
-
-```output
-0 7 true false
-sum of every slot: 28
-```
-
-`First` and `Last` are the bounds — note `Last` is 7, one below the written exclusive bound. `Succ`
-and `Pred` step, and **trap** at the ends rather than saturating or wrapping, on the same argument as
-the produce sites. `Range` is the whole range as a `for` loop's iterable.
-
-Every attribute but one speaks the subtype: a bound of `T` is a value of `T`, and the values `Range`
-walks are `T`s. That is invisible on a transparent subtype and it is the point on a derived one, which
-would otherwise be the only kind of type whose own attributes had to be cast back into it.
-
-`Valid` is the exception, and the asymmetry is its job: it takes the **base**, because asking whether
-a value is a `T` is only a question about something that is not one yet. It is total — it never traps
-— which is what makes it the question form, and a cast after a `Valid` that answered true is the
-ordinary way in.
+A constraint is checked at every point a value of the type is **produced** — an initializer, an
+assignment, an argument, a return, a cast, a field, an element — and nowhere else, because a value
+that already has the type could not have got there unchecked. A violation **traps**: a constrained
+type states something its values *are*, so a value that is not one of them is a bug in the code that
+made it rather than a condition to handle. The type's own name is what asks instead of trapping —
+`Slot::Valid(n)` is total and answers `bool`. [The reference](/reference/types/) has the full set.
 
 ## Struct invariants
 
@@ -259,8 +167,6 @@ When a struct cannot be updated one field at a time, there are three answers and
    them one at a time; one keeping `head` and `count` and computing the end has no clause to break.
 3. **Otherwise assign the whole struct**, and know the price — restating the whole value to move two
    bytes makes a container's own update cost the size of the container.
-
-## Contracts on a function
 
 ```sysl
 half(x: int) -> int
@@ -313,8 +219,6 @@ That is contracts at their most useful — on a mutating method, saying the thin
 
 Contracts are checked in **every** build. There is no release mode that drops them, and adding one
 would make a program's meaning depend on how it was compiled.
-
-## What this is, and where the rest of it is
 
 Nothing on this page is proved while compiling: a `require` is a branch and a trap, an invariant is a
 call to a synthesized predicate, a `within` is two comparisons. What the feature buys is that the

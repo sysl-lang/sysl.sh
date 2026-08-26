@@ -43,8 +43,6 @@ statement.
 `print` takes any number of arguments, renders each one, and puts a space between them. It comes from
 `sysl`, the standard module — the one module a file may name without importing it.
 
-## The scalar types
-
 Integers are an open family: `i8`, `i16`, `i32`, `i64` and the unsigned `u8` … `u64`, with `isize`
 and `usize` for the pointer-width pair. The common ones also have friendly names, and those are what
 ordinary code uses:
@@ -173,47 +171,6 @@ char: é true ☃
 Ordering is defined, so `'a' <= letter` answers. Adding `1` to it is not, because "the next scalar
 value" is rarely what a program that wrote `letter + 1` actually meant. When the code point *is*
 what you want, `u32(letter)` says so and `char(9731)` goes back the other way.
-
-## Assignment is an expression
-
-It yields the value assigned, which is what lets a chain work and a condition read normally:
-
-```sysl
-var a = 0
-var b = 0
-
-a = b = 7
-print("both:", a, b)
-```
-
-```output
-both: 7 7
-```
-
-A binding takes a comma list too, so two names can be introduced, or swapped, in one line:
-
-```sysl
-demo()
-    val lo, hi = 1, 10
-    var x, y = 3, 4
-
-    x, y = y, x
-    print("range:", lo, hi, "swapped:", x, y)
-
-demo()
-```
-
-```output
-range: 1 10 swapped: 4 3
-```
-
-The right-hand side is evaluated before anything is stored, so `x, y = y, x` is a swap and needs no
-temporary.
-
-This one is inside a function rather than at the top level, and it has to be. A binding that names
-several things has nowhere to write a type, and a module-level binding is required to have one — so
-the comma form is a local's convenience, and the compiler says exactly that if you try it at module
-level.
 
 ---
 

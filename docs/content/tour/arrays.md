@@ -55,8 +55,6 @@ The zero-value form is not special to arrays — it is a `var` with a type and n
 "the zero of this type" for any type that has one. A type holding a `&T` has no zero, since a
 reference always points at something live, so that one asks you for an initializer.
 
-## An array is a value
-
 Which means the thing the [structs chapter](/tour/structs/) said about `b = a` is true here too:
 
 ```sysl
@@ -97,37 +95,10 @@ original: 99
 
 Writing through the view wrote through to the array, because there is only one set of elements.
 
-Both ends of the range are optional, and the two range operators keep the meanings they have
-everywhere else in the language — `..` includes its high end, `..<` excludes it:
-
-```sysl
-sum(xs: []int) -> int
-    var total = 0
-
-    for x in xs do total += x
-
-    total
-
-var data = [1, 2, 3, 4, 5]
-
-print(sum(data), sum(data[1..3]), sum(data[..<2]), sum(data[3..]))
-```
-
-```output
-15 9 3 9
-```
-
-`data` on its own is the whole thing: an array standing where a view is asked for **is** a view of
-itself, so the first call needs no subscript at all. The rest name part of it — `data[1..3]` is
-elements 1 through 3, `data[..<2]` is the first two, and `data[3..]` runs to the end. Written out,
-the whole of it is `data[..]`, which is what the position does for you. "The first `n`" is `xs[..<n]`, which matches the
-`for i in 0..<n` that walks it — the two must agree, and that is why the inclusive `..` is the one
-that looks unusual rather than the one that is wrong.
-
-There is no `xs[lo..<]`: "through the last" is not a question of including or excluding anything, so
-the open form is `xs[lo..]` and the other spelling is refused rather than quietly meaning the same.
-
-## A view that may not be written
+Both ends of the range are optional and the two operators keep the meanings they have everywhere
+else — `data[1..3]`, `data[..<2]`, `data[3..]`, and `data` on its own, since an array standing where
+a view is asked for **is** a view of itself. There is no `xs[lo..<]`: "through the last" excludes
+nothing, so the open form is `xs[lo..]`.
 
 `[]const T` is a slice whose elements may not be written **through it**. It is the signature a
 function that only reads should have:
@@ -149,8 +120,6 @@ The `const` is a property of the *view*, not of the element type — which is wh
 brackets, and why a `[]T` is accepted anywhere a `[]const T` is wanted but never the other way
 round. Giving up the ability to write is a promise the caller can always make; inventing one is what
 the type exists to stop.
-
-## Iterating
 
 `for x in xs` binds a **copy** of each element, which is what value semantics mean. To change
 elements, walk the indices:
@@ -175,8 +144,6 @@ scaled: 10 20 30
 
 The loop evaluates its sequence once, so a slice written directly in the header lives for the whole
 loop rather than being rebuilt each step.
-
-## A length worked out while running
 
 Every form so far fixes its length in the type, and that is exactly what a program reading a file
 cannot do — the size is in the header, and the header is read by the code that needs the buffer.
@@ -242,30 +209,7 @@ because `Buf` implements the `Index` trait — the same syntax, reaching a call 
 while `b[i]` past the end panics, because that is a mistake in the program rather than a value it
 meant to handle.
 
-Handing the elements to something that takes a slice is `view()`:
-
-```sysl
-import sysl.buf.{Buf, buf}
-
-total(xs: []const int) -> int
-    var t = 0
-
-    for x in xs do t += x
-
-    t
-
-var b: &Buf[int] = buf()
-
-for i in 1..5 do b.push(i)
-
-print("total:", total(b.view()))
-```
-
-```output
-total: 15
-```
-
-## What a view keeps alive
+Handing the elements to something that takes a slice is `b.view()`.
 
 Taking a slice **retains whatever owns the elements**, and dropping the slice releases it. So a view
 cannot dangle: the storage it names is alive for exactly as long as the view is.

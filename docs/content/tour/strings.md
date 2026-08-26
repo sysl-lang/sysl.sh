@@ -59,6 +59,28 @@ The sharing has the hazard Go's has: a two-byte substring of a two-megabyte stri
 buffer alive. The operation that copies out of it is named — `s.copy()` — and the hazard is
 documented rather than encoded in a second type.
 
+`==` and `<` compare the byte sequences, which for well-formed UTF-8 is also codepoint order.
+Normalization is **not** applied — a composed `é` does not equal a decomposed one:
+
+```sysl
+describe(cmd: string) -> string
+    cmd match
+        "add" -> "combines"
+        "del" -> "removes"
+        _     -> "unknown"
+
+print(describe("add"), describe("nope"), "add" < "del")
+```
+
+```output
+combines unknown true
+```
+
+Swift compares by canonical equivalence, which is right for user-facing text and surprising in
+systems code, where a string is usually a path, a device name, or a protocol token that has to
+compare as the bytes it is. Normalization is a library operation, applied where it is wanted and
+visible when it costs something.
+
 ## Joining
 
 `+` joins two strings and `+=` appends onto a slot. Both allocate a fresh buffer; UTF-8 is closed
@@ -132,62 +154,10 @@ Note where the specifier sits — *after* the hole, not in a separate format str
 value and the way it is formatted stay next to each other, which is the whole reason for the
 spelling.
 
-## Literals that span lines
-
-```sysl
-var doc = """
-    to whom it may concern:
-    the indentation you see here is not in the value
-    """
-
-print(doc.len)
-print(doc)
-```
-
-```output
-73
-to whom it may concern:
-the indentation you see here is not in the value
-```
-
-The content starts on the line *after* the opening delimiter, and each line's incidental indentation
-is dropped — the strip is the least-indented line with content, together with the closing delimiter's
-own line when it sits alone. So the closing delimiter is the control: move it left and the value
-keeps more indentation, right and it keeps less.
-
-This matters more in an indentation-sensitive language than elsewhere. A block written inside a
-deeply nested body would otherwise carry that body's indentation into its value, and how deep a piece
-of code sits is not something its data should record.
-
-Trailing blanks are dropped too, since whitespace at the end of a line is invisible in a source file.
-A trailing space that is *meant* is written `\u{20}`, which survives because escapes are decoded after
-the trimming. And a `\` at the end of a line joins it to the next, which is what the form is really
-for: a blob of embedded data written over twenty lines is a single constant, where the same data
-assembled with `+` would allocate and copy once per piece.
-
-## Comparison, and matching
-
-`==` and `<` compare the byte sequences, which for well-formed UTF-8 is also codepoint order.
-Normalization is **not** applied — a composed `é` does not equal a decomposed one:
-
-```sysl
-describe(cmd: string) -> string
-    cmd match
-        "add" -> "combines"
-        "del" -> "removes"
-        _     -> "unknown"
-
-print(describe("add"), describe("nope"), "add" < "del")
-```
-
-```output
-combines unknown true
-```
-
-Swift compares by canonical equivalence, which is right for user-facing text and surprising in
-systems code, where a string is usually a path, a device name, or a protocol token that has to
-compare as the bytes it is. Normalization is a library operation, applied where it is wanted and
-visible when it costs something.
+A literal may also span lines. `"""` opens a block whose content starts on the next line and whose
+incidental indentation is dropped — the closing delimiter is what decides how much — so a blob of
+embedded text written inside a deeply nested body does not carry that body's indentation into its
+value. [The reference](/reference/strings/#text-blocks) has the trimming rules.
 
 ## Building text a piece at a time
 
@@ -216,8 +186,6 @@ The two ways in are the two that keep the guarantee: a `push` takes a string and
 a character, and UTF-8 is closed under appending either — so `finish` hands back a plain `string`
 that nobody has to validate. That is exactly why a builder is *not* a `Writer`: a public `write`
 taking arbitrary bytes would be an unchecked constructor with a friendlier name.
-
-## Coming from bytes
 
 Bytes a program computed are the one route into a string that can fail, so it is the one that returns
 a `Result`:
@@ -249,29 +217,6 @@ rescue.
 The bytes are copied rather than viewed, and that is deliberate — a slice is writable, so sharing
 would let a later write change something that had already been checked. Copying is what makes the
 validation mean anything afterwards.
-
-## Talking to C
-
-A sysl string carries a length and may hold a NUL as an ordinary byte, so there is no free conversion
-to the shape C reads. For a literal there is no conversion needed at all — the compiler emits a NUL
-after every string literal in read-only data, and `c"…"` is that constant's address:
-
-```sysl
-extern printf(fmt: *u8, ...) -> int
-
-printf(c"%d items\n", 7)
-```
-
-```output
-7 items
-```
-
-No allocation, no copy, no runtime. For a string that is not a literal, `cstring(s)` allocates a
-NUL-terminated copy and hands back a `CString` that owns it — and the hazard the explicitness exists
-for is worth stating as an equation: for `cstring("a\0b")`, `cs.len` is 3 and C's `strlen(cs.ptr)` is
-1. Both are right, and neither can be made into the other.
-
-## Literals cost nothing
 
 A string literal is bytes in read-only data with **no owner at all** — the owner word is null, and
 retain and release both test for that and do nothing. So a literal needs no allocation, no refcount
