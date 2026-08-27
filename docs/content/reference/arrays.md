@@ -617,6 +617,47 @@ is a licence to write them — so the one does not become the other
 Giving up the ability to write is a promise the caller can always make; inventing one is the whole of
 what the type exists to stop.
 
+**Where two of them have to agree, they meet at the read-only view.** A pair of operands, the branches
+of an `if`, the arms of a `match`, a loop's `break` values — each is a place two types have to become
+one, and the two views are the one pair of *known* types in the language with somewhere to meet.
+Everywhere else two concrete types agree or the form is refused, since there is no subtyping to widen
+towards.
+
+```sysl
+var a = [1, 2, 3]
+var b = [1, 2, 3]
+
+val c: []const int = b[..]
+val k = if a.len > 0 then a[..] else c
+
+print(a[..] == c, c == a[..], k.len)
+```
+
+```output
+true true 3
+```
+
+Without it the **order** would decide: the first of the two settles the type and the second is read
+again at it, so one direction converted and its mirror was refused for the same two values.
+
+**What they meet at is the read-only view**, so this is not a way of inventing a licence to write:
+
+```sysl
+var a = [1, 2, 3]
+val c: []const int = a[..]
+
+var k = if a.len > 0 then a[..] else c
+
+k[0] = 9
+```
+
+```error
+views elements it may not write, so there is nothing to assign through
+```
+
+Two writable views are untouched — nothing is read-only, so there is nothing to meet — and a form with
+only one branch keeps that branch's view whichever it is.
+
 **What produces one.** Slicing a `val`, since read-only storage gives a read-only view — and so is
 a `val` array standing where a view is asked for, which is the same rule reached without the
 brackets. `s.bytes`, whose elements are a string's own and may be a literal's. Re-slicing one,
