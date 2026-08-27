@@ -626,6 +626,57 @@ collects the rest of the call, so nothing can follow it
 Its arguments are **positional**: a name picks out one parameter and this one takes as many as are
 left. It declares no default either, a call that leaves it out having an answer already.
 
+**A trait member may declare one, and it is then refused through a trait object.** The array a call
+packs is the caller's frame, and a trait object may hold on to what it is given — so the same member
+is ordinary under static dispatch and refused through a `&Trait`, which is
+[escape analysis](/reference/memory/) rather than a rule of this form's.
+
+```sysl
+trait Sink
+    take(self, xs: ...int) -> int
+
+struct Adder
+    base: int
+
+impl Sink for Adder
+    take(self, xs: ...int) -> int
+        var s = self.base
+
+        for x in xs
+            s += x
+
+        s
+
+var a = Adder(10)
+val d: &Sink = a
+
+print(a.take(1, 2, 3))
+```
+
+```output
+16
+```
+
+```sysl
+trait Sink
+    take(self, xs: ...int) -> int
+
+struct Adder
+    base: int
+
+impl Sink for Adder
+    take(self, xs: ...int) -> int = self.base + int(xs.len)
+
+var a = Adder(10)
+val d: &Sink = a
+
+print(d.take(1, 2, 3))
+```
+
+```error
+a slice of an array this frame owns is passed through a trait object, which may hold on to it
+```
+
 **It is not C's ellipsis**, which is the other variadic and is written `...` with no name and no type
 — that tail is walked with `va_arg` and is the foreign one; see [ffi](/reference/ffi/). A declaration
 may write one of them, and an `extern` may write only C's: what this form hands over is a sysl slice,
