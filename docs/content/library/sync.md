@@ -534,7 +534,7 @@ atomic is a spelling the compiler checks, and it lives on [memory](/reference/me
 any alias — so `&sync Mutex[T]` and `&sync Atomic[i32]` are how shared mutable state is actually
 reached.
 
-**The channel is [`sysl.posix.threads`](/library/threads/#channelt)**, not this module, and the split
+**The channel is [`sysl.posix.threads`](/library/threads/#channel-t)**, not this module, and the split
 is the one everything else here follows: a channel has to *wait*, so it needs a scheduler to yield to,
 and this module requires nothing. What it is for is the message-passing half of the model — where the
 rule about which values may cross a domain boundary is asked of a **value** rather than of an address,

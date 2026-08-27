@@ -76,7 +76,7 @@ print(Fahrenheit.from(Celsius(100.0)).deg, Fahrenheit.from(70).deg)
 ```
 
 ```output
-212.0 70.0
+212 70
 ```
 
 A type may implement it **several times over** — the two blocks above are one type accepting two
