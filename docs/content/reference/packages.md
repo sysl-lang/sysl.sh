@@ -57,6 +57,19 @@ The name reaches the filesystem, so it has to be a single path segment. `.`, `..
 separator, and the empty string are refused when the file is read, rather than being sanitized into
 something that would build a differently-named executable without saying so.
 
+**And it may not be the name of a module directory beside it**, since the binary would be written
+over one:
+
+```
+error: this project builds an executable named 'slate', and 'slate' is a directory — the two
+       cannot both have that name. Rename the package or the directory, or say where the binary
+       goes with '-o <path>'
+```
+
+Naming the package for its own module is the obvious layout and reaches this without trying. `sysl
+run` never does, writing to a temporary file of its own, so a project can carry the collision until
+the first time somebody asks for a binary.
+
 ## The oldest compiler a package builds with
 
 **`package.sysl` states a floor**, and a build stops there rather than somewhere inside the package:
