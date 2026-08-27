@@ -75,7 +75,7 @@ class GrammarTests extends AnyFreeSpec with Matchers {
     * sees them. Adding to this set is a decision about the language, not a way to fix a red test.
     */
   private val soft =
-    Set("is", "not", "invariant", "new", "with", "within", "where", "opaque", "derives")
+    Set("is", "not", "invariant", "new", "with", "within", "where", "opaque", "derives", "become")
 
   "the highlighting grammar" - {
 

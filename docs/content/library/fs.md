@@ -41,7 +41,7 @@ decides which modules exist at all — there is no half of `sysl.fs` that works 
 |---|---|---|
 | whole file | `read_text`, `read_bytes`, `write_text`, `write_bytes`, `append_text`, `append_bytes` | storage the size of the file — allocates by nature |
 | open file | `open`, `create`, `append`, `open_update`, `create_update`, and `File`'s members | a buffer the caller already has |
-| path | `exists`, `readable`, `writable`, `is_file`, `is_dir`, `size_of`, `make_dir`, `remove_file`, `remove_dir`, `rename` | one C call each |
+| path | `exists`, `readable`, `writable`, `is_file`, `is_dir`, `is_link`, `size_of`, `metadata`, `link_metadata`, `set_permissions`, `symlink`, `read_link`, `hard_link`, `canonicalize`, `make_dir`, `make_dir_all`, `remove_file`, `remove_dir`, `remove_dir_all`, `rename`, `copy_file`, `truncate`, `current_dir`, `set_current_dir`, `make_temp_dir` | one C call each, or a loop over them |
 
 **Reading a whole file *is* asking for storage the size of the file**, so the top tier could not have
 been written any other way. Keeping it apart from `File` is what lets the middle tier stay honest:
@@ -404,10 +404,144 @@ concerned when both paths are on the same filesystem, and *fails* rather than co
 not. That is `rename(2)`'s contract and worth knowing, since a program moving a file across devices
 has to read and write it itself.
 
-**`make_dir` makes one directory and needs its parent to be there.** Making a chain is a loop over
-path separators, and where a separator *is* is a question about paths rather than about the
-filesystem — which this module does not answer. It asks for `0o777`, letting the process umask narrow
-it: asking for less would override the environment's decision rather than defer to it.
+**`make_dir` makes one directory and needs its parent to be there.** It asks for `0o777`, letting the
+process umask narrow it: asking for less would override the environment's decision rather than defer
+to it. **`make_dir_all` is the one every caller actually wants** — it climbs with
+[`sysl.path.parent`](/library/path/) and makes each level from the topmost missing one down, and a
+directory that is **already there is success rather than `AlreadyExists`**, because the question being
+asked is *make sure this is there*.
+
+**`remove_dir_all` is its opposite and is a post-order walk**, because `rmdir` refuses a directory
+that is not empty. A **symbolic link is unlinked rather than followed**, which is what keeps it from
+deleting something outside the tree it was pointed at, and a path that is not there at all is
+success — a caller tearing down after a failure should not have to know how far the failure got.
+
+```sysl
+import sysl.fs.{make_dir_all, remove_dir_all, write_text, exists, is_dir}
+import sysl.path.join
+
+var dir = "/tmp/sysl-fs-doc-tree"
+
+remove_dir_all(dir).unwrap()
+make_dir_all(join(dir, "a/b/c")).unwrap()
+write_text(join(dir, "a/b/note.txt"), "hi").unwrap()
+
+print(is_dir(join(dir, "a/b/c")))
+
+make_dir_all(join(dir, "a/b")).unwrap()          // already there, and that is success
+
+remove_dir_all(dir).unwrap()
+
+print(exists(dir))
+```
+
+```output
+true
+false
+```
+
+### One reading of an entry
+
+**`metadata` is the `stat` this module was written around not having**, and it answers everything
+one call knows: the size, the mode, how many names lead to the entry, its owner and group, its inode
+and device, and three `Instant`s. One call rather than several is the point — asking separately
+whether a path is a directory, how big it is and when it changed is three trips into the kernel and
+three chances for the answer to be about three different files.
+
+```sysl
+import sysl.fs.{write_text, metadata, set_permissions, remove_file, Kind}
+
+var path = "/tmp/sysl-fs-doc-meta.txt"
+
+write_text(path, "0123456789").unwrap()
+set_permissions(path, 0o644).unwrap()
+
+var m = metadata(path).unwrap()
+
+print(m.size, m.kind(), m.is_file(), m.is_dir())
+print(m.permissions() == 0o644, m.links >= 1, m.modified.us > 0)
+
+remove_file(path).unwrap()
+```
+
+```output
+10 file true false
+true true true
+```
+
+**`link_metadata` is the same reading about the path *itself*** — so a symbolic link is described
+rather than followed, and it is the only call here that can report one. `metadata`, `is_dir` and
+`exists` all follow a link silently, which is the right default and was for a long time the only
+behaviour available.
+
+`Meta.same_file` is the inode and the device together, which is what says two paths name one file.
+Neither identifies a file on its own: inode numbers are reused, and are unique only within a device.
+
+### Links, and the path the filesystem agrees on
+
+```sysl
+import sysl.fs.{write_text, symlink, read_link, is_link, hard_link, metadata,
+                canonicalize, make_dir_all, remove_dir_all}
+import sysl.path.{join, file_name}
+
+var dir = "/tmp/sysl-fs-doc-links"
+
+remove_dir_all(dir).unwrap()
+make_dir_all(dir).unwrap()
+write_text(join(dir, "target"), "hello").unwrap()
+
+symlink("target", join(dir, "here")).unwrap()
+
+print(read_link(join(dir, "here")).unwrap())
+print(is_link(join(dir, "here")), is_link(join(dir, "target")))
+print(metadata(join(dir, "here")).unwrap().size)
+
+hard_link(join(dir, "target"), join(dir, "second")).unwrap()
+
+print(metadata(join(dir, "target")).unwrap().links)
+print(file_name(canonicalize(join(dir, "here")).unwrap()))
+
+remove_dir_all(dir).unwrap()
+```
+
+```output
+target
+true false
+5
+2
+Some(target)
+```
+
+**A symbolic link's target is stored as written**, which is what makes a tree of relative links
+movable — and a link is allowed to point at nothing, which is sometimes the point. A **hard** link is
+a second name for one file: the two are equal afterwards, there is no original, and the file goes
+when the last of them does, which is what `Meta.links` counts.
+
+**`canonicalize` follows every link and answers an absolute path.** It is
+[`sysl.path.normalize`](/library/path/)'s counterpart and **not** its equivalent: where `a/b` is a
+link, the two answer different files, and confusing them is the shape of every path-traversal bug
+there is. Reach for this one whenever the answer decides access to something.
+
+### Where the program is, and somewhere to put things
+
+`current_dir` and `set_current_dir` are the working directory. Both are **process-wide**, which is
+the thing to know before reaching for the second: a library that changes it changes it for every
+thread and every other library in the program. Prefer building an absolute path.
+
+**`make_temp_dir` makes a directory nobody else can take**, inside whatever `TMPDIR` names. It is
+*created* rather than named, which is the whole point: inventing a path and then making it leaves a
+gap in which somebody else can take the name on a shared `/tmp`. Removing it is the caller's, and
+`defer remove_dir_all(d)` is the idiom.
+
+**`copy_file`** is a read-and-write loop rather than a platform fast path, which is a decision:
+`copyfile(3)` and `copy_file_range(2)` have different names, different signatures and different
+failure modes, and what is here is correct everywhere. It does **not** carry the permission bits
+over — a caller that wants them reads `metadata(from).permissions()` and writes it with
+`set_permissions`, which says out loud that it is doing so.
+
+**`truncate`** cuts a file to a length, or extends it to one with zeroes, and makes nothing: a path
+that is not there reports `NotFound`. `File.truncate` is the same on an open file, and **does not
+move the position** — which is what makes it usable in the middle of writing.
 
 ### Listing a directory
 
@@ -460,15 +594,22 @@ same text on both. What it needs is a POSIX system to run on, which is exactly w
 
 ## What is absent, and why
 
-**Anything `stat` would answer** — timestamps, ownership, a mode — for the reason `size` is a seek.
+**Anything `stat` would answer used to be**, and it is not any more: `metadata` is that call, and the
+`struct stat` it comes back in stays in a shim under `__posix__` where the header decides the layout,
+with thirteen numbers crossing rather than a transcription. That is the shape this section always
+prescribed, arrived at the day something needed it.
 
 The rule the whole module is written under is one sentence: **a question that can be answered by a
-call whose signature is all there is to get right is answered here, and one that cannot is absent.**
-No C structure is transcribed. One header *is* included, in the shim behind `entries`, which is the
-shape the rest of this list should take as it shrinks: a question C can answer in three lines is
-answered by C, and one that would need a structure transcribed into sysl is still not answered at all.
-Where that leaves a gap, an `extern` of one's own — or a `.c` of one's own — is the honest way across
-it, and [foreign functions](/reference/ffi/) is where that is written up.
+call whose signature is all there is to get right is answered here, and one that cannot is answered
+by C.** No C structure is transcribed into sysl. Three headers are included, in the shims behind
+`entries`, `metadata` and `size` — a question C can answer in a few lines is answered by C, and one
+that would need a structure transcribed into sysl is still not answered at all. Where that leaves a
+gap, an `extern` of one's own — or a `.c` of one's own — is the honest way across it, and
+[foreign functions](/reference/ffi/) is where that is written up.
+
+**Lexical path handling is absent from this module on purpose**, and is [`sysl.path`](/library/path/).
+This one requires `os` and a requirement is module-wide, so one `getcwd` beside `join` would take the
+whole of path handling away from every program that has no operating system to ask.
 
 ## Argument types
 

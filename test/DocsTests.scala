@@ -80,12 +80,12 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
-    "docs/content/reference/declarations.md"          -> (34, 12, 1),
+    "docs/content/reference/declarations.md"          -> (37, 13, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
     "docs/content/reference/patterns.md"              -> (14, 13, 0),
-    "docs/content/reference/memory.md"                -> (34, 22, 0),
+    "docs/content/reference/memory.md"                -> (36, 23, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     // One more running and one more refused: the two views of a slice meet at the read-only one
@@ -152,7 +152,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable again: a bound asked through a type parameter answers the subtype the
     // parameter was solved to — the one answer a transparent subtype and its base differ on — and a
     // subtype that narrows nothing answers its base's, which is what a measured typedef is.
-    "docs/content/reference/attributes.md"             -> (25, 32, 6),
+    "docs/content/reference/attributes.md"             -> (26, 33, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     "docs/content/guides/_index.md"                    -> (0, 0, 0),
@@ -164,11 +164,12 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),
-    "docs/content/library/container.md"                -> (5, 0, 3),
+    "docs/content/library/container.md"                -> (6, 0, 3),
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.
     "docs/content/library/io.md"                        -> (7, 3, 3),
-    "docs/content/library/fs.md"                        -> (7, 5, 3),
+    "docs/content/library/fs.md"                        -> (10, 5, 3),
+    "docs/content/library/path.md"                      -> (6, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (23, 10, 3),

@@ -421,6 +421,123 @@ calls itself nowhere the jump can replace
 It changes nothing about what is emitted — write it on the functions where losing the jump silently
 would be a bug, and leave it off the rest.
 
+### `become` — a call that replaces the frame
+
+A tail call to the **same** function is the jump above, and it is an optimization: missing it costs
+speed. A tail call to a **different** function cannot be one. A chain of them is a loop only if every
+call in it is eliminated, so one that is not is an immediate stack overflow rather than a slowdown —
+and a program cannot rely on something it has no way to ask for.
+
+`become` asks for it. It is `return` with the jump guaranteed:
+
+```sysl
+even(n: int) -> bool
+    if n == 0 then return true
+
+    become odd(n - 1)
+
+odd(n: int) -> bool
+    if n == 0 then return false
+
+    become even(n - 1)
+
+print(even(1000000), odd(1000000))
+```
+
+```output
+true false
+```
+
+A million alternating frames is not a stack any machine has, and neither is ten million. Written as
+an ordinary `return odd(n - 1)` the same program is a million frames deep and whether it survives is
+a question about the optimizer.
+
+**The callee may be chosen while the program runs**, which is what the technique this exists for
+needs: one function per state, each ending in a call to the next out of a table of addresses.
+
+```sysl
+step(vm: *int) -> int
+    vm[0] += 1
+
+    if vm[0] >= 5 then return vm[0]
+
+    var table: [2]*extern(*int) -> int = [&step, &step]
+
+    become table[vm[0] % 2](vm)
+
+var n = 0
+
+print(step(&n))
+```
+
+```output
+5
+```
+
+**`become` is not a reserved word.** It is read as this form only where a call follows it, so a
+variable or a function of that name goes on working:
+
+```sysl
+var become = 41
+
+become = become + 1
+print(become)
+```
+
+```output
+42
+```
+
+#### What a `become` requires
+
+The callee's **signature must match this function's** — the same parameter types in the same order,
+and the same result. That is what makes replacing one frame with another something a machine can do
+at all: the arguments land where the replaced frame's were, and the result comes back the way this
+frame's caller is waiting for it.
+
+```sysl
+f(n: int) -> int
+    become g(n, 1)
+
+g(a: int, b: int) -> int = a + b
+
+print(f(1))
+```
+
+```error
+same shape
+```
+
+**No parameter may carry a reference count.** A frame lets go of what it holds along the edge it
+returns on, and a `become` replaces the frame before that edge — so the releases happen *before* the
+jump, and an argument read out of a slot that is about to be let go would name storage that is gone.
+Pass what the callee needs as a value that carries no count, or through a `*T`.
+
+```sysl
+struct Node
+    v: int
+
+f(n: &Node) -> int
+    become g(n)
+
+g(n: &Node) -> int = n.v
+
+var x: &Node = Node(1)
+
+print(f(x))
+```
+
+```error
+counted value
+```
+
+The rest are the tail call's own, for the reasons `Tail calls` gives: an `ensures` is checked when a
+call returns and a `become` never returns; a `defer` runs on the way out of a scope and the jump *is*
+the way out; a `decreases` measure is checked against the frame being replaced; a variadic function's
+tail lives in that frame. An `extern` is refused too — its frame is C's — and so is a result too
+large to come back in a register, which travels through a pointer the replaced frame's caller
+supplied.
+
 ### Several results
 
 A signature may declare more than one result, and the trailing expression or `return` supplies them
@@ -626,10 +743,11 @@ collects the rest of the call, so nothing can follow it
 Its arguments are **positional**: a name picks out one parameter and this one takes as many as are
 left. It declares no default either, a call that leaves it out having an answer already.
 
-**A trait member may declare one, and it is then refused through a trait object.** The array a call
-packs is the caller's frame, and a trait object may hold on to what it is given — so the same member
-is ordinary under static dispatch and refused through a `&Trait`, which is
-[escape analysis](/reference/memory/) rather than a rule of this form's.
+**A trait member may declare one, and it works through a trait object.** The array a call packs is a
+temporary of the caller's frame, and a trait object may hold on to what it is given — so such a call
+is one where the temporary has to outlive the frame that made it, and it is given
+[storage of its own](/reference/memory/) exactly as a declared array would be. That costs an
+allocation at a call that escapes and nothing at one that does not.
 
 ```sysl
 trait Sink
@@ -650,31 +768,11 @@ impl Sink for Adder
 var a = Adder(10)
 val d: &Sink = a
 
-print(a.take(1, 2, 3))
+print(a.take(1, 2, 3), d.take(1, 2, 3), d.take())
 ```
 
 ```output
-16
-```
-
-```sysl
-trait Sink
-    take(self, xs: ...int) -> int
-
-struct Adder
-    base: int
-
-impl Sink for Adder
-    take(self, xs: ...int) -> int = self.base + int(xs.len)
-
-var a = Adder(10)
-val d: &Sink = a
-
-print(d.take(1, 2, 3))
-```
-
-```error
-a slice of an array this frame owns is passed through a trait object, which may hold on to it
+16 16 10
 ```
 
 **It is not C's ellipsis**, which is the other variadic and is written `...` with no name and no type

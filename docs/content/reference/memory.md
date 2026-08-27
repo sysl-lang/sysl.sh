@@ -1337,9 +1337,39 @@ because an element of a local array of arrays is part of that array's storage; a
 not, because that storage belongs to a struct. Only arrays that are *both* sliced *and* escaped are
 promoted.
 
+**An array LITERAL is promoted too, and it has no declaration to promote.** A whole one, viewed, is a
+temporary of the frame that wrote it — which is exactly what promotion exists for — so it is given
+storage of its own, the same storage a literal written where a `[]T` is expected already gets:
+
+```sysl
+trait Sink
+    take(self, xs: []const int) -> int
+
+struct Adder
+    base: int
+
+impl Sink for Adder
+    take(self, xs: []const int) -> int = self.base + int(xs.len)
+
+var a = Adder(10)
+val d: &Sink = a
+
+print(d.take([4, 5, 6][..]))
+```
+
+```output
+13
+```
+
+This is the case a **variadic** call meets without trying: `xs: ...int` packs a call's trailing
+arguments into exactly `[a, b, c][..]`, so a `...T` member reached through a trait object is a
+literal that has to outlive the frame. It costs an allocation there and nothing at a call whose slice
+stays put.
+
 Two roots have nowhere to be promoted to, and are diagnostics rather than promotions — an array a
 caller passed **by value**, which is the caller's layout, and an array that is a **field** of a struct
-on the frame:
+on the frame. A **part** of a literal is a third: it is a different node from its own storage, so
+there is nothing whole to move.
 
 ```sysl
 first_two(a: [4]int) -> []int = a[0..<2]
@@ -1348,7 +1378,7 @@ print(first_two([1, 2, 3, 4]).len)
 ```
 
 ```error
-a slice of an array this frame owns is returned, so it would outlive the array, and the storage is not this body's to move — it is a field of a value, or an array a caller passed by value. Declare it as a '[]T', which makes a buffer of its own and owns it, or as a '&[N]T' where the length is fixed
+a slice of an array this frame owns is returned, so it would outlive the array, and the storage is not this body's to move — it is a field of a value, an array a caller passed by value, or part of an array literal, which has no declaration to move. Declare it as a '[]T', which makes a buffer of its own and owns it, or as a '&[N]T' where the length is fixed
 ```
 
 **Without an allocator it is always a compile error.** Under `no alloc` there is nothing to promote
@@ -1846,6 +1876,53 @@ so a generic facility is asked afresh for every set of type arguments, exactly a
 **A boundary nobody marks is not examined.** The annotation is how a library author says a domain
 begins here, and there is no way for the compiler to guess: a scheduler in a package looks like any
 other function until somebody writes the line.
+
+**A member may carry it, and so may the two frames.** `@crossing`, `@reads` and `@writes` are the
+annotations that are about a **parameter**, which a member has exactly as a free function does — so
+they are the three a method, a property or an associated function may be written above, and the only
+three:
+
+```sysl
+struct Chan
+    open: bool
+
+    @crossing(v)
+    send(*self, v: *int) -> int = v[0]
+
+var c = Chan(true)
+var n = 7
+
+print(c.send(&n))
+```
+
+```output
+7
+```
+
+Everything else says something about a free function or about a type — what `sysl test` calls, what
+recurses, what a symbol names, how fields are laid out — and none of that is something a member
+supplies:
+
+```sysl
+struct P
+    v: int
+
+    @tailrec
+    take(self, n: int) -> int = n
+
+print(P(1).take(2))
+```
+
+```error
+the only annotations a member may carry are the ones about a parameter
+```
+
+The three are refused above a **field** and above a **variant** for a different reason, which the
+sentence says: neither has parameters for one of them to name.
+
+`sysl.posix.threads.Channel[T]` is what this changed. Its `send` and `try_send` were free functions
+taking the channel by address, because the annotation had to be written on a wrapper a caller went
+through; they are methods now, so a channel's transfers and its queries read alike.
 
 ## Hazard summary
 

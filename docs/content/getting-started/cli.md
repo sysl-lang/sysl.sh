@@ -44,8 +44,31 @@ sysl run hello.sysl
 ```
 
 Four things in a row: the source is parsed and checked, textual LLVM IR is emitted, `clang`
-assembles and links it, and the binary runs. The executable goes to a temporary file and is removed
-afterwards — `run` leaves nothing behind.
+assembles and links it, and the binary runs.
+
+**The second run of an unchanged program builds nothing.** The executable is kept, keyed over
+everything that can reach its bytes — this compiler's version, the target, the allocator, the
+optimization level, every source file the program is made of and the C beside it, every `--lib`
+artifact, the standard module, and the search and link paths. Run it again with nothing changed and
+it is the same binary; change a byte of any of those and it is a different key, so there is nothing
+to go stale. **What is deliberately not in the key is the program's own arguments**, which is the
+point: `sysl run p -- a` and `sysl run p -- b` are one binary run twice.
+
+What that saves is most of what `run` costs. In a 9,600-line module with three git dependencies, a
+program whose body is `print("hi")` took **9.2 seconds** every time — all of it compilation, none of
+it the program, and invisible as such: four timings taken while benchmarking that program's real work
+read 9.6 to 10.1 seconds and appeared to say the workloads were indistinguishable, when the ratio
+between the fastest and slowest was about 45x.
+
+**`test` gets the same treatment**, which is where it is felt most often — a suite that recompiles on
+every run is the loop somebody is actually sitting in. `--filter` picks from the list of tests rather
+than deciding what is compiled, so it is not part of the key.
+
+**`SYSL_NO_CACHE`** set to anything non-empty compiles every time. It is for working *on the
+compiler*, where the version in the key stands still while the bytes it produces do not — the one
+case a cache cannot see, and the same one the standard module's cache has. No other subcommand
+consults it: `build` writes a binary somebody named, and `build-c` and `build-lib` write artifacts
+for somebody else's toolchain.
 
 **Everything after a bare `--` belongs to the program**, not to sysl:
 

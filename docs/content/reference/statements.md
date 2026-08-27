@@ -61,6 +61,7 @@ Everything that can stand as a statement:
 | `ref name = place` | a second name for one place — see [memory](/reference/memory/) |
 | `a, b = x, y` | a multiple assignment, which is **not** an expression |
 | `return`, `break`, `continue` | transfers of control |
+| `become f(…)` | `return` with the frame **replaced** rather than added to — see [declarations](/reference/declarations/) |
 | `defer stmt` | what to run on the way out of this block |
 | `require` / `ensure` | a contract clause — see [errors and contracts](/reference/errors/) |
 | `import`, `impl`, and the declarations | a declaration is a statement, so a function may be nested in one |
@@ -537,6 +538,11 @@ print(q, r, z, w)
 ```output
 3 2 0 0
 ```
+
+**`become f(…)` is `return f(…)` with the jump guaranteed**, which is a different statement rather
+than a faster one: a chain of tail calls between functions is a loop only if every one of them is
+eliminated, so an ordinary `return` of a call is a frame and `become` is not. It is written up under
+[declarations](/reference/declarations/), beside the tail call it generalises.
 
 ## `defer`
 

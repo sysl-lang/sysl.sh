@@ -60,9 +60,30 @@ covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where w
 only itself. It attaches to nothing, declares no name, and nothing can refer to one — two saying the
 same thing are two checks rather than a duplicate. It is below.
 
-**On a member, none of them.** "A function" above means a *free* function: a method, a property, an
-associated function, a field and a variant take no annotation at all, and the refusal says so rather
-than complaining about the indentation of the line:
+**On a member, three: the ones that are about a PARAMETER.** `@crossing`, `@reads` and `@writes`
+each name parameters, and a method, a property or an associated function has parameters exactly as a
+free function does — so there was never anything for a blanket refusal to be about in their case:
+
+```sysl
+struct Chan
+    open: bool
+
+    @crossing(v)
+    send(*self, v: *int) -> int = v[0]
+
+var c = Chan(true)
+var n = 7
+
+print(c.send(&n))
+```
+
+```output
+7
+```
+
+Everything else is refused, and the line is what the annotation is **about** rather than where it is
+written. "A function" in the list above means a *free* function: what `sysl test` calls, what
+recurses, what a symbol names, how a type is laid out — none of which a member supplies.
 
 ```sysl
 struct Counter
@@ -73,16 +94,27 @@ struct Counter
 ```
 
 ```error
-an annotation marks a function, and a member is not one
+the only annotations a member may carry are the ones about a parameter
 ```
 
-So what `sysl test` runs is a free function that calls the member, and `@crossing(...)` is written on
-the wrapper a caller already goes through rather than on the method behind it — which is where the
-call a program makes goes, and so where the complaint belongs. `@packed` and `@align(n)` are not the
-exception they look like: they mark the **struct**, written above `struct` and not above a field.
+So what `sysl test` runs is a free function that calls the member. `@packed` and `@align(n)` are not
+the exception they look like: they mark the **struct**, written above `struct` and not above a field.
 `@assert` inside a type's body is refused too, and gets its own sentence, because it is not a claim
 about the member under it — it goes beside the type, where `sizeof` and `offsetof` still name what it
 is about.
+
+**The three are refused above a field and above a variant**, by a sentence of their own: each names
+parameters, and neither a field nor a variant has any.
+
+```sysl
+struct Point
+    @crossing(x)
+    x: int
+```
+
+```error
+are about a parameter
+```
 
 **`#test` above a member is answered by the same sentence**, with the sigil named at the end of it. A
 directive is gone before the lexer counts a column, so an *indented* `#` never reaches the directive

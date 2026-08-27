@@ -454,8 +454,8 @@ var slots: [4]int = [0; 4]
 var ch = channel(slots[..])
 
 print(ch.capacity(), ch.len(), ch.is_closed())
-print(try_send(&ch, 1), try_send(&ch, 2))
-print(try_receive(&ch), try_receive(&ch), try_receive(&ch))
+print(ch.try_send(1), ch.try_send(2))
+print(ch.try_receive(), ch.try_receive(), ch.try_receive())
 ```
 
 ```output
@@ -467,10 +467,10 @@ Some(1) Some(2) None
 | | |
 |---|---|
 | `channel(slots)` | an empty channel over storage the caller supplies |
-| `send(&ch, v)` | puts a value in, waiting while full; `false` only if closed |
-| `try_send(&ch, v)` | the same without waiting |
-| `receive(&ch)` | takes one out, waiting while empty; `None` once closed **and drained** |
-| `try_receive(&ch)` | the same without waiting |
+| `ch.send(v)` | puts a value in, waiting while full; `false` only if closed |
+| `ch.try_send(v)` | the same without waiting |
+| `ch.receive()` | takes one out, waiting while empty; `None` once closed **and drained** |
+| `ch.try_receive()` | the same without waiting |
 | `ch.close()` | no more will arrive; what already has is still taken |
 | `ch.capacity()`, `ch.len()`, `ch.is_closed()` | what it holds and whether it is shut |
 
@@ -488,7 +488,7 @@ struct Feed
 
 feeder(f: *Feed) -> unit
     for i in 1..5
-        send(&f.ch, i)
+        f.ch.send(i)
 
     f.ch.close()
 
@@ -501,7 +501,7 @@ var running = spawn(&feeder, &f) match
 var total = 0
 
 loop
-    receive(&f.ch) match
+    f.ch.receive() match
         Some(v) -> total += v
         None -> break
 
@@ -514,15 +514,17 @@ true 15
 
 Five values go through a ring of two, so the producer really does fill it and really is woken.
 
-### The four transfers are functions, and `@crossing` is why
+### `@crossing(value)` is written on `send`, and marking the way in is the whole check
 
-`send(&ch, v)` rather than `ch.send(v)`, because **no annotation in sysl marks a member** — and
-`send` needs `@crossing(value)`, which is what holds a caller to the rule about what may reach
-another domain. The refusal for an annotation above a method says exactly what to do about it: write
-it on the wrapper a caller already goes through. So the transfers take the channel by address, which
-is `spawn(&body, &state)`'s own shape.
+`send` and `try_send` are the two operations that put a value in, so they carry
+[`@crossing(value)`](/reference/memory/) — which is what holds a caller to the rule about what may
+reach another domain. `receive` carries nothing and needs nothing: **nothing can be taken out that
+was not put in**, so a channel whose sends are held to the rule can hold nothing that breaks it.
 
-Marking the way **in** is the whole of the check: nothing can be taken out that was not put in.
+They were **free functions** taking the channel by address until sysl let a member carry an
+annotation about a parameter, because the word had to go on a wrapper a caller already went through.
+That left a channel's queries as methods and its transfers as functions, which is an asymmetry a
+reader had to learn and no longer has to.
 
 ```sysl
 import sysl.posix.threads.*
@@ -533,7 +535,7 @@ struct Node
 var slots: [2]&Node = [Node(0); 2]
 var ch = channel(slots[..])
 
-print(send(&ch, Node(1)))
+print(ch.send(Node(1)))
 ```
 
 ```error

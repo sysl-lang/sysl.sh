@@ -31,7 +31,8 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.buf`](/library/buf/) | `Buf[T]`, the growable sequence, and `ByteSink` | — |
 | [`sysl.container`](/library/container/) | five containers — [`Map`](/library/container/#the-map) and [`Set`](/library/container/#the-set) over one flat probe table, [`Deque`](/library/container/#the-queue-at-both-ends), [`Heap`](/library/container/#the-priority-queue), and an immutable [`List`](/library/container/#the-immutable-list) that shares its tail | — |
 | [`sysl.io`](/library/io/) | `Reader`, `stdin()`, `lines()` and `console_lines()`, and the in-memory `bytes_reader()` / `bytes_writer()` | — |
-| [`sysl.fs`](/library/fs/) | files and paths — `read_text`, `write_bytes`, `exists`, `rename`, and `IoError` | `os` |
+| [`sysl.path`](/library/path/) | a path by the string alone — `join`, `parent`, `file_name`, `extension`, `stem`, `normalize`, `relative_to`. It opens nothing | — |
+| [`sysl.fs`](/library/fs/) | what is at the end of a path — `read_text`, `write_bytes`, `metadata`, the links, `make_dir_all`, `copy_file`, `canonicalize`, and `IoError` | `os` |
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, [`Magnitude`](/library/math/#magnitude-how-big-when-that-is-not-which-is-greater) and the size a type measures in, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
 | [`sysl.time`](/library/time/) | `Instant` and `Duration` — with `5.ms` and `5.hours` on any integer — the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, `resolve` for a zone whose clocks move, and the ISO 8601 renderers and parsers | — |
@@ -63,6 +64,14 @@ nothing else**: threads because pthreads is what they are, `tty` because `isatty
 it. So a module a target cannot support is not one that
 fails to link — it is one a [capability clause](/reference/modules/) will not let that program import
 in the first place, and now one you can spot by its name.
+
+**`sysl.path` is the same rule one step further out**, and the clearest instance of it: not a
+submodule of `sysl.fs` but a module beside it, because it requires **nothing**. It touches no
+syscall — it is string manipulation whose rules happen to be per-platform — so one `getcwd` filed
+next to `join` would have taken the whole of path handling away from every program that has no
+operating system to ask. What that buys is concrete rather than tidy: a module loader can resolve an
+import and then say *which file* it could not read, which is only writable because the resolution
+never touched the disk.
 
 It is also why `sysl.posix.tty`, `sysl.posix.rand` and `sysl.posix.time` are modules of their own
 rather than functions in `sysl.term`, `sysl.rand` and `sysl.time`. **A requirement is module-wide**,

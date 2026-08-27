@@ -70,6 +70,39 @@ Naming the package for its own module is the obvious layout and reaches this wit
 run` never does, writing to a temporary file of its own, so a project can carry the collision until
 the first time somebody asks for a binary.
 
+## A package may carry examples
+
+**`examples/` at a project root is not part of the tree.** Everything else under a root compiles
+*into* it, which is what makes the exclusion necessary rather than convenient: a `.sysl` file with no
+`module` header is the anonymous root module wherever it sits, and a library may not have one — so
+without this a package could not carry a runnable demo at all, and every one of them would be a
+fenced block in a README that nothing compiles.
+
+```
+mypkg/package.hocon
+mypkg/sh/sysl/mypkg/mypkg.sysl     the library
+mypkg/examples/demo.sysl           a program, and not part of it
+mypkg/examples/bigger/main.sysl    a program of several files
+```
+
+The directory is left out of the library build, out of the C the package carries, out of the modules
+the package offers, and out of the walk `sysl test .` makes — that walk takes every `.sysl` under the
+root and refuses one that declares no module, so the exclusion has to reach it too or the feature
+does not work.
+
+**A program in it compiles against the package with nothing on the command line.** `sysl run
+mypkg/examples/demo.sysl` and `sysl run mypkg/examples/bigger` both find the package they sit under
+and use it as a library, exactly as a `--lib` naming it would — so the manifest's own dependencies,
+its C and its search paths all reach the demo.
+
+That is a rule about the shape of a path rather than a search: exactly two levels up, only where the
+intervening directory is literally `examples`, and only where a `package.hocon` is there. A manifest
+is looked for **beside** the sources everywhere else in this system, deliberately, because a search
+that walked upward would make a build depend on directories above the one it was given.
+
+**The exclusion is at the root and nowhere else.** `sh/sysl/mypkg/examples/` is an ordinary module
+named `sh.sysl.mypkg.examples`, so a package that wants the word still has it.
+
 ## A key this compiler does not know is reported and ignored
 
 A manifest is read by whatever compiler is in hand, which may be older than the manifest. So an

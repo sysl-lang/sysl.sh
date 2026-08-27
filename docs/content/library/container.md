@@ -89,8 +89,45 @@ true false
 **The annotation on `var ages` is required.** `map()` is a nullary generic, so its type arguments come
 from what receives it, and there is nothing else in that line to take them from.
 
-`map_with_capacity(n)` sizes the table for `n` entries up front, which is worth reaching for when the
-count is roughly known: the table is grown at three quarters full, so the storage is twice `n`.
+**An empty map holds no table at all, and does not allocate.** `map()` costs nothing; the first
+`put` makes the table. That matters far more than it looks, because no caller can see that they are
+paying: a map built inside a loop, held in a struct that is usually empty, or made on a branch that
+turns out not to be taken is a `malloc` and the `free` behind it, every time. A profile of an
+interpreter that gave every block its own scope — two maps per scope, one entry each — put **27% of
+its running time** in constructing and destroying maps nothing was ever read out of.
+
+`capacity()` is how that is visible from outside, and it is the one number here that might surprise:
+
+```sysl
+import sysl.container.{Map, map}
+
+var m: Map[string, int] = map()
+
+print(m.capacity(), m.len())
+
+m.put("k", 1)
+
+print(m.capacity(), m.get("k"))
+
+m.clear()
+
+print(m.capacity())
+```
+
+```output
+0 0
+8 Some(1)
+0
+```
+
+`clear` lets the table go entirely for the same reason, so a map used as scratch across a loop keeps
+nothing between passes and one that is cleared and never used again costs nothing at all.
+
+`map_with_capacity(n)` **still allocates up front**, which is the point of writing it: a caller who
+names a size is saying entries are coming. It sizes the table for `n` entries, and the table is grown
+at three quarters full, so the storage is twice `n`.
+
+A `Set` is a `Map` and inherits all of this, including the empty table.
 
 Walking hands back a pair per entry, in no particular order:
 
