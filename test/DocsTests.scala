@@ -72,7 +72,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And one more of each again for ranges: a range with both ends written is a value now, so the
     // section shows one bound, passed and returned, and refuses the two readings that have no value
     // — bounds that disagree, and an end left open.
-    "docs/content/reference/expressions.md"           -> (39, 21, 0),
+    "docs/content/reference/expressions.md"           -> (41, 22, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -80,7 +80,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
-    "docs/content/reference/declarations.md"          -> (29, 10, 1),
+    "docs/content/reference/declarations.md"          -> (33, 11, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
@@ -92,7 +92,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // wherever two types have to agree, so the page shows the meeting, and refuses the write through
     // what it met at — since a meeting that produced a writable view would be the hole the bit exists
     // to stop.
-    "docs/content/reference/arrays.md"                -> (22, 10, 1),
+    "docs/content/reference/arrays.md"                -> (24, 10, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
@@ -127,13 +127,13 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // section shows one in range and refuses one outside it.
     // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no
     // single block can be — a page block is one file, and the rule is about two.
-    "docs/content/reference/modules.md"                -> (17, 14, 14),
+    "docs/content/reference/modules.md"                -> (17, 15, 16),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/reference/errors.md"                 -> (24, 27, 2),
+    "docs/content/reference/errors.md"                 -> (25, 27, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -160,7 +160,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (30, 6, 11),
+    "docs/content/library/core.md"                     -> (31, 6, 11),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),
@@ -184,7 +184,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.
-    "docs/content/library/threads.md"                     -> (7, 6, 2),
+    "docs/content/library/threads.md"                     -> (10, 7, 2),
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),

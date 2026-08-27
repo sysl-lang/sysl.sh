@@ -174,10 +174,10 @@ back the other way when the reason has stopped mattering.
 argument whether or not it is wanted, which is right for a constant and wrong for anything that
 reads a file or builds a string.
 
-**`?` does not convert between error types.** A `Result[T, E]` propagated with `?` out of a function
-returning `Result[T, F]` is refused where `E` and `F` differ, and `map_err` is how the two are
-joined: `step()?` becomes `step().map_err(to_mine)?`. Widening `?` to convert through a trait is a
-question that stays open past 0.1.0.
+**`?` converts between error types through [`From`](#a-converts-through-from)**, so `map_err` is for
+a transformation the type system does not know about — a message reworded, a code renumbered — rather
+than for joining two layers of a program. `step().map_err(to_mine)?` is still what to write where the
+two are not related by a `From` block.
 
 ### They are written in sysl, and that is the point
 
@@ -304,33 +304,69 @@ cross(n: int) -> Result[int, string]
 '?' may only be used in a function returning sysl.Option, not sysl.Result[int, string]
 ```
 
-**The error types must match exactly.** There is no implicit widening, so a function with an error
-type of its own converts a callee's explicitly:
+### A `?` converts through `From`
+
+**Where the two error types differ, `?` converts through [`From`](/library/core/).** A function with
+an error type of its own writes `impl From[Theirs] for Mine` once, and every `?` across that boundary
+finds it — so the two layers are joined in the block that says how rather than at each call that
+crosses between them.
 
 ```sysl
-enum Fail
-    Bad
+enum Io
+    NotFound
 
+enum Fault
+    Disk(cause: Io)
+    Parse(what: string)
+
+impl From[Io] for Fault
+    from(value: Io) -> Fault = Fault.Disk(value)
+
+open(ok: bool) -> Result[int, Io] = if ok then Ok(7) else Err(Io.NotFound)
+
+read(ok: bool) -> Result[int, Fault]
+    val n = open(ok)?
+
+    Ok(n * 2)
+
+describe(r: Result[int, Fault]) -> string = r match
+    Ok(n) -> "ok " + str(n)
+    Err(Fault.Disk(_)) -> "disk"
+    Err(Fault.Parse(s)) -> "parse " + s
+
+print(describe(read(true)), describe(read(false)))
+```
+
+```output
+ok 14 disk
+```
+
+**The parameter is the source and `Self` is the destination**, which is the direction that lets a type
+accept conversions from types it does not own: the block is written where `Fault` is, and `Io` need
+never have heard of it. A type may implement `From` several times over — `From[int]` and `From[real]`
+for one type are two blocks — so an error type may accept every layer it sits above.
+
+Where there is **no** such block the `?` is refused, and the refusal names the one to write:
+
+```sysl
 half(n: int) -> Result[int, string]
     if n % 2 == 0 then Ok(n / 2) else Err("odd")
 
-other(n: int) -> Result[int, Fail]
+other(n: int) -> Result[int, bool]
     var v = half(n)?
 
     Ok(v)
 ```
 
 ```error
-'?' propagates a string error, but this function returns Fail
+a '?' converts through 'sysl.From', so 'impl From[string] for bool' is what joins the two layers
 ```
 
-That last rule is the shipping behaviour rather than the end state, and its ergonomic cost is real: a
-program with its own `AppError` cannot `?`-propagate a library's `IoError` without a manual step at
-each call. The eventual answer is a `From`-style conversion inserted by `?`, which is designed and
-waiting on something else — a type implements a trait **once**, so an `AppError` cannot be
-`From[IoError]` and `From[ParseError]` both, and lifting that needs a way for a use to say which
-implementation it means. The conversion is additive: turning it on later invalidates no exact-match
-`?` written before it.
+An `Option`'s `?` has nothing to convert: `None` carries nothing, so the two enums still have to be
+the same one and the rule above about the channels not crossing is unchanged.
+
+The conversion is a **widening**: every exact-match `?` written before it means what it always meant,
+and a `?` whose error types agree makes no call at all.
 
 **`?` is an expression**, so its unwrapped value flows straight into whatever surrounds it — `Ok(mk()?)`
 is ordinary, and a chain of hops is written as a sequence of `?`-bound locals.
@@ -436,6 +472,34 @@ The library's route goes through `exit`, which flushes on its way out; a compile
 to the target's trap instruction, which does not. So a program that printed diagnostics right up to
 the failing line will appear to have printed **none** of them if a bounds check is what stopped it.
 Reconciling the two so that every stop says why it stopped is an open question in the design.
+
+### Running out of stack, which is the third shape
+
+**A hosted program installs a handler for the fault an exhausted stack raises**, and says which of the
+two things happened rather than dying silently:
+
+```
+sysl: this program has overflowed its stack -- a recursion with no base case, or a walk over a
+structure that contains itself
+```
+
+```
+sysl: this program faulted on an address it does not own
+```
+
+Which of the two is decided by **where the faulting address lies** — just below the stack, or
+anywhere else — which is what Rust, Go and Java each do. Getting it wrong in the safe direction is
+the second message, so the first is worth trusting.
+
+**What the program had already printed comes out with it.** The handler flushes standard output
+before it stops, which recovers exactly the evidence a reader needs and which was lost before: the
+process died with the buffer in it, so a program that had printed twenty lines appeared to have
+printed none. The flush is attempted **after** the message, because it is not async-signal-safe — a
+fault raised inside the output machinery itself would deadlock, and the diagnostic is already out by
+then.
+
+**A freestanding target installs nothing**, having no signals to catch. Neither does an archive built
+with `sysl build-c`: what a C project links its own entry point to is that project's business.
 
 ## Turning a trap back into a value
 

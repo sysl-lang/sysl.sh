@@ -40,6 +40,7 @@ print(maybe.unwrap_or(0), "— and not one import above this line")
 | destruction | `Drop` | [the memory model](/reference/memory/) |
 | operators | `Add`, `Sub`, `Mul`, `Div`, `Rem`, `BitAnd`, `BitOr`, `BitXor`, `Shl`, `Shr`, `Neg`, `Not`, `Eq`, `Ord` | [expressions](/reference/expressions/) |
 | their identities | `Zero`, `One` | [expressions](/reference/expressions/), and [math](/library/math/) |
+| conversion between two types | `From` | [errors and contracts](/reference/errors/#a-converts-through-from) |
 | a range as a value | `Range` | [expressions](/reference/expressions/), and [seq](/library/seq/) |
 | subscripting and walking | `Index`, `IndexSet`, `Iterate` | below |
 | calling | `Fn0` … `Fn4` | below |
@@ -49,6 +50,41 @@ function that prints and exits. What the compiler knows is a short list of *name
 `Option` for its variants when it lowers a `?`, and it asks the `print` family which function renders
 an `int` — and it implements none of the behaviour behind them. Rewriting `printi` is something a
 program can do; rewriting `?` is not.
+
+## `From` — a value of one type built from a value of another
+
+**`From[T]` is how a type accepts a conversion from a type it does not own.** The parameter is the
+**source** and `Self` is the destination, which is the direction that matters: the block is written
+where the destination is, so a program's own error type can accept a library's without the library
+having heard of it. Written the other way round, the orphan rule would put every conversion in
+whichever module lost the argument.
+
+```sysl
+struct Celsius
+    deg: real
+
+struct Fahrenheit
+    deg: real
+
+impl From[Celsius] for Fahrenheit
+    from(value: Celsius) -> Fahrenheit = Fahrenheit(value.deg * 9.0 / 5.0 + 32.0)
+
+impl From[int] for Fahrenheit
+    from(value: int) -> Fahrenheit = Fahrenheit(real(value))
+
+print(Fahrenheit.from(Celsius(100.0)).deg, Fahrenheit.from(70).deg)
+```
+
+```output
+212.0 70.0
+```
+
+A type may implement it **several times over** — the two blocks above are one type accepting two
+sources — and a call says which it means by the argument it wrote.
+
+**`?` is the one thing in the language that reads it**, and it is what makes two layers of error type
+compose; see [errors](/reference/errors/#a-converts-through-from). Everywhere else it is an ordinary
+trait a program declares and calls for itself.
 
 ## Stopping the program
 

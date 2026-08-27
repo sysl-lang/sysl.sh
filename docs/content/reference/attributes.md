@@ -11,6 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
+| `@needs(...)` | an **annotation** — the capabilities reaching the declaration under it requires; the one an `extern` takes | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
 | `@export("...")` on a `struct` | an **annotation** — the name the type carries in a generated C header | the grammar |
 | `@no_alloc`, `@requires`, `@link`, `@include`, `@tests` | an **annotation** — a fact about the whole file, in its header | the grammar |

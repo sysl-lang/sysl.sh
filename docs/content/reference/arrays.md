@@ -574,6 +574,51 @@ A `&sync [N]T` does not convert either, for the reason it cannot be sliced. And 
 out on purpose: the raw-pointer tier is written out where it is used, and a view of pointed-at
 storage taken silently is the one case where nothing in the type says the elements are really there.
 
+### An empty literal is a view of nothing, and needs no allocator
+
+**`[]` where a view is wanted is the empty view**, which is the zero value of what a view is made of —
+no elements, no length, and nobody owning them. So it makes no storage and reaches no allocator, which
+is what lets a module that has given the heap up write one.
+
+```sysl
+@no_alloc
+
+val none: []const int = []
+var also: []int = []
+
+print(none.len, also.len)
+```
+
+```output
+0 0
+```
+
+It takes its element type from the position it stands at, having none of its own — an `[]` with
+nothing asking for a view is refused for exactly that reason.
+
+**A literal with elements in it is different**, and the difference is where the storage comes from: at
+a `[]T` such a literal builds a buffer of its own, which needs an allocator. Where the elements are
+laid out in the caller's frame instead, what is written is an array and a view of it — `[1, 2, 3][..]`
+— and that is the form a variadic call packs its arguments into; see
+[declarations](/reference/declarations/#a-parameter-may-collect-the-rest-of-the-call).
+
+**A sliced array literal takes its element type from the view that was asked for**, which is the one
+receiver with no type of its own:
+
+```sysl
+show(xs: []const &Display) -> unit
+    for x in xs
+        print(x)
+
+show([1, "hi", true][..])
+```
+
+```output
+1
+hi
+true
+```
+
 ## `[]const T` — a view that may not be written
 
 The `const` sits after the brackets, where `sync` sits after the `&`, and for the same reason: it is

@@ -80,8 +80,62 @@ print(a + b)
 '+' needs matching types, got int and long
 ```
 
-This includes the **shift amount**: in `x << 2` the literal `2` takes `x`'s type by the literal rule,
-and shifting by a value of some other type is written `x << u8(k)`.
+### A shift takes a count
+
+**A shift is the one exception, and its right operand may be any integer type.** `a + b` combines two
+values that have to agree on what they are; `x << n` asks for `x` shifted `n` places, and `n`'s width
+has nothing to do with `x`'s. That is C's reading, Rust's, Java's, Go's and Scala's, and the cast a
+program used to write for the compiler's benefit was noise in exactly the code — a hash, a bitset, a
+decoder — where widths are already being juggled.
+
+**The result is the shifted value's own type**, never the count's, so a byte shifted by a 64-bit
+count is still a byte and wraps as one.
+
+```sysl
+var x: u32 = 1
+var n: u8 = 5
+var wide: u64 = 3
+var b: u8 = 0x81
+
+print(x << n, (x << n) >> n)
+print(b << wide)
+```
+
+```output
+32 1
+8
+```
+
+The count must still be an **integer**, and the refusal names it as a count rather than as a
+mismatched operand.
+
+```sysl
+var x: u8 = 1
+
+print(x << 1.5)
+```
+
+```error
+'<<' shifts by a count, and real is not an integer
+```
+
+**A count wider than the value is clamped before it is narrowed**, which is what keeps the
+over-shift rule below meaning what it says: 256 places on a byte is a full shift, not — as
+truncating first would have it — a shift by nothing.
+
+```sysl
+var x: u8 = 1
+var n: u32 = 256
+
+print(x << n)
+```
+
+```output
+0
+```
+
+A **vector** is untouched: its count is lane-wise and is already the same register type, so the two
+sides of `v << w` still have to agree.
 
 ### What has arithmetic
 

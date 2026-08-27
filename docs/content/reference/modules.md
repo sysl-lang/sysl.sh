@@ -454,6 +454,61 @@ Two of the capabilities are checked differently, and the difference is worth kno
   the import graph, which is load-bearing: a qualified path reaches another module with no import at
   all, so a rule about imports would have missed the shorter of the two ways to write the mistake.
 
+### A declaration may name what reaching it needs
+
+**A module is a coarse unit for this question, and `@needs(...)` is the finer one.** `@requires(heap)`
+written on `sysl` would say something false about most of it, so a library wanting the granularity had
+to split modules — which is letting an annotation decide the library's shape. `@needs` goes above one
+**declaration**, and what it says is charged to whoever reaches it rather than to whoever holds it.
+
+```sysl
+module oskit.disk
+
+@needs(os)
+fetch(block: int) -> int = block
+```
+
+The two are different statements and that is why they are different words. A file's `@requires(...)`
+is about the **module**: it cannot be built at all without the capability, and it is checked once,
+against the target. A declaration's `@needs(...)` is about one declaration: reaching it needs the
+capability, and it is checked at the **call**, in the caller's module — which is where the line a
+reader can change is.
+
+```sysl
+@no_os
+
+@needs(os)
+fetch(block: int) -> int = block
+
+print(fetch(1))
+```
+
+```error
+this reaches 'fetch', which needs 'os', and this module declared '@no_os'
+```
+
+It is **transitive**, because reaching is: a module that gave a capability up may not arrive at such
+a declaration through a third that has it.
+
+**The declaration it exists for is `extern`.** Every other declaration has a body the compiler reads —
+a function that makes heap storage is found by looking — so an `extern` was the one route by which a
+module that had given up an environment capability could reach `open()`. Nothing but the declaration
+itself can close that.
+
+```sysl
+module oskit.disk
+
+@needs(os)
+extern "getpid" pid() -> int
+```
+
+The module's own clause stays the **floor**: a declaration may add to what its module needs and cannot
+take anything away. A declaration that says nothing costs its callers nothing, which is what makes the
+annotation additive — a program that writes none is refused exactly what it was refused before.
+
+An `extern` takes this and no other annotation. It has no body, so what `@pure`, `@tailrec` and the
+rest are about is not there to describe.
+
 ### A `@tests` file states its own capabilities
 
 A [`@tests` file](/reference/attributes/) is scaffolding: `sysl test` keeps it and every other build

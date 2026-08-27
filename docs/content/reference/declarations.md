@@ -523,6 +523,114 @@ print(apply(), apply(x -> x + 1))
 A **closure's** parameter declares no default. A call reaches a closure through the `Fn` traits,
 which carry the types and not the names, so there would be nothing at the call to fill one from.
 
+### A parameter may collect the rest of the call
+
+**`xs: ...T` collects a call's trailing arguments into a `[]const T`**, so a function that takes a
+variable number of values has one parameter rather than an arity per shape. The body sees an ordinary
+slice; the call writes the values out.
+
+```sysl
+total(xs: ...int) -> int
+    var s = 0
+
+    for x in xs
+        s += x
+
+    s
+
+print(total(1, 2, 3), total(7), total())
+```
+
+```output
+6 7 0
+```
+
+The parameters in front of it are ordinary and may be named; a call that supplies nothing for the rest
+parameter gets the **empty slice**, which is what "the rest" means when there is none.
+
+```sysl
+label(tag: string, xs: ...int) -> string
+    var out = tag
+
+    for x in xs
+        out = out + " " + str(x)
+
+    out
+
+print(label("sum", 1, 2))
+print(label(tag = "none"))
+```
+
+```output
+sum 1 2
+none
+```
+
+**The heterogeneous form is the same parameter at a trait object.** `...&Display` is what a checked
+`print`-alike takes, and each argument is erased where it stands.
+
+```sysl
+show(xs: ...&Display) -> unit
+    for x in xs
+        print(x)
+
+show(1, "hi", true)
+```
+
+```output
+1
+hi
+true
+```
+
+**The array a call packs is laid out where the call is written**, not on the heap — it is the array
+literal `[a, b, c][..]` the program would otherwise have written by hand — so a variadic call costs no
+allocator and a module that gave one up may still make one.
+
+`xs...` at a call hands an **existing slice** straight through, which is the case a rewrite cannot
+cover: a function forwarding its own tail has a slice and not a list of values.
+
+```sysl
+total(xs: ...int) -> int
+    var s = 0
+
+    for x in xs
+        s += x
+
+    s
+
+forward(xs: ...int) -> int = total(xs...)
+
+var have = [7, 8]
+
+print(forward(4, 5, 6), total(have[..]...))
+```
+
+```output
+15 15
+```
+
+**Nothing may follow it**, because the arguments that would be the next parameter's are already
+inside it.
+
+```sysl
+f(xs: ...int, last: int) -> int = last
+
+print(f(1))
+```
+
+```error
+collects the rest of the call, so nothing can follow it
+```
+
+Its arguments are **positional**: a name picks out one parameter and this one takes as many as are
+left. It declares no default either, a call that leaves it out having an answer already.
+
+**It is not C's ellipsis**, which is the other variadic and is written `...` with no name and no type
+— that tail is walked with `va_arg` and is the foreign one; see [ffi](/reference/ffi/). A declaration
+may write one of them, and an `extern` may write only C's: what this form hands over is a sysl slice,
+which is three words with an owner in them and not what a C function was compiled to read.
+
 ### Overloading
 
 **A name may be declared more than once, and every use of it still means exactly one declaration.**

@@ -439,6 +439,127 @@ The spin is not `SpinLock`'s, either. A failed exchange **gives the processor up
 turning round again, so a waiter cannot starve the holder the way a pure spin can on one core, and
 the hold may be as long as it likes. What it does not do is *sleep*: there is no wait queue.
 
+## `Channel[T]`
+
+**A bounded queue two threads hand values across**, and the one place the rule about leaving a
+concurrency domain is asked of a **value** rather than of an address. Everything else on this page
+shares by address — `spawn` hands a `*T`, `Mutex[T]` hands a `*T` — and what crosses is a pointer
+whose far end both threads are looking at. A channel is the other shape: a value goes in on one
+thread and comes out on another, and the two are never looking at one object.
+
+```sysl
+import sysl.posix.threads.*
+
+var slots: [4]int = [0; 4]
+var ch = channel(slots[..])
+
+print(ch.capacity(), ch.len(), ch.is_closed())
+print(try_send(&ch, 1), try_send(&ch, 2))
+print(try_receive(&ch), try_receive(&ch), try_receive(&ch))
+```
+
+```output
+4 0 false
+true true
+Some(1) Some(2) None
+```
+
+| | |
+|---|---|
+| `channel(slots)` | an empty channel over storage the caller supplies |
+| `send(&ch, v)` | puts a value in, waiting while full; `false` only if closed |
+| `try_send(&ch, v)` | the same without waiting |
+| `receive(&ch)` | takes one out, waiting while empty; `None` once closed **and drained** |
+| `try_receive(&ch)` | the same without waiting |
+| `ch.close()` | no more will arrive; what already has is still taken |
+| `ch.capacity()`, `ch.len()`, `ch.is_closed()` | what it holds and whether it is shut |
+
+**The storage is the caller's**, which is this module's house style rather than a limitation —
+`Mutex[T]` wraps a value the caller built and `spawn` takes an address the caller has. What it buys
+is that a channel needs no allocator at all, so it is available to a program that gave the heap up,
+and its capacity is a number the program chose. The storage has to outlive every thread holding the
+channel, which is the contract `spawn(&body, &state)` already has with whatever `state` points at.
+
+```sysl
+import sysl.posix.threads.*
+
+struct Feed
+    ch: Channel[int]
+
+feeder(f: *Feed) -> unit
+    for i in 1..5
+        send(&f.ch, i)
+
+    f.ch.close()
+
+var slots: [2]int = [0; 2]
+var f = Feed(channel(slots[..]))
+var running = spawn(&feeder, &f) match
+    Some(t) -> t
+    None -> panic("the thread did not start")
+
+var total = 0
+
+loop
+    receive(&f.ch) match
+        Some(v) -> total += v
+        None -> break
+
+print(running.join(), total)
+```
+
+```output
+true 15
+```
+
+Five values go through a ring of two, so the producer really does fill it and really is woken.
+
+### The four transfers are functions, and `@crossing` is why
+
+`send(&ch, v)` rather than `ch.send(v)`, because **no annotation in sysl marks a member** — and
+`send` needs `@crossing(value)`, which is what holds a caller to the rule about what may reach
+another domain. The refusal for an annotation above a method says exactly what to do about it: write
+it on the wrapper a caller already goes through. So the transfers take the channel by address, which
+is `spawn(&body, &state)`'s own shape.
+
+Marking the way **in** is the whole of the check: nothing can be taken out that was not put in.
+
+```sysl
+import sysl.posix.threads.*
+
+struct Node
+    n: int
+
+var slots: [2]&Node = [Node(0); 2]
+var ch = channel(slots[..])
+
+print(send(&ch, Node(1)))
+```
+
+```error
+reaches another concurrency domain, so every count inside it has to be atomic
+```
+
+### A waiter yields rather than sleeps
+
+There is no wait queue in this module, so a full `send` and an empty `receive` give the processor up
+and try again — the same trade `Mutex` makes, and for the same reason. That costs a context switch
+per attempt where a futex would cost none; it is a scheduler call rather than a spin, so a waiter
+cannot starve the thread it is waiting for.
+
+### The ring is a pointer, and that is the crossing rule
+
+The slots are held as a `*T` and a count rather than as a `[]T`, and it is not a preference: **a
+struct holding a view may not reach another domain at all**, because a view owns its elements through
+a count that is not atomic. A channel that kept the slice would have been refused at the `spawn` that
+shares it — one line before the first `send`, and for the only thing the type is for. A raw pointer
+carries no count, so it crosses; the caller writes a slice at `channel(…)` and never sees the pointer.
+
+**The copying half of the crossing rule is still not written.** [The memory
+model](/reference/memory/) allows a channel to take a heap-backed view *because it copies the bytes*,
+and this one assigns a slot — the same share the sender held. So a view is refused here exactly as it
+is at `spawn`.
+
 ## `yield_now` and `current`
 
 ```sysl
@@ -497,7 +618,8 @@ language cannot keep.
 `@crossing(arg)`, so the pointer it takes is looked *through* and a state whose counts are not all
 atomic is refused where the call is written. That is also why this API takes an address rather than a
 value: **a `spawn` taking a `T` would be claiming the *copying* half of the crossing rule**, which
-belongs to a channel and is not written.
+belongs to a channel and is still not written — `Channel[T]` above assigns a slot rather than copying,
+so it refuses a view exactly as `spawn` does.
 
 The unchecked half of that row is where the annotation is **absent**. A facility with no
 `@crossing` on it is a boundary the compiler was never told about, and there is no way to guess one:
