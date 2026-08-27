@@ -100,7 +100,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And the associated-type section on top of that: four more running and seven more refused,
     // since a feature whose whole point is what an implementation may leave unwritten owes its
     // edges as programs.
-    "docs/content/reference/traits.md"                -> (37, 33, 0),
+    //
+    // And the two views of a slice on top of that: two more running and one more refused, since a
+    // block for `[]T` reaches a `[]const T` receiver now — so the page shows the covering, the write
+    // that the read-only instance refuses, and the same member writing freely on a `[]int`.
+    "docs/content/reference/traits.md"                -> (39, 34, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may

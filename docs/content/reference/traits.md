@@ -722,7 +722,83 @@ makes one; a lookup finding nothing under the type's own key falls back to it. A
 
 **A `string` is not covered by `[]T`.** It is a view of bytes that are valid UTF-8, and that invariant
 is the whole difference between it and a `[]u8` — a block written for every slice has said nothing
-about it. `"hi".bytes` is a `[]u8` and is covered.
+about it. `"hi".bytes` is a `[]const u8` and is covered, which is the next rule.
+
+#### Both views of a slice are one shape
+
+`[]T` and `[]const T` are one type with a bit rather than two types
+([`arrays.md`](/reference/arrays/#const-t--a-view-that-may-not-be-written)), and they share the one
+shape. A block written for either subject therefore reaches a receiver of either view:
+
+```sysl
+trait Count
+    count(self) -> usize
+
+impl[T] Count for []T
+    count(self) -> usize = self.len
+
+var xs = [1, 2, 3]
+val view: []const int = xs[..]
+
+print(view.count(), "hi".bytes.count())
+```
+
+```output
+3 2
+```
+
+The block is written against what a slice *is* — a pointer and a count of `T` — and whether this one
+may be written through is no part of that.
+
+**What the covering does not do is lend a member a licence its receiver never had.** The block is
+made real **once per view**, so the instance a read-only receiver reaches has a `self` it may not
+write through. A member that writes is refused, in its own body:
+
+```sysl
+trait Bump
+    bump(self)
+
+impl[T] Bump for []T
+    bump(self)
+        self[0] = self[0]
+
+var xs = [1, 2, 3]
+val view: []const int = xs[..]
+
+view.bump()
+```
+
+```error
+made real at the read-only view because that is what the receiver was
+```
+
+The refusal lands on the line that writes rather than on the call, which is where a reader can act on
+it. It has to say more than the write, though: the block's own file wrote `[]T` and never typed a
+`const`, so the message names the receiver that chose this instance. `bump` is callable as it always
+was — on a `[]int`:
+
+```sysl
+trait Bump
+    bump(self)
+
+impl[T] Bump for []T
+    bump(self)
+        self[0] = 9
+
+var xs = [1, 2, 3]
+
+xs[..].bump()
+
+print(xs[0])
+```
+
+```output
+9
+```
+
+**Write `[]const T` as the subject where the members only read.** Nothing forces it and both forms
+reach both views, but the subject is where a reader looks to find out what a block does with what it
+is given, and a promise made there is one nobody has to discover from a refusal.
 
 **A shape and a written-out type overlap, and an unmarked overlap is refused.** Both blocks would say
 how a `[]int` renders, so whichever is written second is refused and the diagnostic names the one
