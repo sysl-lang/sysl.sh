@@ -40,7 +40,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.env`](/library/env/) | the environment a program was started with — `get`, `get_or`, `is_set`. Reading only | `os` |
 | [`sysl.process`](/library/process/) | starting another program and waiting for it — `run`, `capture`, `Status`, and no shell anywhere in it | `os` |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
-| [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, and `Mutex[T]` | `posix` |
+| [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, `Mutex[T]`, and `Channel[T]` — the bounded queue two threads hand values across | `posix` |
 | [`sysl.term`](/library/term/) | the escape sequences a terminal understands — colour, emphasis, and the screen | — |
 | [`sysl.posix.tty`](/library/term/#whether-to-write-escapes-at-all-sysl-posix-tty) | whether to write them at all — `is_tty`, `color_wanted`, `color`, `color_err` — and taking the terminal over: `raw`, `cooked`, `flush`, `tty_writer` | `posix` |
 | [`sysl.term.edit`](/library/term/#reading-a-line-sysl-term-edit) | a line editor for a terminal with no line discipline — echo, editing, history, over a `Reader` and a `Writer` | — |
@@ -83,6 +83,48 @@ allocation is refused at the **call** rather than at the import — so a program
 imports `sysl.text` and still gets `from_utf8`, the cursors, and `Search`, and is refused only where
 it reaches for `join` or a `StrBuilder`. A capability that gated whole modules would have cost the
 allocator-free subset most of the library it can actually use.
+
+## What belongs here, and what is a package
+
+**The library is what a program cannot get on with the language without.** That is the whole rule, and
+it is a principle rather than a list because a list goes stale the first time somebody adds a module
+and answers nothing about the next one.
+
+Read as a question to ask of a candidate: **can a program take part in the language without it?**
+
+- **Yes, and it is a domain** — matrices, an FFT, a JSON parser, a QR encoder, a physics engine.
+  Those are **packages**, fetched by coordinate. They are not lesser; they are simply not what
+  *everybody* has to have, and a standard library that carried one carries an opinion about what
+  everybody is writing.
+- **No, because the language desugars onto it** — `Option` and `Result` for `?`, `Display` and the
+  `print` family for `print`, `Iterate` for `for … in`, the operator traits for `+`, `Drop` for a
+  destructor, `From` for a `?` across two error types. These are in `sysl` itself, unimported, because
+  a program that had to name them would be naming part of the language.
+- **No, because it is the platform** — the filesystem, the clock, the environment, threads, the
+  terminal, starting another process. These are modules a program **imports**, and they are here
+  rather than in packages because there is one right answer per operating system and every program
+  that wants one wants the same one.
+- **No, because all code touches it** — text, slices, sequences, containers, hashing, formatting,
+  encoding. The line here is the vaguest of the four and the test is the same: a program that avoided
+  `sysl.text` would be writing UTF-8 validation, which is not a domain, it is a tax.
+
+**The `display_*` renderers are the boundary case, and they sharpen the rule rather than escaping
+it.** No desugaring names one, so the letter of the first test puts them in a `sysl.fmt` — and the
+split was tried and works. They stay in `sysl` because **a program writing `impl Display` is not
+reaching for a library; it is implementing a language feature**, and the renderers are the vocabulary
+that contract is written in. A program that could not write its `display` body without an import has
+been asked to name part of the language.
+
+**Two things have left for being domains**, which is the rule working rather than a reversal: matrices
+and vectors went out to [`linalg`](https://github.com/sysl-lang/linalg) and the FFT to
+[`fft`](https://github.com/sysl-lang/fft). Both were leaves — nothing else in the library imported
+them — and both were a *subject* in a library otherwise made of the platform and of things all code
+touches. `sysl.math.complex` stays, and the reason generalises: standard libraries across languages
+carry the complex **type** and leave the algorithms over it to packages.
+
+**What "complete" means here is that the four answers above are covered, not that the list is long.**
+A module added because it would be useful, rather than because one of the four asks for it, is a
+package that has not been written yet.
 
 ## Where some of this already is
 
