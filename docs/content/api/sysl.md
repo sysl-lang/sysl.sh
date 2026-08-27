@@ -689,7 +689,7 @@ trait From[T]
 ```
 
 A value of one type built from a value of another, without either type being changed to know
-about the other (`reference/errors.md § A '?' converts through 'From'`).
+about the other (`reference/errors.md § A ? converts through From`).
 
 **It is what `?` converts through.** A function returning `Result[T, Fault]` may write `?` on a
 call returning `Result[U, Io]` exactly when `Fault` implements `From[Io]`, so the two layers of

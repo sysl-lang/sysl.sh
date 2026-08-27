@@ -445,12 +445,18 @@ print(b.len())
 ```
 
 ```error
-this reaches 'sysl.buf.buf.int', which makes heap storage, and this module declared '@no_alloc'
+this reaches 'sysl.buf.Buf.push.int', which makes heap storage, and this module declared '@no_alloc'
 ```
 
-Both `buf()` and the `push` are named, because [`alloc` is checked on what a module
-*calls*](/reference/modules/). There is no allocator-free `Buf` and there cannot be one: growing is
-the whole of what it does.
+**The `push` is named and `buf()` is not, and the difference is worth reading.** [`alloc` is checked
+on what a module *calls*](/reference/modules/), at the smallest expression that still reaches an
+allocator — and **an empty `Buf` reaches none**. `buf()` is `Buf([], 0)`, and an empty view is
+`{null, null, 0}`: the zero value of what a view is made of, with no elements, no length and nobody
+owning them. So building one costs nothing and the refusal falls where the storage is really made.
+
+There is still no allocator-free `Buf` and there cannot be one: growing is the whole of what it does.
+What an allocator-free module may now do is *hold* an empty one — which is what a function answering
+"no results" wants, and what it could not do before.
 
 ## `ByteSink`
 
