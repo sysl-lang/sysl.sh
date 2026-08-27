@@ -85,7 +85,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
     "docs/content/reference/patterns.md"              -> (14, 13, 0),
-    "docs/content/reference/memory.md"                -> (33, 22, 0),
+    "docs/content/reference/memory.md"                -> (34, 22, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     // One more running and one more refused: the two views of a slice meet at the read-only one
@@ -127,13 +127,13 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // section shows one in range and refuses one outside it.
     // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no
     // single block can be — a page block is one file, and the rule is about two.
-    "docs/content/reference/modules.md"                -> (17, 13, 12),
+    "docs/content/reference/modules.md"                -> (17, 14, 14),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/reference/errors.md"                 -> (23, 27, 2),
+    "docs/content/reference/errors.md"                 -> (24, 27, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -167,7 +167,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/container.md"                -> (5, 0, 3),
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.
-    "docs/content/library/io.md"                        -> (6, 3, 3),
+    "docs/content/library/io.md"                        -> (7, 3, 3),
     "docs/content/library/fs.md"                        -> (7, 5, 3),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
@@ -178,7 +178,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
     // One more runnable: a zone is anything callable, so a closure answers `resolve` as a declaration
     // does — which is what a fixed offset, or one read out of a captured table, is written as.
-    "docs/content/library/time.md"                       -> (20, 4, 4),
+    "docs/content/library/time.md"                       -> (22, 4, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
     "docs/content/library/process.md"                    -> (5, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
@@ -188,7 +188,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),
-    "docs/content/library/slices.md"                      -> (8, 0, 0),
+    "docs/content/library/slices.md"                      -> (9, 0, 0),
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.

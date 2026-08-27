@@ -142,6 +142,22 @@ print(xs)
 [5, 3, 2, 1]
 ```
 
+The pair is `sort_by` and `sort_stable_by`, and `is_sorted_by` asks the same question of a slice
+somebody else ordered — which is what an assertion in a test wants, and what a caller checks before
+paying for a sort it may not need:
+
+```sysl
+import sysl.slices.{is_sorted, is_sorted_by}
+
+var xs = [5, 3, 2, 1]
+
+print(is_sorted(xs), is_sorted_by(xs, (a, b) -> b < a))
+```
+
+```output
+false true
+```
+
 **Which one you want is a real question.** `sort` is faster and says nothing about equal elements;
 `sort_stable` promises their order survives. That only matters for a type whose equality does not mean
 identity — a record ordered on one field — and when it matters, it matters a great deal.
@@ -205,6 +221,11 @@ of one slice be compared.
 The slice must already be sorted by the same order you are searching with. Nothing checks it — that
 would cost a linear scan on every search and defeat the point — and the answer for an unsorted slice
 is unspecified rather than wrong in some particular way.
+
+`binary_search_by` takes the comparison, exactly as the sorts' `_by` forms do, and it is the one to
+reach for on a slice ordered by anything but `<` — searching with an order the slice was not sorted
+by is the mistake the paragraph above describes, and it is easiest to make when the sort took a
+comparison and the search did not.
 
 ## Handing a slice to C
 

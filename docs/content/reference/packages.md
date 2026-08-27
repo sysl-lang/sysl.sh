@@ -70,6 +70,38 @@ Naming the package for its own module is the obvious layout and reaches this wit
 run` never does, writing to a temporary file of its own, so a project can carry the collision until
 the first time somebody asks for a binary.
 
+## A key this compiler does not know is reported and ignored
+
+A manifest is read by whatever compiler is in hand, which may be older than the manifest. So an
+unrecognized key is **warned about and skipped**, and the rest of the file still takes effect:
+
+```
+package.hocon: 'profiles' is not something this sysl understands, and is ignored — either it is a
+               misspelling, or it was added by a newer compiler
+```
+
+That is the middle of three, and the other two are worth naming because the choice is permanent —
+whatever the first stable release does with an unknown key is the compatibility floor every later
+manifest has to clear. **Refusing** would mean no key could ever be added without breaking every
+released compiler, which for a format whose consumers pin coordinates is a promise not to grow.
+**Ignoring silently** is the failure that reads as success: a mistyped `dependencis` block does
+nothing and says nothing.
+
+A **dependency's** unknown keys are reported with the package root in front of them, because that is
+the case a manifest cannot report for itself — a package written against a newer sysl, being built by
+an older one:
+
+```
+/…/cache/github.com/sysl-lang/thing@0.2.0: package.hocon: 'profiles' is not something this sysl
+understands, and is ignored — …
+```
+
+**Inside `dependencies` and `allocator` an unknown key is still refused**, and the asymmetry is the
+point: those are a closed vocabulary rather than a growing one. Somebody who wrote
+`versoin = "1.0.0"` believes they have pinned a version, and resolving whatever the default branch
+happens to be while they believe it is worse than stopping. The same judgement applies to a
+misspelled capability.
+
 ## The oldest compiler a package builds with
 
 **`package.sysl` states a floor**, and a build stops there rather than somewhere inside the package:

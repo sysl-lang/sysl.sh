@@ -122,6 +122,23 @@ Building one needs an `llvm-ar` as well as a `clang`, because a `.syslib` **is**
 [installation](/getting-started/installation/) has the note about which `ar` and why the platform
 one will not do.
 
+**`--cc` and `--ar` name them, where a search would not find the right ones.**
+
+```
+sysl build hello.sysl --cc /opt/homebrew/opt/llvm/bin/clang
+```
+
+They are the answer to a machine with more than one toolchain on it: a vendor's clang trimmed to that
+vendor's processors, an LLVM installed beside the system one, a cross toolchain that has to be
+reached by path. A named compiler is **not searched past and not fallen back from** — somebody who
+wrote down which compiler to use is owed an error rather than a different compiler — so naming one
+that cannot run is refused rather than quietly replaced.
+
+`--cc` reaches every place sysl runs clang: the link, a package's carried C, the `c const` probe, and
+the standard module's own rebuild. That last one is the reason it is worth saying: the standard
+module is rebuilt automatically when nothing usable is at the default path, and a flag that stopped
+applying at that moment would change compiler halfway through a build and blame the library.
+
 **It compiles the package's C, so it asks what that C needs.** A package that declares its
 [header requirements](/reference/packages/#headers-a-package-needs-and-does-not-carry)
 is refused here without `--include-path <name>=<dir>`, exactly as it is for a `build` — this being

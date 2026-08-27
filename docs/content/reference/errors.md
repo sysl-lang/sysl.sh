@@ -123,6 +123,62 @@ true -1 no
 
 `unwrap_err` is `Result`'s alone because `Option`'s empty case carries nothing to hand back.
 
+The **transforming** ones build a new value out of the old one, and carry the other case through
+untouched:
+
+| on `Option[T]` | on `Result[T, E]` | is |
+|---|---|---|
+| `map(f)` | `map(f)` | the payload transformed; absence or failure carried through |
+| — | `map_err(f)` | the failure transformed; the payload carried through |
+| `and_then(f)` | `and_then(f)` | `map` for an `f` that may itself answer nothing, so the two do not nest |
+| `or_else(f)` | `or_else(f)` | another attempt where this one had nothing; `Result`'s hands `f` the failure |
+| `filter(pred)` | — | the payload only where it passes |
+| `unwrap_or_else(f)` | `unwrap_or_else(f)` | the payload, or one computed; `Result`'s computes it from the failure |
+| `ok_or(e)` | — | `Ok(payload)`, or `Err(e)` for absence |
+| — | `ok()` / `err()` | the success, or the failure, as an `Option` |
+
+```sysl
+double(n: int) -> int = n * 2
+halve(n: int) -> Option[int] = if n % 2 == 0 then Some(n / 2) else None
+width(e: string) -> int = int(e.len)
+
+main()
+    val some: Option[int] = Some(21)
+    val none: Option[int] = None
+    val four: Option[int] = Some(4)
+    val bad: Result[int, string] = Err("abc")
+
+    print(some.map(double), none.map(double))
+    print(some.and_then(halve), four.and_then(halve))
+    print(some.ok_or("missing"), none.ok_or("missing"))
+    print(bad.map_err(width), bad.ok(), bad.err())
+```
+
+```output
+Some(42) None
+None Some(2)
+Ok(21) Err(missing)
+Err(3) None Some(abc)
+```
+
+`and_then` is the one worth reading twice. `map` of a function that itself answers an `Option` gives
+an `Option[Option[U]]`; `and_then` gives an `Option[U]`, which is what a chain of fallible steps
+wants. On a `Result` it is `?` written as an expression, for the places `?` cannot go — a chain
+being built as an argument, or a body that is one expression.
+
+`ok_or` and `ok`/`err` are the crossings between the two, and they are as much the point as the
+mapping is: `ok_or` is what makes a lookup usable in a body that propagates with `?`, and `ok` goes
+back the other way when the reason has stopped mattering.
+
+`unwrap_or_else` is the companion of `unwrap_or` rather than a replacement: `unwrap_or` evaluates its
+argument whether or not it is wanted, which is right for a constant and wrong for anything that
+reads a file or builds a string.
+
+**`?` does not convert between error types.** A `Result[T, E]` propagated with `?` out of a function
+returning `Result[T, F]` is refused where `E` and `F` differ, and `map_err` is how the two are
+joined: `step()?` becomes `step().map_err(to_mine)?`. Widening `?` to convert through a trait is a
+question that stays open past 0.1.0.
+
 ### They are written in sysl, and that is the point
 
 The forcing members stop the program without any compiler support of their own:

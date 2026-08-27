@@ -1452,6 +1452,59 @@ A `weak T` is refused for the same reason, and the fat types — a slice, a `str
 and one more: they are wider than an address, so there is nothing to reinterpret. What comes out is a
 `*T`, and reaching anything else from it is the ordinary route through `*p`.
 
+### Storage the compiler did not lay out may not hold a counted value
+
+`ptr_cast` says which type some bytes are. It does not make those bytes into storage the language
+manages, and the difference has one consequence worth stating on its own: **a `&T`, a `weak T`, a
+slice or a `string` may not be written into memory reached that way** — nor may a struct or an enum
+that carries one.
+
+The reason is what an assignment to such a field *does*. It releases whatever occupied the slot
+before writing the new value, and a `&T` is non-nullable, so there is no empty state to guard raw
+bytes with: the release walks whatever the bytes happened to look like. Zeroing the storage first
+does not help either — a zeroed slot is not an empty box, it is a null the release still follows.
+
+**Nothing refuses this**, and that is why it is written here. The compiler knows the field's type but
+not where the pointer came from: `p.next = other` through a `p` that is `&local` writes a field it
+laid out, whose previous occupant is a real box, and the release is correct; through a `p` that is
+`ptr_cast` over an arena the same line walks raw bytes. Telling the two apart needs provenance the
+front end does not track.
+
+**Keep an index, a raw pointer, or a copy instead.** An arena of nodes linked by index is the
+ordinary answer, and it costs nothing a box was buying:
+
+```sysl
+struct Node
+    value: int
+    next: usize          // an index into the arena, not a '&Node'
+
+const nowhere: usize = 999
+
+main()
+    var arena: [4]Node = [Node(0, nowhere); 4]
+
+    arena[0] = Node(10, 1)
+    arena[1] = Node(20, 2)
+    arena[2] = Node(30, nowhere)
+
+    var at: usize = 0
+    var total = 0
+
+    while at != nowhere
+        total += arena[at].value
+        at = arena[at].next
+
+    print(total)
+```
+
+```output
+60
+```
+
+The same rule read from the other side: a type whose fields are all scalars, raw pointers and arrays
+of those is free to live in storage you carved. That covers every C ABI struct, which is what the raw
+tier is mostly for.
+
 `sizeof`, `alignof` and `offsetof`, which measure what is being carved, are on the
 [expressions](/reference/expressions/) page.
 

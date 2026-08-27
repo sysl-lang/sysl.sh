@@ -26,6 +26,10 @@ find_byte(b: []const u8, c: u8) -> Option[usize]
 line_text(b: []const u8) -> string
 try_line_text(b: []const u8) -> Result[string, Utf8Error]
 
+read_all(r: *Reader) -> Buf[u8]
+read_all_text(r: *Reader) -> Result[string, Utf8Error]
+read_exact(r: *Reader, into: []u8) -> []const u8
+
 enum LineEnding
     Lf
     CrOrLf
@@ -42,6 +46,48 @@ lines_ending(r: *Reader, ending: LineEnding) -> Lines
 That is the whole module. Its shape is [`Writer`](/library/core/) turned around, deliberately: one
 method on bytes, a latch rather than a `Result`, and `*self` on both so a source can be stateful and
 still object-safe for a raw trait object — which is what lets a reader need no allocator.
+
+## Reading the lot, and filling a slice
+
+`read` answers whatever **one** call could fill, and a short answer is not the end of anything — a
+pipe with one write in it so far, a socket, and a terminal all answer short routinely. So *"read
+once"* and *"fill this"* are different requests, and three functions are the loops that turn one into
+the other:
+
+```sysl
+import sysl.io.{bytes_reader_at_most, read_all, read_all_text, read_exact}
+
+main()
+    var r = bytes_reader_at_most("hello".bytes, 2)
+    var into: [3]u8 = [0; 3]
+
+    print(read_exact(&r, into).len)
+    print(read_all(&r).len())
+
+    var t = bytes_reader_at_most("hello".bytes, 1)
+
+    print(read_all_text(&t))
+```
+
+```output
+3
+2
+Ok(hello)
+```
+
+`bytes_reader_at_most` is what poses the case: it hands back at most that many bytes per call
+whatever it was offered. Nothing in the block above would notice the difference against a reader that
+always fills, which is exactly why the loops are worth having written once — the two mistakes in a
+hand-rolled version are stopping at the first short read, and taking the length from the slice you
+offered rather than from the one you were handed.
+
+`read_all_text` has **no panicking twin**, and that is deliberate. `line_text` has one because a
+program reading a file it expects to be text has nothing sensible to do with a bad line; a whole
+stream is exactly what arrives off a wire, out of a serial port, or from a file somebody else wrote,
+so the caller is told rather than stopped.
+
+`read_exact` hands back a prefix of `into` exactly as `read` does, so a caller compares `got.len`
+against what it asked for rather than being given a count it might forget to apply.
 
 ## The latch is required, not declared
 

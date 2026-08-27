@@ -85,13 +85,54 @@ case is the wordier one.
 public until restricted, and that is the precedent here. The low-ceremony common case — a small module
 whose declarations are meant to be used — writes no modifier, and encapsulation is the deliberate act.
 
-### A restriction is about naming, not about existence
+### A file-private name is scoped to its file
 
-**A modifier decides who may write a name; it never makes a second namespace.** A file-private
-declaration still belongs to its module and still spends its name there, so a sibling file cannot
-declare something else of that name. The five declaration forms take a modifier; an `impl` takes
-none, having no name for one to restrict; and an **enum's variants carry the enum's own**, since a
-type nobody outside may name is not one whose variants they may construct.
+**A bare `private` restricts the namespace as well as the reach**, so two files of one module may
+each declare their own `Limit`:
+
+```sysl
+// m/one.sysl
+module m
+private const Limit: usize = 1
+from_one() -> usize = Limit
+```
+
+```sysl
+// m/two.sysl
+module m
+private const Limit: usize = 2
+from_two() -> usize = Limit
+```
+
+Each file names its own. That is the same position Rust, C and Go take for their file- and
+crate-private equivalents — a `static` in one C translation unit does not collide with a `static` of
+that name in another — and it is what the modifier is *for*: the reason to keep a helper to its file
+is that `Limit`, `helper`, `check` are local matters, and a rule that hid the name while still
+spending it left a module of any size with `MaxCallDepth` beside `MaxHashDepth` for two bounds that
+were each one file's business.
+
+**Inside one file it is still a duplicate**, which is the ordinary case and is unchanged:
+
+```sysl
+private const Limit: usize = 1
+private const Limit: usize = 2
+
+print(Limit)
+```
+
+```error
+constant Limit is already declared
+```
+
+**And a private name against a sibling file's PUBLIC one of that spelling is a duplicate too.** Only
+the all-private case separates: a public declaration is one the sibling file may write, so the two
+would be two answers to that file's own references with nothing to tell them apart — which is the
+ambiguity the refusal exists for, and it does not arise when neither file can see the other's.
+
+**A scoped `private[M]` spends its name across the subtree it reaches**, since that is exactly the
+set of files that can write it. The five declaration forms take a modifier; an `impl` takes none,
+having no name for one to restrict; and an **enum's variants carry the enum's own**, since a type
+nobody outside may name is not one whose variants they may construct.
 
 **A name a file may not reach is not a candidate for it.** Resolution passes over one and goes on
 through the file's imports rather than stopping there — a file that wrote `import util.width` said

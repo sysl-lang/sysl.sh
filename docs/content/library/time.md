@@ -152,6 +152,22 @@ formatting one wants the second, and getting them confused is how `2 days, 50 ho
 Both truncate toward zero, so a negative duration reads as a negative count of each part rather than
 borrowing across them.
 
+The `odd_` family runs one step further than a clock face does: `odd_us` is the microseconds left
+over after the whole second, which is what a caller formatting a timestamp with sub-second precision
+needs and what nothing else answers.
+
+```sysl
+import sysl.time.*
+
+var d = seconds(3i64) + millis(250i64)
+
+print(odd_seconds(d), odd_us(d))
+```
+
+```output
+3 250000
+```
+
 **`days(1)` is a length of exactly 24 hours, and it is not "a day".** A day that a zone's clocks move
 through is 23 or 25 hours long, so a calendar day is not a fixed length of timeline at all. That
 question belongs to the civil types below, which is why `plus_days` is theirs and not a `Duration`'s.
@@ -381,6 +397,28 @@ print(date_text(d + days(1i64)))
 
 `on_or_after` is the first date on or after a given one falling on a given weekday, which is what
 "every Tuesday" means once a rule has been given a starting point.
+
+### Reading a time of day apart
+
+A `LocalTime` is one number of microseconds since midnight, and the four `*_of` functions read its
+parts out of it — which is what a renderer, a comparison against a schedule, and anything printing a
+clock face all want:
+
+```sysl
+import sysl.time.*
+
+var t = time_at(13, 45, 30)
+
+print(hour_of(t), minute_of(t), second_of(t), us_of(t))
+```
+
+```output
+13 45 30 0
+```
+
+They are the `odd_` family's counterpart on the civil side, and they truncate nothing: a time of day
+is already within one day, so each part is simply read. `us_of` is the sub-second remainder, and it
+is zero here because `time_at` names whole seconds — a time parsed from `13:45:30.25` carries one.
 
 ### Rendering
 
