@@ -8,7 +8,7 @@ module: sysl.io
 
 ## Index
 
-[`bytes_reader`](#bytes_reader) [`bytes_reader_at_most`](#bytes_reader_at_most) [`bytes_writer`](#bytes_writer) [`console_lines`](#console_lines) [`fd_reader`](#fd_reader) [`find_byte`](#find_byte) [`line_text`](#line_text) [`lines`](#lines) [`lines_ending`](#lines_ending) [`stdin`](#stdin) [`try_line_text`](#try_line_text) [`BytesReader`](#bytesreader) [`BytesWriter`](#byteswriter) [`FdReader`](#fdreader) [`LineEnding`](#lineending) [`Lines`](#lines-1) [`Reader`](#reader) [Fallible for BytesReader](#fallible-for-bytesreader) [Fallible for BytesWriter](#fallible-for-byteswriter) [Fallible for FdReader](#fallible-for-fdreader) [Iterate for Lines](#iterate-for-lines) [Reader for BytesReader](#reader-for-bytesreader) [Reader for FdReader](#reader-for-fdreader) [Writer for BytesWriter](#writer-for-byteswriter)
+[`bytes_reader`](#bytes_reader) [`bytes_reader_at_most`](#bytes_reader_at_most) [`bytes_writer`](#bytes_writer) [`console_lines`](#console_lines) [`fd_reader`](#fd_reader) [`find_byte`](#find_byte) [`line_text`](#line_text) [`lines`](#lines) [`lines_ending`](#lines_ending) [`read_all`](#read_all) [`read_all_text`](#read_all_text) [`read_exact`](#read_exact) [`stdin`](#stdin) [`try_line_text`](#try_line_text) [`BytesReader`](#bytesreader) [`BytesWriter`](#byteswriter) [`FdReader`](#fdreader) [`LineEnding`](#lineending) [`Lines`](#lines-1) [`Reader`](#reader) [Fallible for BytesReader](#fallible-for-bytesreader) [Fallible for BytesWriter](#fallible-for-byteswriter) [Fallible for FdReader](#fallible-for-fdreader) [Iterate for Lines](#iterate-for-lines) [Reader for BytesReader](#reader-for-bytesreader) [Reader for FdReader](#reader-for-fdreader) [Writer for BytesWriter](#writer-for-byteswriter)
 
 ## Functions
 
@@ -104,6 +104,52 @@ A cursor over a file or a pipe: `\n` ends a line, and a trailing `\r` is trimmed
 ```sysl
 lines_ending(r: *Reader, ending: LineEnding) -> Lines
 ```
+
+### `read_all`
+
+```sysl
+read_all(r: *Reader) -> Buf[u8]
+```
+
+Every byte the reader has left, gathered into one buffer.
+
+**The whole-stream read the surface was missing.** A `Reader` answers whatever one call could
+fill, so a program that wants the lot has to loop -- and hand-rolling that loop is where the two
+mistakes live: stopping at the first short read, which is not the end of anything, and taking the
+length from the slice you offered rather than from the one you were handed.
+
+It ends at the first empty read, which is what end of input means here, and says nothing about
+whether input ended badly -- `failed` is still the question for that, asked once afterwards.
+
+The chunk is the same 4096 a `Lines` uses. It is a buffer size rather than a limit: a stream
+larger than it is read in as many passes as it takes.
+
+### `read_all_text`
+
+```sysl
+read_all_text(r: *Reader) -> Result[string, Utf8Error]
+```
+
+The same, as text.
+
+**There is no panicking twin, and that is deliberate** -- `line_text` has one because a program
+reading a file it expects to be text has nothing sensible to do with a bad line, while a whole
+stream is exactly what arrives off a wire, out of a serial port, or from a file somebody else
+wrote. A caller who wants the other severity has `line_text`'s shape to copy in one line.
+
+### `read_exact`
+
+```sysl
+read_exact(r: *Reader, into: []u8) -> []const u8
+```
+
+Reads until `into` is full or the input ends, and hands back the prefix that was filled.
+
+`read` may answer short for reasons that have nothing to do with the end of input -- a pipe with
+one write in it so far, a socket, a terminal -- so *"fill this"* and *"read once"* are different
+requests, and only the second one was expressible. What comes back is a prefix of `into` exactly
+as `read`'s is, so a caller checks `got.len` against what it asked for rather than being handed a
+count it might forget to apply.
 
 ### `stdin`
 

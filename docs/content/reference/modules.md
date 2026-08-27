@@ -121,7 +121,7 @@ print(Limit)
 ```
 
 ```error
-constant Limit is already declared
+constant 'Limit' is already declared
 ```
 
 **And a private name against a sibling file's PUBLIC one of that spelling is a duplicate too.** Only

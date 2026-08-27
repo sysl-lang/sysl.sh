@@ -66,13 +66,15 @@ main()
 
     var t = bytes_reader_at_most("hello".bytes, 1)
 
-    print(read_all_text(&t))
+    read_all_text(&t) match
+        Ok(s) -> print(s)
+        Err(e) -> print("not text at byte", e.offset)
 ```
 
 ```output
 3
 2
-Ok(hello)
+hello
 ```
 
 `bytes_reader_at_most` is what poses the case: it hands back at most that many bytes per call

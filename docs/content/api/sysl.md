@@ -366,6 +366,12 @@ trap does under the `os` capability -- so neither needs compiler support of its 
 | `unwrap_or` | `unwrap_or(self, default: T) -> T` |  |
 | `unwrap` | `unwrap(self) -> T` |  |
 | `expect` | `expect(self, msg: string) -> T` |  |
+| `unwrap_or_else` | `unwrap_or_else(self, f: () -> T) -> T` | The default computed rather than passed, for a default that costs something to make. |
+| `map` | `map[U](self, f: T -> U) -> Option[U]` | The payload transformed, absence carried through. |
+| `and_then` | `and_then[U](self, f: T -> Option[U]) -> Option[U]` | The same for a function that may itself answer nothing, which is what keeps the two from nesting: `map` of an `Option`-returning function is an `Option[Option[U]]` and this is not. |
+| `or_else` | `or_else(self, f: () -> Option[T]) -> Option[T]` | Another option where this one is absent -- the first that has something wins. |
+| `filter` | `filter(self, pred: T -> bool) -> Option[T]` | Absent unless the payload passes -- `Some(4).filter(even)` is `Some(4)` and `Some(5)` is `None`. |
+| `ok_or` | `ok_or[E](self, e: E) -> Result[T, E]` | The crossing into the other enum: absence becomes the error the caller names. |
 
 ### `Range`
 
@@ -414,6 +420,13 @@ Like `Option` this is an ordinary generic enum; `?` reaches it through `Library.
 | `unwrap` | `unwrap(self) -> T` |  |
 | `expect` | `expect(self, msg: string) -> T` |  |
 | `unwrap_err` | `unwrap_err(self) -> E` |  |
+| `unwrap_or_else` | `unwrap_or_else(self, f: E -> T) -> T` | The failure computed rather than passed, for a default that costs something to make. |
+| `map` | `map[U](self, f: T -> U) -> Result[U, E]` | The success transformed, the failure carried through. |
+| `map_err` | `map_err[F](self, f: E -> F) -> Result[T, F]` | The failure transformed, the success carried through -- which is how one layer's error type becomes the next one's at a boundary the caller chose. |
+| `and_then` | `and_then[U](self, f: T -> Result[U, E]) -> Result[U, E]` | The same as `map` for a function that may itself fail, which is what keeps the two from nesting: `map` of a `Result`-returning function is a `Result[Result[U, E], E]` and this is not. |
+| `or_else` | `or_else[F](self, f: E -> Result[T, F]) -> Result[T, F]` | Another attempt where this one failed, with the failure in hand to decide by. |
+| `ok` | `ok(self) -> Option[T]` | The success as an `Option`, dropping the failure -- the crossing back from the enum that carries a reason to the one that does not. |
+| `err` | `err(self) -> Option[E]` | And the failure as an `Option`, dropping the success. |
 | `expect_err` | `expect_err(self, msg: string) -> E` |  |
 
 ### `Stderr`
