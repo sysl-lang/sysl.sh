@@ -727,7 +727,7 @@ about it. `"hi".bytes` is a `[]const u8` and is covered, which is the next rule.
 #### Both views of a slice are one shape
 
 `[]T` and `[]const T` are one type with a bit rather than two types
-([`arrays.md`](/reference/arrays/#const-t--a-view-that-may-not-be-written)), and they share the one
+([`arrays.md`](/reference/arrays/#const-t-a-view-that-may-not-be-written)), and they share the one
 shape. A block written for either subject therefore reaches a receiver of either view:
 
 ```sysl
