@@ -416,6 +416,14 @@ that is not empty. A **symbolic link is unlinked rather than followed**, which i
 deleting something outside the tree it was pointed at, and a path that is not there at all is
 success — a caller tearing down after a failure should not have to know how far the failure got.
 
+**It is the one call here that POSIX decides, and `make_dir_all` beside it is not** — which reads as
+arbitrary until you ask what each needs that the other does not. `make_dir_all` climbs with
+`sysl.path.parent` and asks `exists` and `make_dir`, and every target has those. `remove_dir_all` has
+to know whether an entry is a symbolic link *without following it*, and the only reading that answers
+that is `link_metadata`, which is POSIX because a Windows reading of a filesystem entry is a
+different struct rather than this one with fields missing. Following the link instead would make the
+call portable and delete things nobody asked it to, which is the property the walk exists to have.
+
 ```sysl
 import sysl.fs.{make_dir_all, remove_dir_all, write_text, exists, is_dir}
 import sysl.path.join
