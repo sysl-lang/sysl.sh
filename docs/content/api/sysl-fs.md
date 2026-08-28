@@ -27,7 +27,7 @@ and the clause is what says so in the one place a reader of the file will see it
 
 ## Index
 
-[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`create`](#create) [`create_update`](#create_update) [`entries`](#entries) [`exists`](#exists) [`is_dir`](#is_dir) [`is_file`](#is_file) [`make_dir`](#make_dir) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_file`](#remove_file) [`rename`](#rename) [`size_of`](#size_of) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [Display for IoError](#display-for-ioerror) [Eq for IoError](#eq-for-ioerror) [Fallible for File](#fallible-for-file) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
+[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`canonicalize`](#canonicalize) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
 
 ## Functions
 
@@ -52,6 +52,33 @@ whatever the file already held, including anything another program appended in b
 append_text(path: string, text: string) -> Result[unit, IoError]
 ```
 
+### `canonicalize`
+
+```sysl
+canonicalize(path: string) -> Result[string, IoError]
+```
+
+### `copy_file`
+
+```sysl
+copy_file(from: string, to: string) -> Result[unit, IoError]
+```
+
+One file copied to another path, replacing whatever was at the destination.
+
+**It is a read-and-write loop rather than a platform fast path**, which is a decision rather than
+an omission. `copyfile(3)` on macOS and `copy_file_range(2)` on Linux can hand the whole thing to
+the kernel, and on a filesystem that supports reflinks they can do it without moving any data at
+all -- but the two have different names, different signatures and different failure modes, and
+neither is reachable without a shim per platform. What is here is correct everywhere and is what
+every caller needs; the fast path is worth adding the day something measures that it is missed.
+
+**The permission bits are not carried over.** The destination is made the way `create` makes any
+file, which is what the process umask decides. A caller that wants the mode preserved reads
+`metadata(from).permissions()` and writes it with `set_permissions`, which says out loud that it
+is doing so -- and a copy that silently reproduced a `0o600` into a directory where that was not
+intended is the kind of surprise a library should not spring.
+
 ### `create`
 
 ```sysl
@@ -63,6 +90,21 @@ create(path: string) -> Result[File, IoError]
 ```sysl
 create_update(path: string) -> Result[File, IoError]
 ```
+
+### `current_dir`
+
+```sysl
+current_dir() -> Result[string, IoError]
+```
+
+Where the program is, which nothing in the library could ask before.
+
+`sysl.process` takes a `dir` for a child to start in, so a program could say where somebody *else*
+should be and not where it was itself. This is the other half.
+
+**It is a global the whole process shares**, so a threaded program that reads this while another
+thread is calling `set_current_dir` gets one of the two answers and no promise about which.
+Building an absolute path once at start-up is the shape that avoids the question.
 
 ### `entries`
 
@@ -99,6 +141,18 @@ which is the one way this differs from the question it looks like it is asking. 
 be told from absence without a second call whose answer would already be stale, and every caller
 that matters -- one about to open the file -- gets the truth from the open.
 
+### `hard_link`
+
+```sysl
+hard_link(existing: string, fresh: string) -> Result[unit, IoError]
+```
+
+A second name for a file that already exists, in the same filesystem.
+
+The two names are equal afterwards -- there is no original -- and the file goes when the last of
+them does, which is what `Meta.links` counts. It fails across filesystems, and it fails on a
+directory, both of which are the kernel's rules rather than this module's.
+
 ### `is_dir`
 
 ```sysl
@@ -119,6 +173,28 @@ Whether the path names something that is not a directory. A device or a socket a
 here, which is right for what callers use it for: the question is whether opening it as a file
 could work.
 
+### `is_link`
+
+```sysl
+is_link(path: string) -> bool
+```
+
+Whether the path itself is a symbolic link. It follows nothing, so a link to a directory answers
+`true` here and `is_dir` answers `true` about the same path -- the two are asking different
+questions and both answers are right.
+
+### `link_metadata`
+
+```sysl
+link_metadata(path: string) -> Result[Meta, IoError]
+```
+
+The same, about the path **itself** -- so a symbolic link is described rather than followed.
+
+This is the only call in the module that can report a link at all. `is_dir`, `exists` and
+`metadata` all follow one silently, which is the right default and was until now the only
+behaviour available.
+
 ### `make_dir`
 
 ```sysl
@@ -128,6 +204,42 @@ make_dir(path: string) -> Result[unit, IoError]
 Makes one directory. The parent has to be there already: making a chain is a loop over path
 separators, and where a separator *is* is a question about paths rather than about the
 filesystem, which this module does not answer.
+
+### `make_dir_all`
+
+```sysl
+make_dir_all(path: string) -> Result[unit, IoError]
+```
+
+Every directory on the path made, from the topmost one that is missing down.
+
+**A path that is already a directory is success, not `AlreadyExists`**, which is the difference
+between this and a loop over `make_dir` and is what every caller of it wanted: the question being
+asked is "make sure this is there", and a program that has to distinguish "I made it" from "it was
+there" is asking a question this cannot answer honestly anyway, since somebody else may have made
+it in between.
+
+It climbs with `sysl.path.parent` and recurses, so the work is done from the top down and each
+level is attempted exactly once. A component that exists and is **not** a directory reports
+`NotADirectory` from the `make_dir` beneath it rather than being silently accepted.
+
+### `make_temp_dir`
+
+```sysl
+make_temp_dir(prefix: string) -> Result[string, IoError]
+```
+
+### `metadata`
+
+```sysl
+metadata(path: string) -> Result[Meta, IoError]
+```
+
+Everything one `stat` answers about what a path names, following symbolic links.
+
+A path that does not exist reports `NotFound`, which is the distinction a caller has to be able to
+make and the reason this answers a `Result` rather than an `Option`: "there is nothing there" and
+"the directory above it is not searchable" are different facts and lead to different programs.
 
 ### `open`
 
@@ -164,6 +276,18 @@ whose length is not a fact until the read ends. The loop stops on the first empt
 afterwards whether the reading *ended* badly -- the two are separate questions, which is the split
 `Reader` was built around.
 
+### `read_link`
+
+```sysl
+read_link(path: string) -> Result[string, IoError]
+```
+
+What a symbolic link points at, exactly as it was written -- which may be relative, and may name
+nothing at all.
+
+A path that is not a link reports `Other(22)`, which is `EINVAL`: "this is not the kind of thing
+that has a target". Ask `is_link` first where the difference matters.
+
 ### `read_text`
 
 ```sysl
@@ -194,6 +318,26 @@ Removes a directory, which has to be empty. A directory with anything in it repo
 `DirectoryNotEmpty` -- the one error code in the set whose number the two platforms disagree
 about, which is why `error.sysl` reads it through a call rather than a literal.
 
+### `remove_dir_all`
+
+```sysl
+remove_dir_all(path: string) -> Result[unit, IoError]
+```
+
+A directory and everything under it removed.
+
+**The walk is post-order** -- a directory is emptied before it is taken -- because `rmdir` refuses
+one that is not empty, which is the rule `remove_dir` states and this exists to work within rather
+than around.
+
+**A symbolic link is unlinked, not followed**, which is the property that keeps this from deleting
+something outside the tree it was pointed at. `entries` says what is in a directory and `is_dir`
+follows links, so the test here is `link_metadata` -- the one reading in the module that describes
+the path itself.
+
+A path that is not there at all is success. A caller tearing down after a failure should not have
+to know how far the failure got.
+
 ### `remove_file`
 
 ```sysl
@@ -219,6 +363,29 @@ and worth knowing, since a program moving a file across devices has to read and 
 The two copies are named rather than written into the call, because a `cstring` temporary lives
 for the statement it appears in and this statement needs both of them alive at once.
 
+### `set_current_dir`
+
+```sysl
+set_current_dir(path: string) -> Result[unit, IoError]
+```
+
+Moves the program. **It is process-wide**, which is the thing to know before reaching for it: a
+library that changes the working directory changes it for every thread and for every other library
+in the program, and puts it back only if it remembers to.
+
+Prefer building an absolute path. This exists because a program that drives a build, or that is
+the shell-like thing at the top, genuinely needs it.
+
+### `set_permissions`
+
+```sysl
+set_permissions(path: string, mode: u32) -> Result[unit, IoError]
+```
+
+The permission bits set to exactly what is given. It is not a mask to add: `0o644` means the file
+ends up `0o644` whatever it was, which is `chmod(2)`'s own meaning and the one a program that read
+`permissions()` first is expecting.
+
 ### `size_of`
 
 ```sysl
@@ -228,6 +395,33 @@ size_of(path: string) -> Result[long, IoError]
 How many bytes the file holds. It opens the file to ask, so it reports the same failures an open
 does -- a missing file answers `NotFound` rather than zero, which is the distinction a caller
 sizing a buffer needs and the one a bare number could not carry.
+
+### `symlink`
+
+```sysl
+symlink(target: string, link: string) -> Result[unit, IoError]
+```
+
+A symbolic link created at `link`, pointing at `target`.
+
+**`target` is not checked and does not have to exist.** A dangling link is a legal thing to make
+and is sometimes the point -- a package manager writes one before what it names has been
+unpacked. It is also stored **as written**: a relative target is resolved against the directory
+the link is in, every time it is followed, rather than against wherever the program was when it
+made the link.
+
+### `truncate`
+
+```sysl
+truncate(path: string, length: long) -> Result[unit, IoError]
+```
+
+A file cut to a length, or extended to one with zeroes. It makes nothing: a path that is not
+there reports `NotFound` rather than becoming an empty file.
+
+Extending is `truncate(2)`'s own behaviour and is worth knowing, since the name says only half of
+it: a length past the end of the file leaves a hole that reads as zeroes and that most filesystems
+do not store.
 
 ### `writable`
 
@@ -275,6 +469,7 @@ handle until the program exits, the same as in C.
 | `seek` | `seek(*self, to: long) -> Result[unit, IoError]` | Moves to an absolute offset, which also clears the end-of-file mark. |
 | `size` | `size(*self) -> Result[long, IoError]` | How many bytes the file holds. |
 | `at_end` | `at_end(*self) -> bool` | Whether a read has already run off the end. |
+| `truncate` | `truncate(*self, length: long) -> Result[unit, IoError]` | The file cut to a length, or extended to one with zeroes -- the one thing this surface could not do, having `seek` and `size` and no way to change what is there. |
 
 ### `FileState`
 
@@ -317,6 +512,72 @@ Why a filesystem operation did not happen.
 | `code` | `code(self) -> int` | The number this came from, so a program can report or compare one the set does not name. |
 | `message` | `message(self) -> string` | A sentence, in the terms the operation was asked in rather than in C's. |
 
+### `Kind`
+
+```sysl
+enum Kind
+    Regular
+    Directory
+    Symlink
+    Special(bits: u32)
+```
+
+What a filesystem entry is, beside what is in it.
+
+The three a program branches on are named and everything else is `Special` carrying the raw type
+bits, for the same reason `IoError` names ten codes and carries the rest: a table of every device
+flavour is one nobody could keep current, and a program that genuinely cares about a socket is
+already reading the number. `Special` is POSIX's own word for what is left -- a fifo, a socket, a
+character or block device.
+
+**`Regular` rather than `File`, and `Special` rather than `Other`, and both are about COLLISION
+rather than about taste.** A variant is a name of its module, reached unqualified, so `File` here
+would be a second answer for the name `sysl.fs.File` -- the open-file handle, which is what a
+program means by it -- and `Other` a second answer for `IoError.Other`, which every program
+matching on a filesystem error already writes bare. Neither is refused at the declaration; both
+make an ordinary use of the older name ambiguous, one program away.
+
+| Member | Signature | Description |
+|---|---|---|
+| `is_dir` | `is_dir(self) -> bool` | So that `k == Directory` reads as itself. |
+| `name` | `name(self) -> string` | The word for what this is. |
+
+### `Meta`
+
+```sysl
+struct Meta
+    size: long
+    mode: u32
+    links: u64
+    owner: u32
+    group: u32
+    inode: u64
+    device: u64
+    modified: Instant
+    accessed: Instant
+    changed: Instant
+```
+
+Everything one `stat` answers, in one value.
+
+**One call rather than several is the point.** Asking separately whether a path is a directory,
+how big it is and when it changed is three trips into the kernel and three chances for the answer
+to be about three different files -- something can be replaced between them. A `Meta` is one
+reading of one entry.
+
+The times are `Instant`s, so `sysl.time` turns them into a date with nothing here knowing about
+calendars. That costs the nanoseconds the platform reports: an `Instant` is microseconds, which is
+the library's resolution everywhere and is finer than any filesystem here records reliably.
+
+| Member | Signature | Description |
+|---|---|---|
+| `kind` | `kind(self) -> Kind` |  |
+| `permissions` | `permissions(self) -> u32` | The permission bits alone -- the low twelve, which are the nine `rwx` plus setuid, setgid and the sticky bit. |
+| `is_file` | `is_file(self) -> bool` |  |
+| `is_dir` | `is_dir(self) -> bool` |  |
+| `is_link` | `is_link(self) -> bool` | Whether the entry **itself** is a symbolic link, which only `link_metadata` can ever answer `true` to: `metadata` follows links, so what it describes is never one. |
+| `same_file` | `same_file(self, other: Meta) -> bool` | Whether two readings name the same file, which is the inode and the device together and is not the path. |
+
 ## Implementations
 
 ### Display for IoError
@@ -326,6 +587,16 @@ impl Display for IoError
 ```
 
 So that `print(e)` and `f"$e%s"` say the sentence rather than the shape of the value.
+
+### Display for Kind
+
+```sysl
+impl Display for Kind
+```
+
+So that a kind prints as the word rather than as a number, and `Special` says what it is carrying:
+a program reporting what it found in a directory has one thing to print, and the alternative is a
+`match` at every such site.
 
 ### Eq for IoError
 
@@ -347,6 +618,12 @@ It compares on `code()`, which makes `Other(2)` equal to `NotFound` -- deliberat
 are the same condition wearing two spellings, and `from_errno` never produces the first. Comparing
 on the shape instead would make an error that came from a platform sysl does not have a named case
 for unequal to itself after a round trip through a number.
+
+### Eq for Kind
+
+```sysl
+impl Eq for Kind
+```
 
 ### Fallible for File
 

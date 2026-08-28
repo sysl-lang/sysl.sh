@@ -24,6 +24,7 @@ These pages are generated from the library's own doc comments: every declaration
 | [`sysl.io`](sysl-io/) |  |
 | [`sysl.math`](sysl-math/) | Choosing between two values, and holding one to a range. |
 | [`sysl.math.complex`](sysl-math-complex/) |  |
+| [`sysl.path`](sysl-path/) |  |
 | [`sysl.posix.rand`](sysl-posix-rand/) |  |
 | [`sysl.posix.threads`](sysl-posix-threads/) | Threads of execution, and the two things a program does with one: start it, and wait for it. |
 | [`sysl.posix.time`](sysl-posix-time/) |  |

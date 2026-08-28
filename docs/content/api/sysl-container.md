@@ -144,11 +144,21 @@ forwards would produce the reverse and need a second pass to correct.
 map[K: Hash + Eq, V]() -> Map[K, V]
 ```
 
-An empty map, with a table already under it so that every later question can assume one.
+An empty map, which holds **no table at all** until something is put in it.
+
+**An empty map does not allocate**, which matters far more than it looks: a map built inside a
+loop, held in a struct that is usually empty, or made and dropped on a branch that turns out not
+to be taken costs a `malloc` and the `free` behind it every time, and no caller can see that it is
+paying. The first `put` finds the table over its load -- nothing is over nothing -- and rehashes
+to `initial_slots` before it places anything, which is the path `put` already took for a table
+that had filled up. So there is no separate "grow from empty" case to get wrong.
+
+Reach for `map_with_capacity` where entries are known to be coming: a caller who names a size is
+saying so, and gets its table immediately.
 
 **The annotation on `m` is required and is not noise.** `Map`'s parameters would have to come from
-the constructor's arguments while the bare `Slot.Empty` filling the table waits to hear what it is
-a slot of, and neither can go first.
+the constructor's arguments while the empty table waits to hear what it is a table of, and neither
+can go first.
 
 ### `map_with_capacity`
 
@@ -369,7 +379,7 @@ one slot.
 | `has` | `has(self, k: K) -> bool` |  |
 | `put` | `put(*self, k: K, v: V)` | A key given a value: the entry it already had takes the new one, or a fresh entry is placed. |
 | `remove` | `remove(*self, k: K) -> bool` | A key taken out, answering whether it was there. |
-| `clear` | `clear(*self)` | Every entry dropped and the table returned to its starting size, so that a map used as scratch across a loop does not keep the largest table any pass through it needed. |
+| `clear` | `clear(*self)` | Every entry dropped and the table let go entirely, so that a map used as scratch across a loop does not keep the largest table any pass through it needed -- and a map that is cleared and never used again costs nothing at all. |
 | `walk` | `walk(self) -> Cursor[K, V]` | A cursor over the entries, in no particular order -- the order is the table's, which changes when it rehashes and is not something a program may rely on. |
 
 ### `Set`

@@ -36,7 +36,7 @@ be put.
 
 ## Index
 
-[`channel`](#channel) [`current`](#current) [`receive`](#receive) [`send`](#send) [`spawn`](#spawn) [`try_receive`](#try_receive) [`try_send`](#try_send) [`yield_now`](#yield_now) [`Channel`](#channel-1) [`Mutex`](#mutex) [`Thread`](#thread)
+[`channel`](#channel) [`current`](#current) [`spawn`](#spawn) [`yield_now`](#yield_now) [`Channel`](#channel-1) [`Mutex`](#mutex) [`Thread`](#thread)
 
 ## Functions
 
@@ -66,38 +66,6 @@ current() -> Thread
 
 The calling thread's own handle, which is what a body compares against to learn it is not the
 thread that spawned it.
-
-### `receive`
-
-```sysl
-receive[T](ch: *Channel[T]) -> Option[T]
-```
-
-Takes a value out, waiting while the channel is empty.
-
-`None` means the channel is closed **and drained**, which is what makes a receiver's loop
-terminate: a closed channel with values still in it goes on answering `Some`.
-
-### `send`
-
-```sysl
-send[T](ch: *Channel[T], value: T) -> bool
-```
-
-Puts a value in, waiting while the channel is full, and answers whether it went in.
-
-`false` is a closed channel and nothing else: the wait is unbounded, so the only thing that ends
-it other than a free slot is somebody closing.
-
-**`@crossing(value)` is what holds a caller to the rule about what may reach another domain**, and
-it is why this is a free function rather than `ch.send(v)`. No annotation in sysl marks a member
-(`reference/memory.md § Crossing a concurrency domain`), and the refusal says what to do about it:
-write it on the wrapper a caller already goes through. So the four transfers are functions taking
-the channel by address, which is `spawn(&body, &state)`'s own shape and reads as what it is — the
-operations that move a value between two threads, taking the thing both of them hold.
-
-Marking the way **in** is the whole of the check: nothing can be taken out that was not put in, so
-a channel whose sends are held to the rule can hold nothing that breaks it.
 
 ### `spawn`
 
@@ -130,22 +98,6 @@ holding a plain `&T` is refused here rather than racing later.
 A body declared `-> unit` is called by pthreads as though it returned a `void *`, and the value it
 leaves in the return register is whatever was there. Nothing reads it -- `join` above passes no
 place to put it -- so the mismatch costs the thread's exit value, which this module does not offer.
-
-### `try_receive`
-
-```sysl
-try_receive[T](ch: *Channel[T]) -> Option[T]
-```
-
-Takes a value out if there is one, and answers nothing where there is not. Never waits.
-
-### `try_send`
-
-```sysl
-try_send[T](ch: *Channel[T], value: T) -> bool
-```
-
-Puts a value in if there is room, and answers whether it went. Never waits.
 
 ### `yield_now`
 
@@ -195,7 +147,7 @@ var ch = channel(slots[..])
 spawn(&producer, &ch)
 
 loop
-    receive(&ch) match
+    ch.receive() match
         Some(v) -> print(v)
         None -> break
 ```
@@ -216,6 +168,10 @@ refused here exactly as it is at `spawn`, and the relaxation waits on something 
 | `len` | `len(*self) -> usize` | How many values are waiting to be taken. |
 | `is_closed` | `is_closed(*self) -> bool` | Whether `close` has been called. |
 | `close` | `close(*self)` | Stops the channel taking anything further, and lets every waiter go. |
+| `send` | `send(*self, value: T) -> bool` | Puts a value in, waiting while the channel is full, and answers whether it went in. |
+| `try_send` | `try_send(*self, value: T) -> bool` | Puts a value in if there is room, and answers whether it went. |
+| `receive` | `receive(*self) -> Option[T]` | Takes a value out, waiting while the channel is empty. |
+| `try_receive` | `try_receive(*self) -> Option[T]` | Takes a value out if there is one, and answers nothing where there is not. |
 
 ### `Mutex`
 

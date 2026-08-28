@@ -132,6 +132,10 @@ zone_data_in(root: string, name: string) -> Result[[]u8, IoError]
 The same, from a database somewhere else -- a copy shipped with an application, a mount, or a
 directory a test wrote.
 
+Through `sysl.path.join` rather than a `+ "/" +`, which is the one case a hand-rolled join gets
+wrong: a root written with a trailing separator would otherwise put two in the middle, and a name
+that is already absolute would be appended to rather than replacing what is in front of it.
+
 ### `zoneinfo_root`
 
 ```sysl

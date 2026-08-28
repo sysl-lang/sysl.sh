@@ -23,7 +23,7 @@ print(normalize("/home/me/./work/../notes.txt"))
 /home/me/notes.txt
 Some(/home/me)
 Some(notes.txt)
-archive.tar gz
+Some(archive.tar) Some(gz)
 /home/me/notes.txt
 ```
 
