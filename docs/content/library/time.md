@@ -352,6 +352,44 @@ particular date.
 The weekday falls out of the same count: 1970-01-01 was a Thursday, so shifting by four puts Sunday
 at zero. Nothing here needs to know which day a week starts on.
 
+### A date the calendar does not have
+
+`date_at` is `days_from_civil` under another name, so it answers for any three numbers at all. The
+thirtieth of February is a day count like any other and comes back as the second of March:
+
+```sysl
+import sysl.time.*
+
+print(date_text(date_at(2026, 2, 30)))
+print(checked_date(2026, 2, 30).is_none(), checked_date(2026, 2, 28).is_some())
+
+val text = checked_date(2026, 2, 29) match
+    Some(d) -> date_text(d)
+    None -> "no such date"
+
+print(text)
+```
+
+```output
+2026-03-02
+true true
+no such date
+```
+
+**Two constructors rather than one that checks.** A calendar walk — `plus_months`, a loop over the
+days of a month, `on_or_after` — has already established that its dates are real, and a range test
+per step would be paid for by every one of them to catch nothing. `date_at` is that walk's
+arithmetic and stays exactly as it is.
+
+What asks the other question is a **reader**: text names three numbers that a person wrote, and a
+format saying a date must exist has to be able to refuse them. `parse_date` already answers
+`Err(OutOfRange(…))`, so the checking was there; what was missing was reaching it without going
+through text, which a reader that has already scanned the digits itself has no way to do.
+
+The year is unbounded on purpose. The proleptic Gregorian calendar has no first or last one, and
+`days_from_civil` is its own inverse over the whole `int` range — so `checked_date` checks the month
+and the day and nothing else.
+
 ### Adding to a calendar
 
 ```sysl

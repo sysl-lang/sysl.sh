@@ -160,7 +160,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (32, 6, 12),
+"docs/content/library/core.md"                     -> (32, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),
@@ -179,7 +179,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
     // One more runnable: a zone is anything callable, so a closure answers `resolve` as a declaration
     // does — which is what a fixed offset, or one read out of a captured table, is written as.
-    "docs/content/library/time.md"                       -> (22, 4, 4),
+    // One more again: a date the calendar does not have is a day count to `date_at` and `None` to
+    // `checked_date`, and the section runs both so the pair is visible rather than described.
+    "docs/content/library/time.md"                       -> (23, 4, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
     "docs/content/library/process.md"                    -> (5, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
