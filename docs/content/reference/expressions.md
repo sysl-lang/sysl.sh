@@ -1020,6 +1020,47 @@ print(twice, inc(41))
 A closure's parameter declares **no default**. A call reaches a closure through the `Fn` traits,
 which carry types and not names, so there would be nothing at the call to fill one from.
 
+### A closure that only reads what it captured may be a `val`
+
+A closure captures **by value**, so it carries its own copy of what it closed over and calling one
+that writes a capture writes through the closure itself. That is why `Fn::call` takes `*self` — and a
+`val` is written once, so binding such a closure to one and calling it is refused.
+
+**A closure that only reads is not that closure**, and it is the common one. It writes nothing, so
+nothing about the call needs the name to be mutable, and `val` is what a program that is not going to
+reassign it should be able to write.
+
+```sysl
+val inc = (x: int) -> x + 1
+val double = (x: int) -> x * 2
+
+print(inc(41), double(21))
+```
+
+```output
+42 42
+```
+
+The refusal stands exactly where it was, which is the point of the distinction rather than an
+exception to it — a closure that writes a capture is a value the call mutates:
+
+```sysl
+var n = 0
+val bump = () ->
+    n += 1
+    n
+
+print(bump(), bump())
+```
+
+```error
+'call' takes '*self', so it writes through what it is called on, and a 'val' is written once — write 'var bump' if it is meant to change
+```
+
+`&Fn(int) -> int` is still the way to hold one behind a reference, and is what a program without an
+allocator cannot use — a `&T` is a box. That was the whole of the argument for admitting the reading
+case: on a freestanding target there had been no way to bind a closure to an immutable name at all.
+
 ### `_` — a parameter with the name left out
 
 A bare `_` in operand position is a closure parameter, and the closure it builds closes at the

@@ -72,7 +72,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And one more of each again for ranges: a range with both ends written is a value now, so the
     // section shows one bound, passed and returned, and refuses the two readings that have no value
     // — bounds that disagree, and an end left open.
-    "docs/content/reference/expressions.md"           -> (41, 22, 0),
+    "docs/content/reference/expressions.md"           -> (42, 23, 0),
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
@@ -160,7 +160,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/core.md"                     -> (31, 6, 11),
+    "docs/content/library/core.md"                     -> (32, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),

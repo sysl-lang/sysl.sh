@@ -245,6 +245,8 @@ already says everything a message could; `panic` is for a check a *program* make
 knows and the compiler does not, where the message is the entire point. The full account is on
 [errors and contracts](/reference/errors/).
 
+### Choosing an exit status
+
 `exit` is the third name here and the only `extern` the core offers rather than keeps:
 
 ```sysl
@@ -254,6 +256,42 @@ extern exit(code: int) -> never
 It takes no link name where the four platform externs in [`sysl.sys`](/library/sys/) all take one,
 because it is not a platform detail — it is the hosted exit, the thing `panic` and `unwrap` stop
 with, and a program stopping itself writes exactly the same call.
+
+**It is how a program chooses its own status, and it prints nothing.** That is the pairing worth
+naming, because the two halves are asked for together and are answered from opposite directions:
+`main` may answer nothing or a `Result[unit, E]` and [nothing else](/reference/modules/#where-a-program-starts)
+— a status is one byte and a return type is a value — and `Err(e)` exits non-zero having *also*
+written `error: <e>`, which is a second line a program that has already reported its own failure did
+not ask for.
+
+```sysl
+print("done")
+exit(0)
+```
+
+```output
+done
+```
+
+**Nothing the runtime added** — that is the whole of what the call buys, and the status is the
+argument. `exit(3)` is the same line with a different number, and a program that has already printed
+its own diagnostic ends that way:
+
+```sysl
+print("no such file: notes.txt")
+exit(3)
+```
+
+The program's own message, the status it chose, and no `error:` line. A CLI that renders a caret and
+a line number wants exactly that: a message for a person and a status for the parent process, which
+are two different things everywhere else too — C's `exit(3)`, Go's `os.Exit`, Rust's
+`std::process::exit`, Python's `sys.exit`.
+
+(The second block is shown rather than run: this page's programs are executed and their output
+compared, and one that deliberately exits non-zero would be reported as a failure.)
+
+Its result type is `never`, so the call is an expression that never comes back and a function ending
+in one owes no other answer.
 
 ## Rendering to standard output
 

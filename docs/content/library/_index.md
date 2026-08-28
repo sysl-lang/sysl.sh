@@ -25,7 +25,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 
 | module | holds | requires |
 |---|---|---|
-| [`sysl`](/library/core/) | the core — `Option`, `Result`, `Display`, the operator traits, `print`, `assert` | — |
+| [`sysl`](/library/core/) | the core — `Option`, `Result`, `Display`, the operator traits, `print`, `assert`, and [`exit`](/library/core/#choosing-an-exit-status) for a program that chooses its own status | — |
 | [`sysl.text`](/library/text/) | the whole text surface — validation, the character cursors, `Ascii` and `Search`, splitting and joining, `StrBuilder`, the parsers, `CString` | — |
 | [`sysl.regex`](/library/regex/) | POSIX Extended Regular Expressions — `regex`, `Regex`, `Match` | — |
 | [`sysl.buf`](/library/buf/) | `Buf[T]`, the growable sequence, and `ByteSink` | — |

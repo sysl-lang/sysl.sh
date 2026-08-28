@@ -494,6 +494,24 @@ and it works because `Ascii for char` is total, so a character outside the range
 exactly the bytes it arrived as. A byte map would be the faster loop and would need a raw-byte way
 into a builder, which is the one thing the builder deliberately does not offer.
 
+**`to_upper` AND `to_lower` MAP ASCII AND NOTHING ELSE, WHICH THEIR NAMES DO NOT SAY.** `Ascii` says
+so in its own name; these two are general words over a per-character call into it, so `to_upper` on a
+`string` is the one place in the library where a fully general name promises more than it delivers.
+It is a documented choice rather than an oversight — a caller who passes text outside the range gets
+that text back unchanged, never a wrong mapping and never a refusal — but it is the reader who did
+nothing wrong and got `HéLLO`, so it is said in the signature's own words rather than
+left to be read off the output above.
+
+**What full Unicode case mapping would cost is why it is not here.** The simple mapping alone —
+one code point to one — is about 1,357 range entries, roughly 16KB, against the 499 entries of
+Unicode data [`columns`](#how-wide-is-it-on-screen-columns) already carries. `sysl.text` is not
+optional: it is what places a diagnostic's caret, so every freestanding program links it. Beyond the
+simple mapping there is *special* casing, where `ß` uppercases to `SS` and the result is longer than
+the input, and *locale-sensitive* casing — Turkish dotless `ı` — which needs a notion of locale the
+library does not have. So the table belongs in a package rather than here, which is the line
+[`sysl.math.complex`](/library/complex/) already sits on: the standard library keeps the type and a
+package carries the data.
+
 **`split` drops nothing and `fields` drops whitespace.** Adjacent separators yield an empty piece
 between them and a separator at either end yields an empty piece outside it, so `"a,b,,c"` is four
 pieces of which the third is empty. `fields` is not `split` on a space: a run of whitespace separates
