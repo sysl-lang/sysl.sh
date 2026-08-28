@@ -715,7 +715,7 @@ equal. `%g` strips its own trailing zeros, so the precision is a ceiling on the 
 width — `0.5` comes out at two characters, not fifteen.
 
 The reader it checks against is `strtod`, which is the same conversion
-[`sysl.text.parse_real`](/library/text/) goes to. That is what makes the check mean anything: the
+[`sysl.text.parse_real`](/library/text/#reading-a-value-back-the-parsers) goes to. That is what makes the check mean anything: the
 two directions have to be the same pair of functions, or a value survives this test and not the one
 a consumer runs.
 
