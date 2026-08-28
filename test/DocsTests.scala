@@ -160,7 +160,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-"docs/content/library/core.md"                     -> (32, 6, 12),
+// One more again: a `real` renders at the shortest precision that reads back equal, and the
+    // section shows that beside the six digits `str` gives a person and the seventeen that keep
+    // every value — which is the comparison the function exists for.
+    "docs/content/library/core.md"                     -> (33, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),

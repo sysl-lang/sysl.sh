@@ -615,6 +615,7 @@ Every rendering the language does ends up in this family, one function per shape
 | `display_str` | a `string`; precision **truncates** |
 | `display_int`, `display_uint` | an integer a caller already holds at **64 bits**; precision is a **minimum digit count**, zero-filled |
 | `display_real` | a float; precision is **significant digits**, defaulting to 6 and capped at 40 |
+| `display_real_shortest` | a float at the **shortest precision that reads back equal**; ignores the precision |
 | `display_bool`, `display_char` | `true`/`false`, and a code point encoded to UTF-8 |
 | `display_digits` | **where a number ends up** — reads a sign off the front, zero-fills to the precision, then pads |
 | `display_pad` | **where the rest end up** — puts finished bytes in the field the spec asked for |
@@ -671,6 +672,62 @@ It did not always. The buffer has to be sized for the width, and until an array'
 written in terms of a type parameter — `[sizeof(T) * 3 + 2]u8`, three decimal digits per byte being
 the bound at every width — the widest values fell back through `str`, which is heap storage. So the
 values needing the most care were the ones a module without an allocator could not print.
+
+#### The shortest rendering that survives a round trip
+
+A precision is a count of significant digits, so any fixed one is a choice between losing the value
+and printing digits nobody asked for:
+
+```sysl
+import sysl.buf.byte_sink
+
+var sink = byte_sink()
+var out: *Writer = &sink
+
+display_real(3.141592653589793, out, FormatSpec(0, -1, false))
+display_str(" ", out, FormatSpec(0, -1, false))
+display_real(3.141592653589793, out, FormatSpec(0, 17, false))
+display_str(" ", out, FormatSpec(0, -1, false))
+display_real_shortest(3.141592653589793, out, FormatSpec(0, -1, false))
+display_str("\n", out, FormatSpec(0, -1, false))
+
+display_real(0.1, out, FormatSpec(0, 17, false))
+display_str(" ", out, FormatSpec(0, -1, false))
+display_real_shortest(0.1, out, FormatSpec(0, -1, false))
+
+putbytes(sink.text())
+prints("\n")
+```
+
+```output
+3.14159 3.1415926535897931 3.141592653589793
+0.10000000000000001 0.1
+```
+
+Six is a reasonable thing to show a person and a broken thing to serialize; seventeen keeps every
+value and spells `0.1` with noise on the end. **What a document wants is neither**, and the answer
+has been the same since Steele and White: the shortest text that parses back to the number you
+started with.
+
+Fifteen significant digits is where a `real` starts round-tripping and seventeen is where all of
+them do, so `display_real_shortest` tries the three in order and stops at the first that reads back
+equal. `%g` strips its own trailing zeros, so the precision is a ceiling on the search rather than a
+width — `0.5` comes out at two characters, not fifteen.
+
+The reader it checks against is `strtod`, which is the same conversion
+[`sysl.text.parse_real`](/library/text/) goes to. That is what makes the check mean anything: the
+two directions have to be the same pair of functions, or a value survives this test and not the one
+a consumer runs.
+
+**It decides the precision and nothing else.** `%g` chooses the exponent form for a value whose
+plain decimal would be long, and `1.0` comes out as `1` with no point in it — writing a number a
+format's reader would take as an integer is that format's problem, which is why
+[`sysl-lang/json`](https://github.com/sysl-lang/json) adds the point and this does not. A value with
+no decimal reading never compares equal to anything, so an infinity or a NaN falls out of the search
+at seventeen digits and renders as `%g` spells it.
+
+**`str` is unchanged and stays at six.** This is the other rendering being available at all, not a
+new default: changing `str` would alter the output of every program that prints a number.
 
 ### One padder, and why
 
