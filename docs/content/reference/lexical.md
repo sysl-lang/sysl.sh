@@ -12,7 +12,7 @@ language happen in the first pass, which is why it gets its own page.
 ## Source text
 
 Source is **UTF-8**, and the encoding is not configurable. A non-ASCII character is legal in a
-comment, a string literal, and a character literal; identifiers are ASCII (see below).
+comment, a string literal, a character literal — and in an identifier (see below).
 
 Line endings may be LF or CRLF. A file need not end in a newline.
 
@@ -298,8 +298,50 @@ sentence. Where the body ends no sentence at all, the whole of it is the summary
 
 ## Identifiers
 
-An identifier starts with a letter or `_` and continues with letters, digits, or `_`. Letters are
-ASCII `A`–`Z` and `a`–`z`.
+An identifier starts with a letter or `_` and continues with letters, digits, or `_`. **A letter is
+whatever Unicode calls one**, so a name may be written in any script:
+
+```sysl
+val año = 2026
+área(ancho: real, altura: real) -> real = ancho * altura
+
+struct Círculo
+    radio: real
+
+print(año, área(3.0, 4.0), Círculo(2.0).radio)
+```
+```output
+2026 12 2
+```
+
+This is a rule about *reading* rather than about internationalization. A language whose identifiers
+are ASCII asks everybody who does not think in English to transliterate their own vocabulary, and the
+words that suffer are the domain ones — the names a reader most needs to recognize. Go, Java, Scala
+and C# all draw the line here.
+
+A **digit** is whatever Unicode calls one too, but only *inside* a name: `caf٣` is an identifier and
+`٣` is not, because a name may not begin with a digit in any script. The number *literal* grammar is
+deliberately unmoved — a literal is a value the arithmetic has to read, and `٣` is not one.
+
+**Two spellings that look identical are two names**, and this is the one edge worth stating outright:
+`café` written with a precomposed `é` and `café` written with an `e` and a combining acute are
+different identifiers. sysl applies no normalization, which is a deliberate refusal of UAX #31's
+rule — a declaration is what a caller has to spell, and folding them would make a name that looks
+right refuse to resolve for a reason nothing on the screen shows.
+
+**A letter above the Basic Multilingual Plane is refused**, which is the other edge and is not
+predictable from the rule above. Every living script's letters are inside the BMP, CJK Unified
+Ideographs included; what is outside is the historic scripts and the CJK extension planes.
+
+```sysl
+val 𠮷 = 1
+print(𠮷)
+```
+```error
+illegal character
+```
+
+An **operator-shaped** character is not a letter and never was: `×` and `÷` are refused the same way.
 
 Case is significant. Capitalization is not enforced anywhere, but the convention the standard library
 and this documentation follow is `PascalCase` for types and traits, `snake_case` for everything else —
@@ -309,7 +351,9 @@ correctly on a page.
 ### Quoted identifiers
 
 **A name written between backticks may be anything the rule above refuses** — a reserved word, or a
-name carrying spaces and punctuation:
+name carrying spaces and punctuation. That set is narrower than it looks: since a letter is Unicode's
+letter, `café` and `名前` need no backticks, and what is left for the quoted form is punctuation,
+spaces, and the words the grammar has taken for itself.
 
 ```sysl
 var `item count` = 3
@@ -323,6 +367,17 @@ end `Grid Cell`
 It is a name and nothing more: `` `match` `` *is* the identifier `match`. A contextual word written
 this way is an ordinary name rather than the word — `` `end` `` names something, and does not close a
 block.
+
+That holds for a name the ordinary grammar can also write, so the two spellings are one name:
+
+```sysl
+var café = 3
+`café` += 1
+print(café)
+```
+```output
+4
+```
 
 Two characters may not appear inside, and a newline ends the search rather than the name, so an
 unclosed backtick is reported on the line that opened it. A **backtick** cannot appear at all, since

@@ -57,7 +57,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and one more refusal: a line may now continue the one above it by starting
     // with a dot, so the page shows a chain broken before the dot, refuses the trailing spelling,
     // and shows the `match` whose arms the rule's second half is what keeps.
-    "docs/content/reference/lexical.md"               -> (16, 3, 3),
+    "docs/content/reference/lexical.md"               -> (18, 4, 3),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound.
