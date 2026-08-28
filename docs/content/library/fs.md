@@ -551,6 +551,67 @@ over — a caller that wants them reads `metadata(from).permissions()` and write
 that is not there reports `NotFound`. `File.truncate` is the same on an open file, and **does not
 move the position** — which is what makes it usable in the middle of writing.
 
+### Where a directory *belongs*
+
+A different question from where the program is: not where it happens to be, but where the machine's
+own conventions say a file of a given kind goes. Four calls, each answering `Option[string]`.
+
+```sysl
+import sysl.fs.{home_dir, cache_dir, config_dir, data_dir}
+
+print(home_dir().is_some())
+print(cache_dir().is_some(), config_dir().is_some(), data_dir().is_some())
+
+print(cache_dir().unwrap() != home_dir().unwrap())
+```
+
+```output
+true
+true true true
+true
+```
+
+| call | macOS | Windows | elsewhere |
+|---|---|---|---|
+| `home_dir` | `$HOME` | `%USERPROFILE%` | `$HOME` |
+| `cache_dir` | `~/Library/Caches` | `%LOCALAPPDATA%` | `$XDG_CACHE_HOME`, or `~/.cache` |
+| `config_dir` | `~/Library/Application Support` | `%APPDATA%` | `$XDG_CONFIG_HOME`, or `~/.config` |
+| `data_dir` | `~/Library/Application Support` | `%APPDATA%` | `$XDG_DATA_HOME`, or `~/.local/share` |
+
+**They are `Option` because a machine may genuinely not say.** An environment with no `HOME` set is
+not a failure with an errno behind it; it is a machine that has not told the program where its user
+lives. A caller that gets `None` falls back to something of its own **knowingly**, which is the whole
+difference between this and reading the variable itself. A variable set to *nothing* counts as unset
+here, which is where these differ from [`sysl.env`](/library/env/)'s `get`: an empty string is a
+truthful reading of an environment and is not a place.
+
+**They name a directory and do not make one.** Nothing here touches the filesystem — the answer is a
+path, and whether it exists is `exists` and whether it should is `make_dir_all`. A question that
+created a directory as a side effect could not be asked by a program that was about to read.
+
+**A program appends its own name, and nothing here does it for you.** These say where the machine
+keeps caches, not where *yours* goes:
+
+```sysl
+import sysl.fs.cache_dir
+import sysl.path.join
+
+val mine = cache_dir().map((d) -> join(d, "myprogram"))
+
+print(mine.is_some())
+```
+
+```output
+true
+```
+
+A library that guessed the leaf would be guessing the program's identity, which is not its to guess.
+
+**macOS answers the same directory for `config_dir` and `data_dir`, and that is Apple's convention
+rather than a gap here.** The platform draws the line between *cache* and everything else and does
+not draw one between configuration and data. Inventing a `~/Library/Config` to make the four look
+symmetrical would put files where nothing else on the machine looks.
+
 ### Listing a directory
 
 ```sysl

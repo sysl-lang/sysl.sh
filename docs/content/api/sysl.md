@@ -25,7 +25,7 @@ came back and neither of these comes back.
 
 ## Index
 
-[`assert`](#assert) [`assert_eq`](#assert_eq) [`assert_slice_eq`](#assert_slice_eq) [`display_bool`](#display_bool) [`display_char`](#display_char) [`display_digits`](#display_digits) [`display_fill`](#display_fill) [`display_int`](#display_int) [`display_pad`](#display_pad) [`display_real`](#display_real) [`display_real_shortest`](#display_real_shortest) [`display_str`](#display_str) [`display_uint`](#display_uint) [`encode_utf8`](#encode_utf8) [`eprints`](#eprints) [`eputbytes`](#eputbytes) [`hash_bool`](#hash_bool) [`hash_str`](#hash_str) [`hash_u128`](#hash_u128) [`hash_u64`](#hash_u64) [`panic`](#panic) [`printb`](#printb) [`printc`](#printc) [`printi`](#printi) [`printr`](#printr) [`prints`](#prints) [`printu`](#printu) [`putbytes`](#putbytes) [`stderr`](#stderr) [`stdout`](#stdout) [`Counting`](#counting) [`FormatSpec`](#formatspec) [`Option`](#option) [`Range`](#range) [`Result`](#result) [`Stderr`](#stderr-1) [`Stdout`](#stdout-1) [`Add`](#add) [`BitAnd`](#bitand) [`BitOr`](#bitor) [`BitXor`](#bitxor) [`Display`](#display) [`Div`](#div) [`Drop`](#drop) [`Eq`](#eq) [`Fallible`](#fallible) [`Fn0`](#fn0) [`Fn1`](#fn1) [`Fn2`](#fn2) [`Fn3`](#fn3) [`Fn4`](#fn4) [`From`](#from) [`Hash`](#hash) [`Index`](#index) [`IndexSet`](#indexset) [`Integer`](#integer) [`Iterate`](#iterate) [`Mul`](#mul) [`Neg`](#neg) [`Not`](#not) [`One`](#one) [`Ord`](#ord) [`Rem`](#rem) [`Shl`](#shl) [`Shr`](#shr) [`Sub`](#sub) [`Writer`](#writer) [`Zero`](#zero) [Display for (..A)](#display-for-a) [Display for []T](#display-for-t) [Display for [N]T](#display-for-nt) [Display for bool](#display-for-bool) [Display for char](#display-for-char) [Display for f32](#display-for-f32) [Display for Option[T]](#display-for-optiont) [Display for real](#display-for-real) [Display for Result[T, E]](#display-for-resultt-e) [Display for string](#display-for-string) [Display for T](#display-for-t-1) [Eq for (..A)](#eq-for-a) [Eq for []T](#eq-for-t) [Eq for [N]T](#eq-for-nt) [Eq for Option[T]](#eq-for-optiont) [Eq for Result[T, E]](#eq-for-resultt-e) [Fallible for Counting](#fallible-for-counting) [Fallible for Stderr](#fallible-for-stderr) [Fallible for Stdout](#fallible-for-stdout) [Hash for (..A)](#hash-for-a) [Hash for bool](#hash-for-bool) [Hash for char](#hash-for-char) [Hash for string](#hash-for-string) [Hash for T](#hash-for-t) [Iterate for Range[T]](#iterate-for-ranget) [One for f32](#one-for-f32) [One for real](#one-for-real) [Ord for (..A)](#ord-for-a) [Writer for Counting](#writer-for-counting) [Writer for Stderr](#writer-for-stderr) [Writer for Stdout](#writer-for-stdout) [Zero for f32](#zero-for-f32) [Zero for real](#zero-for-real)
+[`assert`](#assert) [`assert_eq`](#assert_eq) [`assert_slice_eq`](#assert_slice_eq) [`cpu`](#cpu) [`display_bool`](#display_bool) [`display_char`](#display_char) [`display_digits`](#display_digits) [`display_fill`](#display_fill) [`display_int`](#display_int) [`display_pad`](#display_pad) [`display_real`](#display_real) [`display_real_shortest`](#display_real_shortest) [`display_str`](#display_str) [`display_uint`](#display_uint) [`encode_utf8`](#encode_utf8) [`eprints`](#eprints) [`eputbytes`](#eputbytes) [`hash_bool`](#hash_bool) [`hash_str`](#hash_str) [`hash_u128`](#hash_u128) [`hash_u64`](#hash_u64) [`os`](#os) [`panic`](#panic) [`printb`](#printb) [`printc`](#printc) [`printi`](#printi) [`printr`](#printr) [`prints`](#prints) [`printu`](#printu) [`putbytes`](#putbytes) [`stderr`](#stderr) [`stdout`](#stdout) [`Counting`](#counting) [`Cpu`](#cpu-1) [`FormatSpec`](#formatspec) [`Option`](#option) [`Os`](#os-1) [`Range`](#range) [`Result`](#result) [`Stderr`](#stderr-1) [`Stdout`](#stdout-1) [`Add`](#add) [`BitAnd`](#bitand) [`BitOr`](#bitor) [`BitXor`](#bitxor) [`Display`](#display) [`Div`](#div) [`Drop`](#drop) [`Eq`](#eq) [`Fallible`](#fallible) [`Fn0`](#fn0) [`Fn1`](#fn1) [`Fn2`](#fn2) [`Fn3`](#fn3) [`Fn4`](#fn4) [`From`](#from) [`Hash`](#hash) [`Index`](#index) [`IndexSet`](#indexset) [`Integer`](#integer) [`Iterate`](#iterate) [`Mul`](#mul) [`Neg`](#neg) [`Not`](#not) [`One`](#one) [`Ord`](#ord) [`Rem`](#rem) [`Shl`](#shl) [`Shr`](#shr) [`Sub`](#sub) [`Writer`](#writer) [`Zero`](#zero) [Display for (..A)](#display-for-a) [Display for []T](#display-for-t) [Display for [N]T](#display-for-nt) [Display for bool](#display-for-bool) [Display for char](#display-for-char) [Display for f32](#display-for-f32) [Display for Option[T]](#display-for-optiont) [Display for real](#display-for-real) [Display for Result[T, E]](#display-for-resultt-e) [Display for string](#display-for-string) [Display for T](#display-for-t-1) [Eq for (..A)](#eq-for-a) [Eq for []T](#eq-for-t) [Eq for [N]T](#eq-for-nt) [Eq for Option[T]](#eq-for-optiont) [Eq for Result[T, E]](#eq-for-resultt-e) [Fallible for Counting](#fallible-for-counting) [Fallible for Stderr](#fallible-for-stderr) [Fallible for Stdout](#fallible-for-stdout) [Hash for (..A)](#hash-for-a) [Hash for bool](#hash-for-bool) [Hash for char](#hash-for-char) [Hash for string](#hash-for-string) [Hash for T](#hash-for-t) [Iterate for Range[T]](#iterate-for-ranget) [One for f32](#one-for-f32) [One for real](#one-for-real) [Ord for (..A)](#ord-for-a) [Writer for Counting](#writer-for-counting) [Writer for Stderr](#writer-for-stderr) [Writer for Stdout](#writer-for-stdout) [Zero for f32](#zero-for-f32) [Zero for real](#zero-for-real)
 
 ## Functions
 
@@ -61,6 +61,18 @@ assert_slice_eq[T: Eq + Display](got: []const T, want: []const T, msg: string = 
 The same for a slice, which needs more than `==` to be useful: a report saying two slices differ
 sends its reader to find out where, and finding out where is a loop nobody wants to write at each
 call. Length first, since a length mismatch explains every index after the shorter one.
+
+### `cpu`
+
+```sysl
+cpu() -> Cpu
+```
+
+Which processor this program was compiled for, on the same terms as `os` above: a constant the
+compiler already holds, reaching an expression rather than a gated line.
+
+A program wanting an address width should ask for one -- `sizeof(usize)` is the question, and it
+is right for a processor this list has not got yet.
 
 ### `display_bool`
 
@@ -251,6 +263,34 @@ This is splitmix64's finalizer: it is the one that turns a counter into somethin
 bucket on, since consecutive integers are the input a hash table actually meets and the identity
 hash is what makes them collide in a row.
 
+### `os`
+
+```sysl
+os() -> Os
+```
+
+Which operating system this program was compiled for.
+
+**It is a constant, not a query.** A sysl program is compiled for exactly one target, so the
+answer is something the compiler already holds and this costs a program nothing at run time --
+there is no table to consult and no environment to read, and a freestanding target pays for it
+exactly as much as a hosted one does, which is nothing.
+
+**What it adds over `#if` is expression position.** `#if` gates lines, before the lexer, so a
+program could already define a different `val` per platform; what it could not do is pass a
+platform to a function, compare one, or `match` on one. This is that half:
+
+```
+val leaf = os() match
+    MacOS -> "Library/Caches"
+    Windows -> "AppData"
+    _ -> ".cache"
+```
+
+**There is deliberately no `#else` under this**, so an operating system added to the compiler's
+registry without a branch here fails to build for that target rather than quietly answering
+something else.
+
 ### `panic`
 
 ```sysl
@@ -358,6 +398,27 @@ once -- and an implementation written outside `sysl` had nowhere to measure into
 separate files -- and so does **every derived `Display`**, which the compiler writes in this shape
 (`reference/traits.md § The compiler writes four of them`).
 
+### `Cpu`
+
+```sysl
+enum Cpu
+    Aarch64
+    X86_64
+    Riscv64
+    Riscv32
+    Thumb
+    Wasm32
+    X86
+    Craft
+```
+
+The processor a program was compiled for, named as `#if` and an `asm` arm name it.
+
+**`Thumb` rather than `Arm`, because it is the instruction set that a program gating on a
+processor has to be right about** -- a Cortex-M executes Thumb and nothing else. The two widths of
+RISC-V are two rows for the same reason a 32-bit and a 64-bit x86 are: an address width is the
+thing most code asking this question is asking about.
+
 ### `FormatSpec`
 
 ```sysl
@@ -401,6 +462,30 @@ trap does under the `os` capability -- so neither needs compiler support of its 
 | `or_else` | `or_else(self, f: () -> Option[T]) -> Option[T]` | Another option where this one is absent -- the first that has something wins. |
 | `filter` | `filter(self, pred: T -> bool) -> Option[T]` | Absent unless the payload passes -- `Some(4).filter(even)` is `Some(4)` and `Some(5)` is `None`. |
 | `ok_or` | `ok_or[E](self, e: E) -> Result[T, E]` | The crossing into the other enum: absence becomes the error the caller names. |
+
+### `Os`
+
+```sysl
+enum Os
+    MacOS
+    Linux
+    Windows
+    Freestanding
+    Android
+```
+
+The operating system a program was compiled for.
+
+**These are the same five machines `#if` gates on**, under the same names a source file writes at
+the margin: `#if macos` and `os() == MacOS` ask one question, and the two must never come to
+disagree. `Freestanding` is a member because a target with no operating system under it is still a
+target with an answer, and a program that has to say what it is running on would otherwise have
+one case it could not spell.
+
+`Android` is its own row rather than a kind of `Linux`, for the reason `Conditional.osSymbol`
+gives: what a program asking this wants to know is which libc and which conventions it has, and
+Bionic is neither glibc's nor its headers'. A program that means either writes
+`os() == Linux || os() == Android`.
 
 ### `Range`
 

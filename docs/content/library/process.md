@@ -146,9 +146,55 @@ child while the child waits for the parent to drain that buffer is a deadlock th
 the output gets long enough. Nothing here can deadlock, and the file is removed before `capture`
 returns.
 
-**Standard error is not captured.** It goes wherever this program's does, which is what a shell's
-`$(...)` leaves it doing — a tool asking a program a question wants the answer without a warning
-mixed into the middle of it, and the warning is still worth seeing.
+**Standard error is left alone unless it is asked for.** By default it goes wherever this program's
+does, which is what a shell's `$(...)` leaves it doing — a tool asking a program a question wants the
+answer without a warning mixed into the middle of it, and the warning is still worth seeing.
+
+## Reading why a child failed
+
+A child that exits non-zero has usually said why, on the stream `capture` lets through to the
+terminal — where a person may not be looking and a program cannot read it at all. `stderr = true`
+collects it into `Output.err`, and takes it off the terminal.
+
+```sysl
+import sysl.process.capture
+import sysl.text.Search
+
+val quiet = capture("sh", ["-c", "echo why >&2; exit 3"]).unwrap()
+
+print(quiet.status, quiet.err.is_none())
+
+val loud = capture("sh", ["-c", "echo why >&2; exit 3"], "", [], true).unwrap()
+
+print(loud.status, loud.err.unwrap().trim(), loud.text == "")
+```
+
+```output
+exited 3 true
+exited 3 why true
+```
+
+**`err` is an `Option[string]` and the two empty answers are different.** `None` is "this call did
+not collect standard error"; `Some("")` is "it was collected and the child wrote nothing". A bare
+string could say only the second, so a tool reporting a failure would have had to guess which it
+had.
+
+```sysl
+import sysl.process.capture
+
+val asked = capture("true", [], "", [], true).unwrap()
+
+print(asked.err.is_some(), asked.err.unwrap() == "")
+print(capture("true").unwrap().err.is_none())
+```
+
+```output
+true true
+true
+```
+
+The second stream goes through a second file, on the same mechanism and for the same reason: two
+pipes is where the deadlock above gets *easier* to reach, and two files cannot deadlock at all.
 
 ## What is not here
 

@@ -27,7 +27,7 @@ and the clause is what says so in the one place a reader of the file will see it
 
 ## Index
 
-[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`canonicalize`](#canonicalize) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
+[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
 
 ## Functions
 
@@ -52,11 +52,43 @@ whatever the file already held, including anything another program appended in b
 append_text(path: string, text: string) -> Result[unit, IoError]
 ```
 
+### `cache_dir`
+
+```sysl
+cache_dir() -> Option[string]
+```
+
+Where a program's own cache belongs -- the things it can regenerate and would rather not.
+
+`~/Library/Caches` on macOS, `%LOCALAPPDATA%` on Windows, and `$XDG_CACHE_HOME` or `~/.cache`
+elsewhere, which is the freedesktop rule.
+
+**A program appends its own name and nothing here does it for you**: this answers where the
+machine keeps caches, not where yours goes, so the call is
+`cache_dir().map((d) -> join(d, "myprogram"))`. A library that guessed the leaf would be guessing
+the program's identity.
+
 ### `canonicalize`
 
 ```sysl
 canonicalize(path: string) -> Result[string, IoError]
 ```
+
+### `config_dir`
+
+```sysl
+config_dir() -> Option[string]
+```
+
+Where a program's configuration belongs -- what a person edits, and what survives a reinstall.
+
+`~/Library/Application Support` on macOS, `%APPDATA%` on Windows, `$XDG_CONFIG_HOME` or
+`~/.config` elsewhere.
+
+**macOS answers the same directory for this and for `data_dir`, and that is Apple's convention
+rather than an omission here.** The platform draws the line between *cache* and *everything else*
+and does not draw one between configuration and data; a library that invented a `~/Library/Config`
+to make the four look symmetrical would be putting files where nothing else on the machine looks.
 
 ### `copy_file`
 
@@ -106,6 +138,17 @@ should be and not where it was itself. This is the other half.
 thread is calling `set_current_dir` gets one of the two answers and no promise about which.
 Building an absolute path once at start-up is the shape that avoids the question.
 
+### `data_dir`
+
+```sysl
+data_dir() -> Option[string]
+```
+
+Where a program's own data belongs -- what it wrote and cannot regenerate.
+
+`~/Library/Application Support` on macOS, `%APPDATA%` on Windows, `$XDG_DATA_HOME` or
+`~/.local/share` elsewhere. See `config_dir` for why two of those three are the same answer.
+
 ### `entries`
 
 ```sysl
@@ -152,6 +195,19 @@ A second name for a file that already exists, in the same filesystem.
 The two names are equal afterwards -- there is no original -- and the file goes when the last of
 them does, which is what `Meta.links` counts. It fails across filesystems, and it fails on a
 directory, both of which are the kernel's rules rather than this module's.
+
+### `home_dir`
+
+```sysl
+home_dir() -> Option[string]
+```
+
+Where the user's home directory is, or `None` where the environment does not say.
+
+`HOME` everywhere but Windows, which spells it `USERPROFILE`. **A variable set to nothing counts
+as unset here**, which is where this differs from `sysl.env.get`: an empty string is a truthful
+reading of an environment and is not a place, and every specification that mentions the case says
+to treat it as absent.
 
 ### `is_dir`
 

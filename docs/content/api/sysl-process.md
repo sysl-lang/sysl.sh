@@ -16,7 +16,7 @@ requires: "requires { os }"
 ### `capture`
 
 ```sysl
-capture(program: string, args: []const string = [], dir: string = "", env: []const Var = []) -> Result[Output, IoError]
+capture(program: string, args: []const string = [], dir: string = "", env: []const Var = [], stderr: bool = false) -> Result[Output, IoError]
 ```
 
 Run a program, wait for it, and collect what it wrote to its standard output.
@@ -25,9 +25,18 @@ For asking a program a question -- what version it is, where something lives, wh
 attached. The output is collected through a file rather than a pipe, which is not an
 implementation detail worth hiding: a pipe has a buffer, and a parent that waits for a child
 while the child waits for the parent to drain that buffer is a deadlock that only appears once
-the output gets long enough. Nothing here can deadlock.
+the output gets long enough. Nothing here can deadlock, and adding a second stream does not
+change that -- two pipes is where the deadlock gets *easier* to reach, and two files is two
+files.
 
-The file is removed before this returns, whether the child succeeded or not.
+**`stderr` is what a tool reporting a failure needs, and it is off by default.** Without it a
+program that ran and exited non-zero says only that it failed: the reason was written to a stream
+this call let through to the terminal, where a tool cannot read it and a person may not be
+looking. Asking for it puts the message in `Output.err` and takes it *off* the terminal, which is
+the trade -- so a call whose output a person is watching should leave it alone, and one whose
+answer another program is reading should not.
+
+The files are removed before this returns, whether the child succeeded or not.
 
 ### `run`
 
@@ -57,14 +66,22 @@ answer rather than a failure of this call.
 struct Output
     status: Status
     text: string
+    err: Option[string]
 ```
 
-A child's standard output, and how it ended.
+A child's output, and how it ended.
 
-`text` is what the program wrote to its standard output and nothing else. **Standard error is not
-captured**: it goes wherever this program's does, which is what a shell's `$(...)` leaves it
-doing. A tool asking a program a question wants its answer without a warning it printed mixed
-into the middle of it, and a warning is still worth seeing.
+`text` is what the program wrote to its standard output. `err` is what it wrote to its standard
+error, and only where the caller asked for it -- by default that stream goes wherever this
+program's does, which is what a shell's `$(...)` leaves it doing. A tool asking a program a
+question wants its answer without a warning printed into the middle of it, and a warning is still
+worth seeing.
+
+**`None` and `Some("")` are different answers and the distinction is the point.** `None` is "this
+call did not collect standard error"; `Some("")` is "it was collected and the child wrote
+nothing". A `string` alone could not tell a caller which of those it had, so a tool reporting why
+a child failed would have had to guess between "it said nothing" and "nobody was listening" --
+which is the whole reason this field is an `Option`.
 
 ### `Status`
 

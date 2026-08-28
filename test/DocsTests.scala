@@ -163,7 +163,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
 // One more again: a `real` renders at the shortest precision that reads back equal, and the
     // section shows that beside the six digits `str` gives a person and the seventeen that keep
     // every value — which is the comparison the function exists for.
-    "docs/content/library/core.md"                     -> (33, 6, 12),
+    // `os()` and `cpu()` gained a section of their own -- one runnable block, since what the platform
+    // constants add over a directive is that they can be compared, passed and matched on.
+    "docs/content/library/core.md"                     -> (34, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (11, 6, 3),
@@ -171,7 +173,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.
     "docs/content/library/io.md"                        -> (7, 3, 3),
-    "docs/content/library/fs.md"                        -> (10, 5, 3),
+    // Two more runnable blocks for where a directory belongs: the four answers, and the leaf a
+    // program appends for itself.
+    "docs/content/library/fs.md"                        -> (12, 5, 3),
     "docs/content/library/path.md"                      -> (6, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
@@ -186,7 +190,12 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // `checked_date`, and the section runs both so the pair is visible rather than described.
     "docs/content/library/time.md"                       -> (23, 4, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
-    "docs/content/library/process.md"                    -> (5, 0, 0),
+    // Two more for `capture`'s `stderr`: the reason a failed child gives, and the difference between
+    // a stream nobody collected and one that was collected and empty.
+    "docs/content/library/process.md"                    -> (7, 0, 0),
+    // Four runnable blocks and no refusals: `sysl.posix.net` is a surface rather than a set of
+    // rules, so what a page about it can show is connections it actually makes.
+    "docs/content/library/net.md"                        -> (4, 0, 0),
     "docs/content/library/sync.md"                       -> (9, 7, 2),
     // One refusal became a runnable program when `null` learned to wait for the argument that
     // settles the parameter: a thread body with nothing of its own is now passed one.

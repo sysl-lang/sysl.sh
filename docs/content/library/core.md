@@ -293,6 +293,53 @@ compared, and one that deliberately exits non-zero would be reported as a failur
 Its result type is `never`, so the call is an expression that never comes back and a function ending
 in one owes no other answer.
 
+## Which machine the program was compiled for
+
+`os()` and `cpu()` answer the platform as a value.
+
+```sysl
+print(os() == MacOS || os() == Linux || os() == Windows)
+print(cpu() == Aarch64 || cpu() == X86_64 || cpu() == Riscv64 || cpu() == X86)
+
+val leaf = os() match
+    MacOS -> "Library/Caches"
+    Windows -> "AppData"
+    _ -> ".cache"
+
+print(leaf.len > 0)
+```
+
+```output
+true
+true
+true
+```
+
+`Os` is `MacOS`, `Linux`, `Windows`, `Freestanding` and `Android`; `Cpu` is `Aarch64`, `X86_64`,
+`Riscv64`, `Riscv32`, `Thumb`, `Wasm32`, `X86` and `Craft`. Both derive `Display`, so `str(os())` is
+the name it is written with.
+
+**They are constants, not queries.** A sysl program is compiled for exactly one target, so the
+answer is something the compiler already holds: there is nothing to look up at run time, and a
+freestanding target pays exactly as much for them as a hosted one, which is nothing.
+
+**What they add over [`#if`](/reference/attributes/#if-gating-lines-before-the-lexer) is expression
+position.** A `#if` gates *lines*, before the lexer, so a program could already define a different
+`val` per platform — what it could not do is compare a platform, pass one to a function, or `match`
+on one. That is the whole of the difference, and it is why these exist beside a directive that has
+been there all along.
+
+**The two vocabularies are the same words on purpose.** `#if macos` and `os() == MacOS` ask one
+question, and `Os` has a `Freestanding` member because a target with no operating system under it is
+still a target with an answer. `Android` is its own case rather than a kind of `Linux`: what a
+program asking this wants to know is which libc and which conventions it has, and Bionic is neither
+glibc's. A program that means either writes `os() == Linux || os() == Android`.
+
+`Thumb` rather than `Arm` for the same reason — a Cortex-M executes Thumb and nothing else, and it is
+the instruction set that a program gating on a processor has to be right about. A program that wants
+an **address width** should ask for one: `sizeof(usize)` is that question, and it is right for a
+processor this list has not got yet.
+
 ## Rendering to standard output
 
 `print(a, b, c)` is **a desugaring, not a variadic function**. Each argument is looked at
