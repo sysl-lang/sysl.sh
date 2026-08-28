@@ -311,6 +311,34 @@ The standard module is under the same rule and needs nothing done about it — i
 pair among the other things it is keyed by, so a program that names an allocator gets a standard
 module built for that allocator, built on demand and announced on stderr.
 
+### A freestanding target has nowhere to take the default from
+
+Declaring nothing gets libc's `malloc` and `free`, which is the right default everywhere there is a
+libc. A freestanding target has none — so a package that `requires { heap = true }`, built for one by
+a command that links, is asking for two symbols nothing will define:
+
+```
+this package requires a heap and 'wasm32-freestanding' is freestanding, so nothing supplies
+'malloc' and 'free' — the link would answer with an undefined symbol for each. Name a heap of
+your own in package.hocon's 'allocator' block, or build for a target that has a libc
+```
+
+The `allocator` block above is the way out, and it is the whole of the way out: naming libc's own pair
+explicitly is refused by the same rule, because writing `malloc` down does not make a machine that has
+one.
+
+**This is not the capability check, and cannot be.** `requires` is answered against what the *project*
+says a target provides, and a capability the manifest does not mention is provided — the prior is that
+a machine can do everything, and what a manifest records is what a machine cannot do. Whether an
+allocator exists is exactly the kind of engineering decision that prior is right about: a Cortex-M
+program linked against newlib has `malloc`, one linked against nothing has not, and the target cannot
+tell you which. So what is asked here is not what the machine has. It is **who is doing the link**.
+
+That is why `build-c` and `build-lib` are untouched. They write an archive for somebody else's build
+system to link, and the allocator arrives from a `CMakeLists.txt` the compiler never sees — which is
+how every board project works. Only where sysl invokes the linker itself is there nothing left to
+supply the pair.
+
 ### What it does not do
 
 Naming the pair says which functions the program uses. It says nothing about **where** the program may
