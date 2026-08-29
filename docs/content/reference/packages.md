@@ -770,6 +770,38 @@ nothing to record about which versions were chosen. The first time a package is 
 and recorded; reviewing the line that appears is the part a person does. A `path` dependency gets no
 entry, because a directory beside you is expected to change.
 
+## Adding one, and vendoring the lot
+
+A dependency is a line in `package.hocon` and you may write it yourself, but `sysl add` is what
+settles the two things you would otherwise go and look up — how the coordinate is spelled and what
+the newest tag is:
+
+```text
+sysl add github.com/sysl-lang/sdl3
+sysl add github.com/sysl-lang/sdl3@0.3.1
+```
+
+The version comes from `git ls-remote --tags`, so it works for any host a build can clone from. The
+manifest is rewritten one run of bytes at a time, which is why your comments and layout survive it,
+and the result is read back before it is written — a rewrite that produced something unreadable
+leaves the file exactly as it was. Nothing is fetched; the next build does that.
+
+`sysl vendor` puts everything the project resolves to into a `vendor/` directory beside the manifest:
+
+```text
+sysl vendor .
+```
+
+**It is the machine's package cache moved into the project** — the same layout, the same resolution,
+the same `sysl.sum`. A project that has a `vendor/` builds with the network off, and the directory
+being there is the whole of what turns that on: nobody has to be told, and no flag has to be passed.
+It is not part of the project's own source, exactly as [`examples/`](#a-package-may-carry-examples)
+is not, so nothing in it is compiled as one of your modules.
+
+Commit it where you want a build that an upstream disappearing cannot break; leave it out where you
+would rather fetch. A `path` dependency is not vendored and cannot be — it is a directory you are
+editing beside this one, which is why nothing keeps a sum for it either.
+
 ## No build scripts, ever
 
 **A package cannot run code at build time.** Not a hook, not a script, not a plugin. `sysl add` and

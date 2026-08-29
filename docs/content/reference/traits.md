@@ -2289,6 +2289,95 @@ number to write down anywhere, and two compilations of *one* program agree only 
 the same thing from the same name. A generic body asks through its parameter, `T::Id`, which is
 answered once per instantiation.
 
+## A method may promise to borrow
+
+A call through a trait object is opaque: which body it reaches is settled at run time, so
+[escape analysis](/reference/memory/#what-happens-when-a-slice-escapes) has to assume the worst of
+every argument. A view of an array in your own frame passed through one could be kept by whatever is
+behind it, so the array goes on the heap.
+
+`@borrows` is how a trait says otherwise — and the compiler holds every implementation to it, so the
+promise is checked rather than trusted:
+
+```sysl
+trait Sink
+    @borrows(bytes)
+    put(*self, bytes: []const u8)
+
+struct Counter
+    n: usize
+
+impl Sink for Counter
+    put(*self, bytes: []const u8)
+        self.n += bytes.len
+
+var c: Counter
+var s: *Sink = &c
+var buf: [8]u8
+
+buf[0] = 7u8
+s.put(buf[0..<4])
+
+print(c.n)
+```
+
+```output
+4
+```
+
+Without the annotation that program is identical and `buf` is allocated. With it, the frame keeps its
+storage — which is what makes rendering allocation-free, since a renderer writes into a buffer on its
+own stack and passes a slice of it. `sysl.Writer` declares exactly this, and is an ordinary user of
+the feature rather than a case the compiler knows about.
+
+**An implementation that keeps what it was lent is refused**, by the name the trait gave the
+parameter:
+
+```sysl
+trait Sink
+    @borrows(bytes)
+    put(*self, bytes: []const u8)
+
+struct Bad
+    held: []const u8
+
+impl Sink for Bad
+    put(*self, bytes: []const u8)
+        self.held = bytes
+
+var b: Bad
+var s: *Sink = &b
+var buf: [8]u8
+
+s.put(buf[0..<4])
+```
+
+```error
+keeps what it is passed as 'bytes', but 'Sink' declares that parameter borrowed
+```
+
+Reading out of the view is not keeping it, which is the distinction the check draws and the reason it
+is a question about what the body *does* rather than about how it is written.
+
+**It names parameters rather than being a flag**, because a method may take a buffer it borrows and
+something it legitimately retains. A name that is not a parameter is refused: a misspelling would
+promise nothing and say nothing, which reads exactly like a rule being enforced.
+
+**It says nothing above a free function and is refused there.** That body is right in front of the
+compiler and the analysis reads the answer out of it — a written promise would restate what is
+already known and go stale the moment the body changed.
+
+```sysl
+@borrows(xs)
+take(xs: []const u8) -> usize = xs.len
+
+print(take([1u8][..]))
+```
+
+```error
+'@borrows' is about a call whose body the compiler cannot see
+```
+
 ## Reaching a trait's members without a value
 
 A trait may declare a member with **no receiver** — an associated function — reached through the

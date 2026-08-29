@@ -4,7 +4,7 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.process
-requires: "requires { os }"
+requires: "requires { posix }"
 ---
 
 ## Index

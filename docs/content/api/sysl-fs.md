@@ -27,7 +27,7 @@ and the clause is what says so in the one place a reader of the file will see it
 
 ## Index
 
-[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
+[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_dir_all`](#copy_dir_all) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`walk`](#walk) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`Entry`](#entry) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [`Walk`](#walk-1) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Iterate for Walk](#iterate-for-walk) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
 
 ## Functions
 
@@ -89,6 +89,31 @@ Where a program's configuration belongs -- what a person edits, and what survive
 rather than an omission here.** The platform draws the line between *cache* and *everything else*
 and does not draw one between configuration and data; a library that invented a `~/Library/Config`
 to make the four look symmetrical would be putting files where nothing else on the machine looks.
+
+### `copy_dir_all`
+
+```sysl
+copy_dir_all(from: string, to: string) -> Result[unit, IoError]
+```
+
+A directory and everything under it copied, making the destination and everything under it.
+
+**A directory is merged into and a file is never overwritten.** Those are the safe half of each
+question: a destination that already holds a subtree gains what this brings, and a destination
+that already holds a *file* of a name being copied reports `AlreadyExists` rather than quietly
+replacing something. `make_dir_all` is idempotent, so the merge half is simply what happens.
+
+**Permissions are carried**, which is where this differs from `copy_file` -- an executable copied
+with that one stops being executable, and this org copies build inputs. A symbolic link is copied
+*as a link*, pointing wherever it pointed, which may be nothing and may be outside the tree.
+
+**A failure part way through leaves what it has already written.** Nothing here removes a tree on
+the way out, because it cannot know whether the destination existed before it started, and
+deleting one the caller owned would be far worse than the failure being reported. A caller that
+needs the destination to appear whole or not at all copies into `make_temp_dir` and `rename`s the
+result into place, which is one call each and is the only way to get atomicity from a filesystem.
+
+The source may be a plain file, in which case this is `copy_file` with the mode carried.
 
 ### `copy_file`
 
@@ -479,6 +504,17 @@ Extending is `truncate(2)`'s own behaviour and is worth knowing, since the name 
 it: a length past the end of the file leaves a hole that reads as zeroes and that most filesystems
 do not store.
 
+### `walk`
+
+```sysl
+walk(root: string) -> Walk
+```
+
+Everything at or under a path, the path itself first.
+
+The root is reported whatever it is, so a walk of a plain file yields that one entry -- which is
+what lets `copy_dir_all` be given either and do the right thing without asking first.
+
 ### `writable`
 
 ```sysl
@@ -500,6 +536,30 @@ write_text(path: string, text: string) -> Result[unit, IoError]
 ```
 
 ## Types
+
+### `Entry`
+
+```sysl
+struct Entry
+    path: string
+    depth: usize
+    meta: Meta
+```
+
+One entry a walk reported: where it is, how far down, and one reading of what it is.
+
+**The `Meta` is a `link_metadata`**, so a symbolic link describes itself rather than whatever it
+points at. That is what `is_dir` on this answers about, and it is why a walk never follows one.
+
+The depth is from the root the walk was given, which is itself depth zero. A caller reproducing
+the tree somewhere else wants `sysl.path.relative_to` rather than this, but a caller that only
+needs to know how deep it has got -- a printer indenting, a search bounding itself -- would
+otherwise have to count separators.
+
+| Member | Signature | Description |
+|---|---|---|
+| `is_dir` | `is_dir(self) -> bool` | Whether this is a directory the walk will descend into -- so a link to one answers `false`. |
+| `is_link` | `is_link(self) -> bool` | Whether this is a symbolic link, which a walk reports and does not follow. |
 
 ### `File`
 
@@ -634,6 +694,35 @@ the library's resolution everywhere and is finer than any filesystem here record
 | `is_link` | `is_link(self) -> bool` | Whether the entry **itself** is a symbolic link, which only `link_metadata` can ever answer `true` to: `metadata` follows links, so what it describes is never one. |
 | `same_file` | `same_file(self, other: Meta) -> bool` | Whether two readings name the same file, which is the inode and the device together and is not the path. |
 
+### `Walk`
+
+```sysl
+struct Walk
+    stack: Buf[Frame]
+    root: string
+    started: bool
+    up: bool
+    open_next: Option[Entry]
+    pruned: bool
+```
+
+A cursor over a directory tree, reporting the root and then everything under it.
+
+**The default order is parents first**, which is what a caller reproducing a tree needs: a
+directory has to exist before anything can be written into it. `bottom_up` reverses that for the
+callers that need the opposite, `remove_dir_all` being the one in this file -- `rmdir` refuses a
+directory that is not empty.
+
+**A failure is reported as an item rather than ending the walk**, so a directory that cannot be
+read is one `Err` and the walk carries on with what is left. That is the axis `remove_dir_all` and
+a best-effort cleanup disagree about, and neither answer is now the library's: `?` in the loop
+body makes the first `Err` fatal, and ignoring it makes the walk best effort.
+
+| Member | Signature | Description |
+|---|---|---|
+| `bottom_up` | `bottom_up(self) -> Walk` | The same walk, reporting a directory *after* everything under it. |
+| `skip_dir` | `skip_dir(*self)` | Do not descend into the directory just reported. |
+
 ## Implementations
 
 ### Display for IoError
@@ -696,6 +785,12 @@ reports this way (`reference/errors.md § The third shape: a latch`).
 one type -- allowed, but a call could not say which it meant, since `failed` takes no arguments
 and a program that reads and writes a file has both traits in scope. Both requiring `Fallible`
 instead leaves this the single answer each of them reaches.
+
+### Iterate for Walk
+
+```sysl
+impl Iterate for Walk
+```
 
 ### Reader for File
 

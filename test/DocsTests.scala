@@ -57,7 +57,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and one more refusal: a line may now continue the one above it by starting
     // with a dot, so the page shows a chain broken before the dot, refuses the trailing spelling,
     // and shows the `match` whose arms the rule's second half is what keeps.
-    "docs/content/reference/lexical.md"               -> (18, 4, 3),
+    "docs/content/reference/lexical.md"               -> (19, 4, 3),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound.
@@ -108,7 +108,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And the two views of a slice on top of that: two more running and one more refused, since a
     // block for `[]T` reaches a `[]const T` receiver now — so the page shows the covering, the write
     // that the read-only instance refuses, and the same member writing freely on a `[]int`.
-    "docs/content/reference/traits.md"                -> (39, 34, 0),
+    "docs/content/reference/traits.md"                -> (40, 36, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may
@@ -175,11 +175,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/io.md"                        -> (7, 3, 3),
     // Two more runnable blocks for where a directory belongs: the four answers, and the leaf a
     // program appends for itself.
-    "docs/content/library/fs.md"                        -> (12, 5, 3),
+    "docs/content/library/fs.md"                        -> (14, 5, 3),
     "docs/content/library/path.md"                      -> (6, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/math.md"                      -> (23, 10, 3),
+    "docs/content/library/math.md"                      -> (24, 10, 3),
     "docs/content/library/complex.md"                   -> (8, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section

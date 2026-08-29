@@ -30,8 +30,10 @@ hello from a child
 true
 ```
 
-It requires `os`. A freestanding target has no processes to start, and nothing here can be given a
-body on one.
+It requires `posix`. The whole of the mechanism is `fork` and `execvp` — the `PATH` search below is
+`execvp`'s own — and neither exists outside POSIX: a freestanding target has no processes to start,
+and a hosted target that is not POSIX has no way to start one. WASI preview1 is the case that made
+that visible, having files and a clock and no way to spawn at all.
 
 ## A program that fails is not a failure
 

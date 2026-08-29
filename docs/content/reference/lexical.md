@@ -626,13 +626,43 @@ There are several other quote forms, each marked by a prefix on the opening quot
 | `c"…"` | a C string — the same value with the terminator C expects, read as `*u8` |
 | `s"…"` | interpolated: `${expr}` holes rendered with `str` |
 | `f"…"` | interpolated with a printf specifier allowed after each hole |
-| `raw"…"` | no escape processing — a backslash is a backslash |
+| `raw"…"` | left exactly alone — no escapes decoded and no `${…}` read |
 
 Any of them may also be written **tripled** as a text block, which spans lines and strips the common
 leading indentation so the text lines up with the code around it rather than against the left margin.
 
 The forms are told apart at the token, so nothing downstream has to remember which quote produced a
 given value.
+
+**`raw` means raw, which is one rule rather than two thirds of one.** Scala's `raw` is an
+interpolator that happens to leave backslashes alone, and copying that left the one combination
+nobody could write: a plain string reads no `${…}` and *does* decode escapes, and Scala's `raw` does
+the opposite, so *leave all of it alone* had no spelling at all. That is the only thing a literal
+carrying another language's source can use — and `${` is not exotic, since shell, Make, Kotlin,
+Groovy and JavaScript template literals all spell interpolation with it.
+
+```sysl
+val program = raw"""
+    fn main() {
+        let re = "\d+\.\d+";
+        println!("{}", re);
+    }
+    """
+
+print(program)
+```
+
+```output
+fn main() {
+    let re = "\d+\.\d+";
+    println!("{}", re);
+}
+
+```
+
+Byte for byte what was written, with the block's indentation still stripped so it sits at the margin
+of the code around it. **On one line a `raw"…"` cannot hold a `"`** — the first one ends it, because
+there is no escape left to write one with — which is what the tripled form is for.
 
 ### Loop labels
 

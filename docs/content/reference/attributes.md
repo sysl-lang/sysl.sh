@@ -11,6 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
+| `@borrows` | an **annotation** on a trait's method — see [`@borrows`](/reference/traits/#a-method-may-promise-to-borrow) | the grammar |
 | `@needs(...)` | an **annotation** — the capabilities reaching the declaration under it requires; the one an `extern` takes | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
 | `@export("...")` on a `struct` | an **annotation** — the name the type carries in a generated C header | the grammar |
@@ -60,9 +61,10 @@ covered under [modules](/reference/modules/) and [FFI](/reference/ffi/), where w
 only itself. It attaches to nothing, declares no name, and nothing can refer to one — two saying the
 same thing are two checks rather than a duplicate. It is below.
 
-**On a member, three: the ones that are about a PARAMETER.** `@crossing`, `@reads` and `@writes`
-each name parameters, and a method, a property or an associated function has parameters exactly as a
-free function does — so there was never anything for a blanket refusal to be about in their case:
+**On a member, four: the ones that are about a PARAMETER.** `@crossing`, `@borrows`, `@reads` and
+`@writes` each name parameters, and a method, a property or an associated function has parameters
+exactly as a free function does — so there was never anything for a blanket refusal to be about in
+their case:
 
 ```sysl
 struct Chan
@@ -103,7 +105,7 @@ the exception they look like: they mark the **struct**, written above `struct` a
 about the member under it — it goes beside the type, where `sizeof` and `offsetof` still name what it
 is about.
 
-**The three are refused above a field and above a variant**, by a sentence of their own: each names
+**They are refused above a field and above a variant**, by a sentence of their own: each names
 parameters, and neither a field nor a variant has any.
 
 ```sysl
@@ -1557,7 +1559,7 @@ print(say())
 ```
 
 ```error
-'darwin' is not something a target says about itself — sysl knows aarch64, android, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasm32, windows, x86, x86_64
+'darwin' is not something a target says about itself — sysl knows aarch64, android, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasi, wasm32, windows, x86, x86_64
 ```
 
 The set is closed, so a name outside it is a mistake rather than a fact this build happens not to

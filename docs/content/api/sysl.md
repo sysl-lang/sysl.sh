@@ -472,6 +472,7 @@ enum Os
     Windows
     Freestanding
     Android
+    Wasi
 ```
 
 The operating system a program was compiled for.
@@ -1041,7 +1042,7 @@ bounded buffer, a device that goes away -- says so once, and nothing about the l
 
 | Member | Signature | Description |
 |---|---|---|
-| `write` | `write(*self, bytes: []const u8)` |  |
+| `write` | `write(*self, bytes: []const u8)` | *The bytes are borrowed for the call and may not be kept**, which is what keeps rendering allocation-free: a renderer writes into a buffer on its own stack and passes a slice of it, and without the promise every such call would put that buffer on the heap. |
 
 ### `Zero`
 

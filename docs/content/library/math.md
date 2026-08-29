@@ -456,6 +456,7 @@ trait Signed
     signum(self) -> Self
 
 trait Bits
+    width() -> u32
     count_ones(self) -> u32
     count_zeros(self) -> u32
     leading_zeros(self) -> u32
@@ -556,6 +557,7 @@ print(u.reverse_bits(), u.rotate_left(1u32), u.rotate_right(1u32))
 print(zero8.leading_zeros(), zero8.trailing_zeros())
 print(all8.leading_ones(), all8.count_zeros())
 print(wide.leading_zeros(), wide.rotate_right(1u32))
+print(u8.width(), u32.width(), i64.width())
 ```
 
 ```output
@@ -566,7 +568,36 @@ print(wide.leading_zeros(), wide.rotate_right(1u32))
 8 8
 8 0
 31 2147483648
+8 32 64
 ```
+
+**`width()` is asked of the TYPE and not of a value**, which is what the empty parentheses on a bare
+type name are saying: every `u32` has the same answer, and a body that wants the width usually has no
+value of the type in hand yet. It is the same shape `zero()` and `one()` have.
+
+**It is what makes a bit expression writable in a body that does not know its own width.** Reversing
+the low `n` bits is one line with it and a loop without:
+
+```sysl
+import sysl.math.Bits
+
+low[T: Bits + Shr](v: T, n: u32) -> T = v.reverse_bits() >> T(T.width() - n)
+
+print(low(0b001u8, 3), low(0b001u32, 3))
+```
+
+```output
+4 4
+```
+
+**The shift count is converted, and that is the one thing to know before writing one of these.** The
+width arithmetic happens at `u32` because that is what `width()` answers, and a `u8` shifts by a `u8`
+— so `T(...)` is what carries the count back to the receiver's own type. Neither a bare `Shr` bound
+nor `Shr[u32]` reaches a `u8` without it.
+
+**The answer is a `u32` and not `Self`**, for the reason the rotation amount is: a width is a count of
+bit positions rather than a value of the type it measures. At `Self` a `u8` could not state its own
+width plus one, and `u8.width() + 248` would wrap to zero instead of answering `256`.
 
 **Every one of these is a shift-and-mask loop a program would otherwise write, and every one is a
 single instruction on the machines sysl targets** — `count_ones` is `popcnt`, `leading_zeros` is
@@ -578,8 +609,9 @@ instruction is on some targets — `0u8.leading_zeros()` is 8 and so is its `tra
 what makes `leading_zeros` usable as "how far left is the top bit" with no special case in front of
 it, and what makes the same program print the same number on every machine.
 
-**`count_zeros` is worth having rather than left to a subtraction**, because the width is the fact the
-caller would otherwise have to know and this is the member that already knows it. `leading_ones` and
+**`count_zeros` is worth having rather than left to a subtraction**, because it says what it means at
+the point of use — `width() - count_ones()` is the same number arrived at by arithmetic a reader has
+to follow. `leading_ones` and
 `trailing_ones` are the same pair counted over set bits, so `-1` answers the width and `0` answers
 nothing.
 

@@ -661,6 +661,100 @@ nothing in sysl learns the layout. It sits in a `__posix__` directory
 platforms disagree about the layout, the shim is what settles that, and so the shim itself is the
 same text on both. What it needs is a POSIX system to run on, which is exactly what `__posix__` says.
 
+### Walking a tree
+
+`entries` lists one directory. `walk` reports a whole tree — the root first, then everything under
+it — and is a [cursor](/library/core/#walking-a-type-of-your-own), so a `for` walks it:
+
+```sysl
+import sysl.fs.{make_dir_all, remove_dir_all, walk, write_text}
+
+var dir = "/tmp/sysl-fs-doc-walk"
+
+remove_dir_all(dir).unwrap()
+make_dir_all(dir + "/a/b").unwrap()
+write_text(dir + "/a/b/deep", "x").unwrap()
+
+var files = 0
+var dirs = 0
+
+for item in walk(dir)
+    val e = item.unwrap()
+
+    if e.is_dir() then dirs += 1 else files += 1
+
+print(dirs, files)
+
+remove_dir_all(dir).unwrap()
+```
+
+```output
+3 1
+```
+
+**Each item is a `Result`, and that is the error policy being left to you**: `?` in the body makes the
+first unreadable directory fatal, and ignoring it makes the walk best effort. A directory that cannot
+be read is one `Err` and the walk carries on with what is left.
+
+**A symbolic link is reported and never followed.** `is_dir` follows a link, so a walk that classified
+with it would descend into a link to a directory without ever deciding to — and a link pointing at one
+of its own ancestors would make the walk unbounded. Each entry carries a
+[`link_metadata`](#one-reading-of-an-entry) reading, so `e.is_link()` is what a caller asks.
+
+**`bottom_up()` reverses the order** — a directory after everything under it, which is what
+`remove_dir_all` needs since `rmdir` refuses a directory that is not empty. **`skip_dir()` prunes**
+the directory just reported, and it needs the cursor by hand rather than a `for`, since a `for` walks a
+copy:
+
+```
+var w = walk(root)
+
+loop
+    val e = w.next() match
+        None -> break
+        Some(item) -> item?
+
+    if e.is_dir() && hidden(e.path) then w.skip_dir()
+```
+
+### Copying a tree
+
+`copy_dir_all` is the walk with a leaf action, and `remove_dir_all` is the same walk asked the other
+way round:
+
+```sysl
+import sysl.fs.{copy_dir_all, make_dir_all, read_text, remove_dir_all, write_text}
+
+var dir = "/tmp/sysl-fs-doc-copy"
+
+remove_dir_all(dir).unwrap()
+make_dir_all(dir + "/from/inner").unwrap()
+write_text(dir + "/from/inner/one", "hello").unwrap()
+
+copy_dir_all(dir + "/from", dir + "/to").unwrap()
+
+print(read_text(dir + "/to/inner/one").unwrap())
+
+remove_dir_all(dir).unwrap()
+```
+
+```output
+hello
+```
+
+**A directory is merged into and a file is never overwritten** — the safe half of each question. A
+destination that already holds a subtree gains what this brings; one that already holds a *file* of a
+name being copied reports `AlreadyExists` rather than quietly replacing something.
+
+**Permissions are carried**, which is where this differs from `copy_file`: an executable copied with
+that one stops being executable. A symbolic link is copied *as a link*, pointing wherever it pointed.
+
+**A failure part way through leaves what it has already written.** Nothing removes a tree on the way
+out, because it cannot know whether the destination existed before it started, and deleting one you
+owned would be far worse than the failure being reported. A caller needing the destination to appear
+whole or not at all copies into `make_temp_dir` and `rename`s the result into place, which is the only
+way to get atomicity from a filesystem.
+
 ## What is absent, and why
 
 **Anything `stat` would answer used to be**, and it is not any more: `metadata` is that call, and the

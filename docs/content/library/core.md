@@ -315,7 +315,7 @@ true
 true
 ```
 
-`Os` is `MacOS`, `Linux`, `Windows`, `Freestanding` and `Android`; `Cpu` is `Aarch64`, `X86_64`,
+`Os` is `MacOS`, `Linux`, `Windows`, `Freestanding`, `Android` and `Wasi`; `Cpu` is `Aarch64`, `X86_64`,
 `Riscv64`, `Riscv32`, `Thumb`, `Wasm32`, `X86` and `Craft`. Both derive `Display`, so `str(os())` is
 the name it is written with.
 
@@ -334,6 +334,11 @@ question, and `Os` has a `Freestanding` member because a target with no operatin
 still a target with an answer. `Android` is its own case rather than a kind of `Linux`: what a
 program asking this wants to know is which libc and which conventions it has, and Bionic is neither
 glibc's. A program that means either writes `os() == Linux || os() == Android`.
+
+`Wasi` is the same distinction on the other side of the same question: `Wasm32` is the processor, and
+both wasm [targets](/getting-started/cli/#targets) answer it — what tells them apart is whether there
+is a libc and a host underneath, which is `os()`. A module built for `wasm32-unknown-unknown` answers
+`Freestanding`.
 
 `Thumb` rather than `Arm` for the same reason — a Cortex-M executes Thumb and nothing else, and it is
 the instruction set that a program gating on a processor has to be right about. A program that wants

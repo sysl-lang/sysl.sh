@@ -24,10 +24,12 @@ the path is standing on.
 | `sysl weave <path>` | render a literate source as an HTML document |
 | `sysl tangle <path>` | print the program a literate source holds |
 | `sysl deps <path>` | print the dependency graph the project resolves to |
+| `sysl add <coordinate>` | add a dependency to the project's manifest |
+| `sysl vendor <path>` | put what the project depends on into `vendor/` |
 | `sysl doc <path>` | generate an API reference from declarations and their doc comments |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is a twelfth, and it has a page of its own — see
+`sysl prove` is a fourteenth, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -378,6 +380,62 @@ The command resolves exactly as a build does, so it fetches what this machine ha
 what it got in `sysl.sum`. It asks nothing of a machine beyond that — no target, no standard module,
 no source is read — so a project that cannot be built here can still be inspected.
 
+### `add`
+
+A dependency written into `package.hocon`, at the newest version the repository has tagged or at one
+you name.
+
+```
+sysl add github.com/sysl-lang/sdl3
+sysl add github.com/sysl-lang/sdl3@0.3.1
+```
+
+```
+added sdl3 github.com/sysl-lang/sdl3 0.3.1
+```
+
+The version comes from `git ls-remote --tags`, not from a forge's API — a coordinate here is a git
+identity and the build already clones it with plain git, so this works for a self-hosted server or a
+mirror as well as for GitHub. A tag that is not a version is passed over rather than refused, since
+repositories carry `latest` and `nightly` and neither is something a manifest can pin.
+
+**Your manifest is rewritten one run of bytes at a time**, and nothing else in it moves. Printing a
+parsed value back would emit the value and nothing else — every blank line, every comment explaining
+why a dependency is there, and your own layout would be gone the first time a tool touched the file.
+A new entry takes the indent its siblings have and lines up with their column where they have one.
+
+Nothing is fetched: this records what the project takes, and the next build goes and gets it. The
+result is read back through the manifest reader before it is written, so a rewrite that produced
+something unreadable leaves the file exactly as it was.
+
+### `vendor`
+
+Every package the project depends on, put in a `vendor/` directory beside the manifest.
+
+```
+sysl vendor .
+```
+
+```
+fetching github.com/sysl-lang/json v0.1.2
+fetching github.com/sysl-lang/parsing v0.2.0
+vendored 2 packages into vendor/
+```
+
+**It is the machine's package cache moved into the project, rather than a second mechanism beside
+it** — the same layout, the same resolution, the same `sysl.sum`. A project that has a `vendor/`
+builds with the network off, and somebody who clones it needs to know none of this: the directory
+being there is the whole of what turns it on.
+
+`vendor/` is not part of the project's own source, exactly as
+[`examples/`](/reference/packages/#a-package-may-carry-examples) is not, so nothing in it is compiled
+as one of your modules. Commit it where you want a build that cannot be broken by an upstream
+disappearing; leave it out of the repository where you would rather fetch.
+
+**A path dependency is not vendored and cannot be.** It is a directory you are editing beside this
+one — which is why nothing keeps a sum for it — so freezing a copy is the one thing it is there not
+to do. The command says how many there were.
+
 ### `doc`
 
 An API reference for a tree, generated from its declarations and their
@@ -473,6 +531,7 @@ thumbv7em-freestanding       thumbv7em-none-eabihf
 thumbv7em-freestanding-soft  thumbv7em-none-eabi
 riscv32-freestanding         riscv32-unknown-elf
 wasm32-freestanding          wasm32-unknown-unknown
+wasm32-wasi                  wasm32-wasip1
 craft-freestanding           craft
 x86-linux                    i386-unknown-linux-gnu  (no C calling convention has been measured for x86)
 ```
@@ -594,6 +653,32 @@ It needs a clang with the WebAssembly back end. Apple's has eleven back ends and
 them, so on a Mac sysl reaches for Homebrew's LLVM by itself — the same fallback it already makes for
 the RISC-V rows — and says so if it cannot find one.
 
+**`wasm32-wasi` is the same machine with a libc under it, and it is the row to reach for unless you
+know you want the bare one.** WASI is a standardised set of *imports* — file descriptors, clocks,
+randomness, arguments, exit — that a module asks its host for by name in place of syscalls, and
+**wasi-libc** is a real libc built on them. So a program that prints links and runs, `sysl.fs` and
+`sysl.env` have something underneath them, and nothing has to be written by hand before the first
+build:
+
+```
+export WASI_SDK_PATH=~/wasi-sdk-34.0-arm64-macos
+sysl build --target wasm32-wasi hello.sysl -o hello.wasm
+wasmtime hello.wasm
+```
+
+It needs **wasi-sdk**, which is clang, wasi-libc and a sysroot in one download from
+[the project's releases](https://github.com/WebAssembly/wasi-sdk/releases). That is the same
+arrangement Android's NDK is under and for the same reason: having the `wasm32` back end is not
+having the toolchain, so a clang picked for the back end alone succeeds at the search and fails at
+the first `#include`. Nothing is guessed at, and with nothing set the build stops and says what to
+set.
+
+The version is **preview1**, which is what every runtime supports today and what the browser shims
+(`@bjorn3/browser_wasi_shim`, Node's `node:wasi`) implement. preview2 — the Component Model, with WIT
+interfaces and resource handles — produces something that is not a core wasm module at all and that
+browsers do not run natively; the standard preview1-to-preview2 adapter lifts a module into a
+component, so nothing here is a dead end.
+
 **`craft-freestanding` is 16-bit, and it is the one row sysl will not drive a build for.** It is
 CRAFT — a teaching ISA with eight registers, a 64 KiB virtual address space and a
 software-managed TLB — whose LLVM back end lives out of tree, so what exists is an `llc` rather than
@@ -702,7 +787,7 @@ sysl: error: 'run' executes what it builds, and 'x86_64-linux' is not this machi
 A name the registry does not have is answered with the names it does:
 
 ```
-sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-android, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, craft-freestanding, x86-linux
+sysl: error: unknown target 'arm-linux' — sysl knows aarch64-macos, x86_64-macos, aarch64-linux, x86_64-linux, riscv64-linux, x86_64-windows, aarch64-android, aarch64-freestanding, x86_64-freestanding, riscv64-freestanding, thumb-freestanding, thumb-freestanding-softfp, thumb-freestanding-soft, thumbv6m-freestanding, thumbv7m-freestanding, thumbv7em-freestanding, thumbv7em-freestanding-soft, riscv32-freestanding, wasm32-freestanding, wasm32-wasi, craft-freestanding, x86-linux
 ```
 
 ### `-v`, `--verbose`

@@ -311,6 +311,7 @@ other. A program that needs to know writes the check it needs.
 
 ```sysl
 trait Bits
+    width() -> u32
     count_ones(self) -> u32
     count_zeros(self) -> u32
     leading_zeros(self) -> u32
@@ -343,6 +344,7 @@ program that means to reorder bytes has the shifts, and knows its own width whil
 
 | Member | Signature | Description |
 |---|---|---|
+| `width` | `width() -> u32` | How many bits the type has, asked of the **type** rather than of a value: `u32.width()` is `32`, and `T.width()` inside a `[T: Bits]` body is the width the body was instantiated at. |
 | `count_ones` | `count_ones(self) -> u32` | How many bits are set, and how many are clear. |
 | `count_zeros` | `count_zeros(self) -> u32` |  |
 | `leading_zeros` | `leading_zeros(self) -> u32` | How many bits above the highest one, and below the lowest one. |
