@@ -896,8 +896,8 @@ generic
 ```
 
 **The third tie-break is that a candidate that named its parameters beats one that was solved for
-them, where both are exact.** `f(x: int)` and `f[T](x: T)` both fit `f(0)` at `int`, and the ordinary
-declaration is the one that said what it takes:
+them, where both fitted at the same types.** `f(x: int)` and `f[T](x: T)` both fit `f(0)` at `int`,
+and the ordinary declaration is the one that said what it takes:
 
 ```sysl
 f(x: int) -> string = "plain"
@@ -912,6 +912,32 @@ plain
 
 That ranks a declaration against a declaration, which is a different question from ranking the routes
 the arguments took — the thing the paragraph above refuses.
+
+**It reads "at the same types" rather than "exact" because the third question is worth asking where
+the second found nothing.** A type parameter is often *inside* a parameter's type rather than being
+the whole of it, and then an argument may reach every candidate by a conversion — leaving no exact
+candidate at all, and two declarations that nonetheless fitted the call at one signature. Both calls
+below reach `g(x: []u8)`, and the array is the case where nothing is exact:
+
+```sysl
+g(x: []u8) -> string = "plain"
+g[T](x: []T) -> string = "generic"
+
+var a: [3]u8 = [1, 2, 3]
+val v: []u8 = a[..]
+
+print(g(v))
+print(g(a))
+```
+
+```output
+plain
+plain
+```
+
+**Where the candidates fitted at *different* types it stays ambiguous**, which is the same refusal
+as before: two routes out of one argument, and nothing to choose between them that is not a
+preference among conversions.
 
 **An address chooses by the type the context wants**, which is the mechanism a generic function's
 address already uses. With no expected type there is nothing to read, and the address is refused

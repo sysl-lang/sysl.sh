@@ -80,7 +80,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
-    "docs/content/reference/declarations.md"          -> (37, 13, 1),
+    "docs/content/reference/declarations.md"          -> (38, 13, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
@@ -203,7 +203,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),
-    "docs/content/library/slices.md"                      -> (9, 0, 0),
+    "docs/content/library/slices.md"                      -> (11, 0, 0),
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.

@@ -1,6 +1,6 @@
 ---
 title: The slices module
-summary: "`sysl.slices` — the operations over a built-in slice: searching, comparing, reversing, two sorts that neither of them allocates, a binary search that answers where a missing value belongs, and the pointer a C binding hands across."
+summary: "`sysl.slices` — the operations over a built-in slice: searching, comparing, reversing, a copy that is right where the two slices overlap, two sorts that neither of them allocates, a binary search that answers where a missing value belongs, and the pointer a C binding hands across."
 weight: 55
 ---
 
@@ -96,6 +96,78 @@ under `@no_alloc`, reachable from a freestanding target — so a caller holding 
 a `bool` loses nothing by keeping it, and a binding that must not acquire an allocator has it
 whatever the core module gains. `starts_with` and `ends_with` are the same story one step along:
 both are `equal` over a sub-slice, and both stay for the same reason.
+
+## Moving elements from one slice to another
+
+`copy` writes as much of the source as fits in the destination and answers how much that was.
+`copy_exact` writes the whole of the source or nothing at all, and answers whether it fitted.
+
+```sysl
+import sysl.slices.{copy, copy_exact}
+
+var dst = [0, 0, 0, 0]
+var tight = [0, 0]
+var room = [0, 0, 0, 0]
+var small = [0, 0]
+var src = [1, 2, 3]
+
+print(copy(dst, src), dst)
+print(copy(tight, src), tight)
+
+print(copy_exact(room, src), room)
+print(copy_exact(small, src), small)
+```
+
+```output
+3 [1, 2, 3, 0]
+2 [1, 2]
+true [1, 2, 3, 0]
+false [0, 0]
+```
+
+**The short answer is the point rather than a failure.** A caller streaming into a buffer writes what
+fits and asks again; one that has already sized the destination wants `copy_exact`, where a mismatch
+is a mistake in the program rather than a state to handle. A destination *larger* than the source is
+a fit — a buffer sized once and written into in runs is the ordinary caller.
+
+**The two slices may be views of one array**, and the copy is right in both directions. That is
+`memmove`'s guarantee rather than `memcpy`'s, and it is the one worth making: two views into one
+array is an ordinary thing to have.
+
+```sysl
+import sysl.slices.copy
+
+var a = [1, 2, 3, 4, 5]
+var b = [1, 2, 3, 4, 5]
+
+copy(a[0..<3], a[2..<5])
+copy(b[2..<5], b[0..<3])
+
+print(a)
+print(b)
+```
+
+```output
+[3, 4, 5, 4, 5]
+[1, 2, 1, 2, 3]
+```
+
+### Why there are two declarations of each
+
+`copy` is [overloaded](/reference/declarations/#overloading): a generic declaration over any `[]T`,
+and one taking `[]u8`. A call over bytes reaches the second, which hands the move to the platform's
+`memmove`; every other element type reaches the first, which assigns element by element.
+
+**That is not an optimization detail — it is what makes the generic one correct.** An element
+carrying a reference count needs the retain and the release an assignment does. A bitwise move over a
+`[]string` leaks what the destination held and hands the source's boxes out twice, and it *prints the
+right answer* while doing so: the fault is a use-after-free that arrives later, if it arrives at all
+where anybody is looking. So the fast path is exactly as wide as the type where it is sound.
+
+The byte declaration earns its place because the loop is genuinely a byte at a time. The destination's
+bounds check survives inside the loop body, which stops the optimizer recognising the idiom, so what
+the generic form compiles to is one load and one store per element — the same reason
+[`sysl.io`](/library/io/)'s line reader reaches `memchr` rather than scanning bytes itself.
 
 ## Two sorts, and neither of them allocates
 
