@@ -553,6 +553,33 @@ print(1)
 `Shape.Circle(1)` is what that line wants. The qualified form works at a construction exactly as it
 [works in a pattern](/reference/patterns/#the-bare-name-rule).
 
+**The expected type reaches across modules too, which is what lets a program name a variant the
+library also names.** `Result` and `Option` are the prelude's, so their `Ok`, `Err`, `Some` and `None`
+are the four names most likely to collide with an enum you were going to write anyway — and a module
+declaring its own may still return a `Result` on the next line:
+
+```sysl
+enum Status
+    Ok
+    Bad
+
+f() -> Result[int, string] = Ok(1)
+g() -> Result[int, string] = Err("no")
+
+s() -> Status = Ok
+
+print(f().unwrap(), g().is_err(), s() == Ok)
+```
+
+```output
+1 true true
+```
+
+Each `Ok` there means what the line it is on asks for. Where the expected type is the library's, the
+library's variant is what a bare name reaches; where it is the module's own, the module's own is. The
+qualified `Status.Ok` says so outright for a site whose expected type is a `Result` and whose meaning
+is not.
+
 This is Rust's arrangement — a variant is namespaced under its enum — without Rust's use site, where
 `Link::Failed` is required everywhere unless a scope opts into `use Link::*`. A variant still may not
 share a name with a constant, a `val`, a module `var` or an `extern` variable: two variants of a name

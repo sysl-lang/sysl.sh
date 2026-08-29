@@ -169,6 +169,12 @@ bounds check survives inside the loop body, which stops the optimizer recognisin
 the generic form compiles to is one load and one store per element — the same reason
 [`sysl.io`](/library/io/)'s line reader reaches `memchr` rather than scanning bytes itself.
 
+**On a freestanding target it walks the elements instead, because there is nothing to call.** A bare
+board is linked with no C library, so a `memmove` reached from here would be an undefined symbol —
+and this is a module a board reaches, `sysl.harness` being written for exactly that. The declaration
+and what it promises are the same on every target; only what it costs differs, which is what keeps
+this module usable where the operating system is not.
+
 ## Two sorts, and neither of them allocates
 
 `sort` is **unstable**, works in the slice it was given, and uses no extra storage. It is an
