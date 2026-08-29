@@ -1834,6 +1834,42 @@ refused connection whose connection object still has to be freed — the `Result
 ever owns the handle, and no box is ever made for a destructor to hang off. Read what you need from
 it and close it where it stands.
 
+**Boxing the *holder* does not save a field held by value**, which is the same mistake one level in
+and reads more convincingly than the last one:
+
+```sysl
+struct Thing
+    n: int
+
+impl Drop for Thing
+    drop(self) = print("drop", self.n)
+
+struct ByValue
+    inner: Thing        // no destructor ever runs
+
+struct Boxed
+    inner: &Thing       // it runs when the holder dies
+
+hold()
+    val a: &ByValue = ByValue(Thing(1))
+    val b: &Boxed = Boxed(Thing(2))
+
+hold()
+```
+
+```output
+drop 2
+```
+
+The `ByValue` holder really is on the heap and its count really does reach zero — and the `Thing`
+inside it is a copy in that box, not a box of its own, so there is nothing whose count could reach
+zero for it. **The rule is the type at every level that owns a resource, not the outermost one**, and
+*"I boxed it"* settles the question for the holder alone.
+
+**A container is the same shape.** A `Buf[Thing]` destructs nothing whatever happens to it; a
+`Buf[&Thing]` destructs each element when the buffer dies. The compiler's warning sees none of these
+— it reads declared return types — so a field and a container are the two places to check by hand.
+
 **It is not called for a value in a reference cycle**, whose count never reaches zero. That is not a
 new consequence of this feature but the existing cost of counting rather than collecting — the
 *storage* already leaks there. A `weak T` is what breaks a cycle.
