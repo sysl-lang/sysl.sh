@@ -98,6 +98,41 @@ It answers an `Option` rather than trapping: a program that cannot get entropy u
 reasonable fallback — a fixed seed and a line in its log saying so — and a library that aborted would
 take that choice away. It requires `posix`.
 
+### Key material is `entropy_from_os`, and it is not the generator
+
+**Everything above this line is for seeding, and none of it is a source of key material.** What a
+seed feeds is PCG32, whose whole output is computable by anyone who sees a few of its values — and
+seeding a predictable generator unpredictably does not make it unpredictable.
+
+`entropy_from_os` is the source. It fills a slice straight from the kernel's pool, which is what a
+salt, a nonce, an IV, a session id and a token want:
+
+```sysl
+import sysl.posix.rand.entropy_from_os
+
+var salt: [16]u8 = [0; 16]
+
+print(entropy_from_os(salt[..]))
+```
+
+```output
+true
+```
+
+It answers a `bool` rather than an `Option`, which is `seed_from_os`'s reasoning turned round: a
+caller who cannot seed has a reasonable fallback, and **a caller who cannot get key material has
+none and must stop**. A value it has to look at is what makes that a decision rather than an
+omission.
+
+**A slice longer than 256 bytes is filled by looping.** That is `getentropy(2)`'s limit per call and
+not a limit on what a caller may ask for — every real caller wants 16 or 32, so a cap would be a rule
+nobody meets and everybody has to read about. An empty slice succeeds, which is what a loop over no
+bytes means.
+
+Every binding over [monocypher](https://github.com/sysl-lang/monocypher), OpenSSL or any future AEAD
+says the same thing about randomness — *the caller brings it* — and this is where the caller brings
+it from.
+
 ## `below` is where this module earns its keep
 
 The obvious `next_u64() % n` is **not uniform** whenever `n` does not divide 2⁶⁴: the low residues

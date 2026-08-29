@@ -1794,6 +1794,46 @@ not a second resource: there is no single point of death to hook, and running it
 one descriptor several times. So a destructor is for a type held behind a `&T`, and a program that
 puts one on a type it then passes by value gets no destructor rather than a wrong one.
 
+### A constructor for a type with a destructor returns `&T`
+
+The paragraph above is a rule about where a destructor runs. This is the same rule said as the
+consequence somebody writing a binding actually meets, because that is the form of it that is worth
+having:
+
+```sysl
+struct Encoder
+    state: *u8
+
+impl Drop for Encoder
+    drop(self) = print("closing")
+
+open_bad() -> Result[Encoder, string] = Ok(Encoder(null))    // the destructor never runs
+open_good() -> Result[&Encoder, string] = Ok(Encoder(null))  // it does
+```
+
+**Nothing about the first line looks wrong**, which is why this is stated rather than left to be
+derived. The `impl Drop` is right there, the resource is handled as far as any reader can see, and
+the program is correct in every respect but the one nobody checks. A binding shipped that way
+compresses, parses and queries perfectly while leaking a handle per call.
+
+**The compiler says so now**, which is its only warning that carries a position:
+
+```
+warning: 'open_bad' hands back 'Encoder' by value, and 'Encoder' has a 'Drop' — a destructor runs
+when a box's count reaches zero, so nothing here will ever call it. Return '&Encoder' instead, or
+take the resource apart before returning it
+```
+
+**A type annotation at the call site is not a fix**, and it looks like one. `val e: &Encoder =
+open_bad()?` compiles whichever way the constructor is declared, because reading a value into a `&T`
+binding boxes a *copy* — so the defensive move leaks exactly as much as no move at all. The
+declaration is what has to change.
+
+**And an error path needs closing by hand.** Where a C call hands back a handle *and* fails — a
+refused connection whose connection object still has to be freed — the `Result` is an `Err`, no value
+ever owns the handle, and no box is ever made for a destructor to hang off. Read what you need from
+it and close it where it stands.
+
 **It is not called for a value in a reference cycle**, whose count never reaches zero. That is not a
 new consequence of this feature but the existing cost of counting rather than collecting — the
 *storage* already leaks there. A `weak T` is what breaks a cycle.
