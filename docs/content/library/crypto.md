@@ -1,6 +1,6 @@
 ---
 title: The crypto module
-summary: "`sysl.crypto` — the SHA-2 family and HMAC, written in sysl, answering bytes and allocating nothing."
+summary: "`sysl.crypto` — the SHA-2 family, SHA-1, and HMAC over any of them, written in sysl, answering bytes and allocating nothing."
 weight: 59
 ---
 
@@ -9,6 +9,10 @@ weight: 59
 `sysl.crypto` is SHA-224, SHA-256, SHA-384 and SHA-512, and HMAC over any of them. It is written in
 sysl rather than bound to a C library, it needs no allocator, and it builds for a freestanding target
 along with the rest of the standard module.
+
+SHA-1 is here too, and it is here for one thing — [the WebSocket handshake](#sha-1-and-the-one-thing-it-is-for).
+It is broken, a new program should not choose it, and the section that introduces it says so at
+length rather than in a footnote.
 
 ```sysl
 import sysl.crypto.sha256
@@ -88,7 +92,7 @@ true
 
 ## One algorithm at two widths
 
-The four digests are **two** algorithms. SHA-224 and SHA-256 are the same 32-bit compression started
+The four SHA-2 digests are **two** algorithms. SHA-224 and SHA-256 are the same 32-bit compression started
 from different initial values and truncated differently; SHA-384 and SHA-512 are the same 64-bit one.
 So the width is what a type parameter carries, and the compression is written **once** over a bound
 that `u32` and `u64` both satisfy.
@@ -130,6 +134,81 @@ print(hex_string(hmac256("Jefe".bytes, "what do ya want for nothing?".bytes)))
 
 The generic `hmac` underneath them takes a started hasher and the caller's buffer, which is what the
 four above are written in terms of.
+
+## SHA-1, and the one thing it is for
+
+**SHA-1 is broken and has been publicly broken since 2017.** `SHAttered` exhibited two different PDF
+files with one digest; `SHA-1 is a Shambles` made that a *chosen-prefix* collision in 2019, for about
+$45,000 of rented compute. A SHA-1 digest therefore says nothing about a document nobody could have
+substituted, so it must not carry a signature, a certificate, a content address or a deduplication
+key. **`sha256` is what every one of those wants**, and it is in this same module.
+
+It is here because of **RFC 6455's opening handshake**, where a WebSocket server answers a client's
+key with `base64(sha1(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))`. There is no substitute: the
+algorithm and the constant are both written into the standard, and no browser will open a socket
+against any other answer. The example below is the RFC's own, key and result both.
+
+```sysl
+import sysl.crypto.sha1
+import sysl.encoding.{Alphabet, base64_string}
+
+val key = "dGhlIHNhbXBsZSBub25jZQ=="
+val accept = sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").bytes)
+
+print(base64_string(accept[..], Alphabet.Standard, true))
+```
+
+```output
+s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+```
+
+**That use makes no security claim at all**, which is the whole reason an algorithm this broken still
+serves it. The handshake shows that the far end read the request and understood the protocol — it
+authenticates nobody, and a collision would buy an attacker nothing, because there is nothing to
+substitute. Wherever the answer to "what would a second preimage let somebody do here?" is "nothing",
+SHA-1 is adequate; everywhere else it is not, and there is no third case.
+
+The surface is the same as the others': a one-shot digest, and a hasher that streams.
+
+```sysl
+import sysl.crypto.{new_sha1, sha1}
+import sysl.encoding.hex_string
+
+var h = new_sha1()
+var out: [20]u8
+
+h.update("a".bytes)
+h.update("bc".bytes)
+h.finish(out[..]).expect("a digest buffer of the right size")
+
+print(hex_string(sha1("abc".bytes)))
+print(hex_string(out[..]) == hex_string(sha1("abc".bytes)))
+```
+
+```output
+a9993e364706816aba3e25717850c26c9cd0d89d
+true
+```
+
+### `hmac1` is a weaker claim than SHA-1's collisions make it sound
+
+`hmac1` answers a twenty-byte tag, like the four beside it.
+
+```sysl
+import sysl.crypto.hmac1
+import sysl.encoding.hex_string
+
+print(hex_string(hmac1("Jefe".bytes, "what do ya want for nothing?".bytes)))
+```
+
+```output
+effcdf6ae5eb2fa2d27416d5f184df9c259a7c79
+```
+
+**HMAC's security does not rest on the hash being collision resistant**, so HMAC-SHA-1 is not broken
+the way SHA-1 is — which is why RFC 6238 still specifies it as TOTP's default and why a great deal of
+deployed request signing still uses it. It is here to talk to those, not to be chosen: a protocol
+being written now wants `hmac256`.
 
 ## What is not here
 
