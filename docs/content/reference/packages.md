@@ -623,6 +623,57 @@ on, and every claim that was made on it, including the ones that lost. That is t
 losing claim survives: selection keeps the maximum and forgets the rest, so once a build is over
 there is nothing left to reconstruct it from.
 
+### Dependencies a test alone needs
+
+A package's own suite often reaches for something no consumer of it should have to install — a second
+implementation to check answers against, a driver for a database, a fixture generator.
+`dev_dependencies` is where those go, and it reads exactly as `dependencies` does:
+
+```hocon
+dependencies {
+  parsing { git = "github.com/sysl-lang/parsing", version = "0.5.0" }
+}
+
+dev_dependencies {
+  quickjs { git = "github.com/sysl-lang/quickjs", version = "0.1.0" }
+}
+```
+
+The difference is entirely in **who resolves them**:
+
+- `sysl test` on this project resolves them, exactly like an ordinary dependency;
+- `sysl build`, `sysl build-lib` and `sysl build-c` do not — every other build drops the source that
+  could name one before it analyzes anything, so fetching the package would compile something the
+  compilation cannot refer to;
+- **anything that depends on this package does not resolve them at all**, at any command. They are
+  not fetched, not built, and not on the link line.
+
+That last one is the point of the block. A test-only dependency declared in `dependencies` is a
+package every consumer clones, builds, and — for a binding to a system library — has to have
+installed before your package will build for them at all.
+
+**A dev dependency may only be imported from a `@tests` file or a `@test` function**, which is the
+same line the resolution is drawn along: those are what an ordinary build strips, so they are exactly
+the source a consumer never compiles. An ordinary module importing one is refused:
+
+```text
+error: 'sh.sysl.quickjs' comes from 'sh.sysl.quickjs', which this project declares in
+'dev_dependencies' — that is not fetched for anything depending on this project, so only a
+'@tests' file or a '@test' function may import it. Move the import into the tests, or declare
+the package in 'dependencies' if the library itself needs it
+```
+
+Without that check the mistake is invisible to the person making it: `sysl test` resolves the package,
+the ordinary module importing it compiles, the suite passes, and every consumer is refused at a module
+that was never fetched for them.
+
+**A package may not be named by both blocks.** They say opposite things about one package — that a
+consumer gets it, and that a consumer does not — and there is no reading under which both are meant,
+so it is refused the way a `git` beside a `path` is.
+
+[`sysl deps`](/getting-started/cli/#deps) lists them with the rest, marked `(dev)`, since what a
+project takes is a property of its manifests rather than of any one build.
+
 ## What a dependency's modules are called
 
 A package is a tree of modules, and **its modules come in under their own names**. A module is a

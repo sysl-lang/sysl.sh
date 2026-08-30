@@ -373,6 +373,21 @@ build prints covers only the case where *your own* manifest was overtaken; this 
 overtaken by its sibling, which is the case where the version you are running is one no file you own
 mentions.
 
+**A coordinate marked `(dev)` is one only this project's tests reach.**
+
+```
+github.com/sysl-lang/quickjs  0.1.0  (dev)
+```
+
+It is declared in [`dev_dependencies`](/reference/packages/#dependencies-a-test-alone-needs), so
+`sysl test` resolves it and nothing that depends on this project ever fetches it. The listing shows
+it because what a project *takes* is a property of its manifests rather than of any one build — and
+the mark is what says a consumer will not be paying for it.
+
+It is a mark rather than a section of its own, because a package reached *through* a dev dependency
+is in exactly the same position without being named in either block, and a second section would have
+nowhere to put it.
+
 **A path dependency prints its directory** where a coordinate prints a version, since it has none and
 the directory is the only thing that says which tree it is.
 
