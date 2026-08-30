@@ -21,9 +21,14 @@ freestanding target, which is deliberate and is what keeps it usable by a C bind
 the first thing a binding reaches for, and acquiring an allocator by asking for it would be a poor
 trade. Sorting is in `sort.sysl` beside this file and holds to the same rule.
 
+**The byte `copy` reaches libc, and it is gated on the target rather than reaching it everywhere.**
+A bare board is linked `-nostdlib` and has no `memmove` to call, so a hosted target hands the move
+to libc and a freestanding one walks the elements. Nothing about what `copy` promises differs
+between the two; only what it costs does.
+
 ## Index
 
-[`INSERTION_LIMIT`](#insertion_limit) [`align_up`](#align_up) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`is_aligned`](#is_aligned) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
+[`INSERTION_LIMIT`](#insertion_limit) [`align_up`](#align_up) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`copy`](#copy) [`copy`](#copy-1) [`copy_exact`](#copy_exact) [`copy_exact`](#copy_exact-1) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`is_aligned`](#is_aligned) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
 
 ## Constants
 
@@ -140,6 +145,86 @@ contains[T: Eq](xs: []const T, x: T) -> bool
 ```
 
 Whether the value appears at all -- `index_of` where the position is not wanted.
+
+### `copy`
+
+```sysl
+copy[T](dst: []T, src: []const T) -> usize
+```
+
+As much of `src` as fits in `dst`, copied element by element, answering how much moved.
+
+**This exists because every caller was writing the loop**, `Buf.extend` included -- and a loop at
+a call site is both noise and slower than the platform's own move. C has `memcpy`, Rust has
+`copy_from_slice` and Go has `copy` for the same reason.
+
+**The two slices may be views of one array, and the direction is chosen from their addresses** so
+that an overlap does not overwrite what has not been read yet. `usize(p)` reads an address as a
+number, which is an ordinary conversion (`reference/memory.md`), so this needs nothing raw.
+Overlapping is `memmove`'s guarantee rather than `memcpy`'s, and it is the right one to make: two
+views into one array is an ordinary thing to have, and a silently wrong answer is not worth the
+nanoseconds.
+
+**The short answer is the point rather than a failure.** A streaming caller writes what fits and
+asks again; `copy_exact` is for a caller who has already sized the destination and for whom a
+mismatch is a mistake.
+
+The declaration beside this one takes byte slices and is what a call over `[]u8` reaches, since
+`reference/declarations.md § Overloading` prefers a declaration that named its parameters. That
+one hands the move to `memmove`; this one cannot, because an element carrying a reference count
+needs the retain and the release an assignment does, and a bitwise move would leak what the
+destination held and hand the source's boxes out twice.
+
+### `copy`
+
+```sysl
+copy(dst: []u8, src: []const u8) -> usize
+```
+
+The same over bytes, which libc moves a word at a time where a sysl loop moves one byte.
+
+**Measured rather than assumed**: the loop above compiles to a `ldrb`/`strb` pair per element at
+the default optimization, because the destination's bounds check survives inside the body and
+stops the optimizer recognising the idiom. `sysl.io.find_byte` reaches `memchr` for exactly this
+reason and says so.
+
+A byte carries no count, so the bitwise move the generic form must not make is the right one
+here. `memmove` rather than `memcpy`, for the overlap the other declaration promises.
+
+**A FREESTANDING TARGET WALKS THE ELEMENTS INSTEAD, because there is nothing to call.** A bare
+board is linked `-nostdlib`, so a `memmove` reached from here is an undefined symbol at the link
+-- and this module is one a board reaches, `sysl.harness` being written for exactly that. The
+declaration stays either way, so a caller writes one thing and a program's own targets decide what
+it costs.
+
+The gate is `freestanding` rather than anything finer, and that is deliberately conservative: a
+board with an SDK usually *does* have a libc -- the Pico's newlib defines `__aeabi_memmove` -- but
+whether one is on the link line is the application's to decide and not something the library can
+read. Being wrong in this direction costs a loop; being wrong in the other costs a build.
+
+### `copy_exact`
+
+```sysl
+copy_exact[T](dst: []T, src: []const T) -> bool
+```
+
+The whole of `src` copied, or nothing at all -- `true` when it fitted.
+
+**The question `copy` does not answer.** A caller who sized the destination once and is filling it
+has a bug rather than a state when the source is too long, and reading a returned count back
+against `src.len` at every call is the check this is instead.
+
+**A destination LARGER than the source is a fit**, where Rust's `copy_from_slice` asks for equal
+lengths. A buffer sized once and written into in runs is the ordinary caller, and refusing that
+would send them back to `copy` for a question they were not asking.
+
+### `copy_exact`
+
+```sysl
+copy_exact(dst: []u8, src: []const u8) -> bool
+```
+
+The same over bytes, reaching `memmove` through the byte `copy` beside it.
 
 ### `ends_with`
 
