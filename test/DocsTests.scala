@@ -168,7 +168,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/core.md"                     -> (34, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
-    "docs/content/library/buf.md"                       -> (11, 6, 3),
+    "docs/content/library/buf.md"                       -> (12, 6, 3),
     "docs/content/library/container.md"                -> (6, 0, 3),
     // One more runnable: `bytes_reader` and `bytes_writer`, the in-memory pair that arrived with the
     // line editor and made anything taking a `*Reader` testable without a descriptor.

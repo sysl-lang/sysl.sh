@@ -240,11 +240,33 @@ for x in b
 ```
 
 ```error
-'for' iterates an integer range, an array, a slice, or a type that implements 'sysl.Iterate', and sysl.buf.Buf[int] is none of those
+'for' iterates an integer range, an array, a slice, or a type that implements 'sysl.Iterate', and sysl.buf.Buf[int] is none of those — what it does have is 'view()', which answers with something a 'for' walks, so 'for x in b.view()' is the loop
 ```
 
 `for x in b.view()` is how it is walked, and that is not a workaround — it names the thing being
-iterated, which is *the live prefix at the moment the loop started*.
+iterated, which is *the live prefix at the moment the loop started*:
+
+```sysl
+import sysl.buf.{Buf, buf}
+
+var b: Buf[int] = buf()
+
+b.push(1)
+b.push(2)
+
+for x in b.view()
+    print(x)
+```
+
+```output
+1
+2
+```
+
+The refusal says so itself: it looks for a member of the receiver whose answer a `for` **does** walk,
+so a container that hands out a cursor from [`walk()`](/library/container/) is told to use that
+instead. It offers only a member you could have called — no arguments, and visible from where you
+are.
 
 **What a buffer answers without being walked at all is [`sysl.seq`](/library/seq/)** — `map`,
 `filter`, `fold` and the seven questions beside them, implemented for a `Buf` as well as for a slice,

@@ -513,6 +513,25 @@ and `sdl3.pc` are two naming conventions that happen to share a word. A `headers
 the other, and worse: a name that happened to match some `.pc` file on your machine would satisfy a
 requirement nobody answered — met by accident on the machine that built it and nowhere else.
 
+**So it is not yours to choose, and what it may hold says so.** A `headers` name is one you invent, and
+it is held to a plain word: letters, digits, `_` and `-`, starting with a letter. A `.pc` name may also
+hold a `.` and a `+`, because a great many libraries file under one with a version in it — libyaml is
+`yaml-0.1` on macOS, Debian and Arch alike, GLib is `glib-2.0`, GTK 3 is `gtk+-3.0`. A rule that
+refused those would not be asking for a better name; it would be refusing to bind the library.
+
+**A name with a `.` in it has to be quoted**, because an unquoted dot is HOCON's path separator and
+`yaml-0.1 = "…"` would declare a `1` inside a `yaml-0`:
+
+```hocon
+requires {
+  pkg_config { "yaml-0.1" = "libyaml — brew install libyaml, or Debian's libyaml-dev" }
+}
+```
+
+What the name may **not** hold is a separator or an `=`, and that bound is the flag rather than
+taste: the name is written back to you as `--include-path <name>=<dir>`, and one holding either
+could not be told from the directory beside it.
+
 ### What happens when it cannot be answered
 
 **Your own flags win and stop the probe.** `--include-path <name>=<dir>` answers this exactly as it
