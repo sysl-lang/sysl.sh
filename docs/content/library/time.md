@@ -195,7 +195,7 @@ print(whole_micros(micros(7i64)))
 All three numbers on that first row are true of one length: it is a hundred and twenty milliseconds,
 and it is no seconds at all.
 
-Scaling reads one way round only:
+Scaling reads both ways round:
 
 ```sysl
 import sysl.time.*
@@ -203,18 +203,27 @@ import sysl.time.*
 var d = seconds(3i64)
 
 print(whole_seconds(d * 3))
-print(whole_seconds(2i64 * d))
+print(whole_seconds(2 * d))
 ```
 
-```error
-'*' needs matching types, got long and sysl.time.Duration
+```output
+9
+6
 ```
 
-`d * 3` is what is written instead, and the count is an ordinary literal — a bare number beside a
-duration takes the `long` the one `impl Mul` names rather than the `int` a literal with nothing to
-take would fall back to. An operator's implementation is written for the type on its **left**, and
-nothing may be written for `long`, so the commutativity a reader expects of multiplication is not
-something this module could have supplied.
+**The two sides are two `impl` blocks and they are not the same shape**, which is worth a moment
+because it is what a bare literal costs. `d * 3` reaches `impl Mul[long] for Duration`, and the `3`
+takes the `long` that block's parameter names rather than the `int` a literal with nothing to take
+would fall back to. On the left there is nothing to take it *from* — `2` is an `int` before the
+operator is looked at — so the block that answers is written over the whole integer family,
+`impl[N: Integer] Mul[Duration, Duration] for N`. A block for `long` alone would have compiled and
+then refused the spelling everybody actually writes.
+
+`Integer` may be a blanket subject where an ordinary trait may not, and the reason is that its
+membership is the compiler's to settle: every `iN` and `uN` is in it — an
+[open family](/reference/types/#integers-are-an-open-family) of arbitrary widths — and nothing a
+program declares can join. A blanket over an ordinary trait would be a blanket over every type at
+once, which is refused.
 
 ### Writing a duration number-first
 
