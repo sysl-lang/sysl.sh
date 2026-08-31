@@ -7,8 +7,25 @@ weight: 10
 ## Install
 
 ```bash
+brew tap sysl-lang/tap
+brew trust sysl-lang/tap
 brew install sysl-lang/tap/sysl
 ```
+
+**The `brew trust` line is not optional and its absence does not look like a missing step.** Homebrew
+requires per-tap trust before it will load a formula, and it checks *after* fetching and verifying
+the download — so an install without it fails at the end of a successful download, in words that
+read like a defect in the formula:
+
+```
+Error: sysl-lang/tap/sysl: Refusing to load formula sysl-lang/tap/sysl from untrusted tap
+sysl-lang/tap. Run `brew trust --formula sysl-lang/tap/sysl` or `brew trust sysl-lang/tap`
+```
+
+It can also name a formula you did not ask for. `sysl-alpha` conflicts with `sysl`, and a
+`conflicts_with` makes Homebrew *load* the other formula to check the conflict — so installing one
+is refused over the other's trust, which reads as the wrong formula being installed. Trusting the
+tap once covers both, and covers every upgrade after it.
 
 That is a native binary — there is no JVM under it and nothing to start up. It brings **LLVM** with
 it, which sysl needs at runtime: the compiler emits textual LLVM IR and hands it to `clang` to

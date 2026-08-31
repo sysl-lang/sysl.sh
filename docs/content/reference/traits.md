@@ -555,10 +555,10 @@ An `impl` is **unnamed** — nothing at a use site says which one to apply — s
 search needs a bound, or it would range over every module in the program, which is exactly the
 property that makes separate compilation impossible.
 
-**An `impl Trait for Type` may appear only in the module that declares `Trait`, or in one that
-declares a type named in `Type`.** Resolving a bound therefore inspects only the modules a use site
-already depends on in order to write the trait and the type down. No global search, and no dependency
-edge the source does not show.
+**An `impl Trait[A…] for Type` may appear only in the module that declares `Trait`, or in one that
+declares a type the block names — in `Type` or among `A…`.** Resolving a bound therefore inspects
+only the modules a use site already depends on in order to write the trait and the type down. No
+global search, and no dependency edge the source does not show.
 
 This is Rust's orphan rule, and it costs nothing:
 
@@ -572,10 +572,47 @@ This is Rust's orphan rule, and it costs nothing:
   rules are separate, and a slice of your own struct needs both — coherence to have a home, and
   [`override`](#override-when-the-overlap-is-deliberate) to outrank the block already covering it);
 - **a type parameter is not a local type**, so `impl[T: Display] Display for []T` is refused however
-  its bound is written. Making every printable slice printable is the library's job.
+  its bound is written. Making every printable slice printable is the library's job;
+- **a local type in the trait's arguments licenses the block too**, which is what puts a scalar on
+  the left of an operator. `impl Mul[Point, Point] for real` is written by the module that declares
+  `Point` — `real` is the library's and `Mul` is the library's, and the argument list is what makes
+  the block that module's business:
+
+```sysl
+struct Point
+    x: real
+    y: real
+
+impl Mul[real] for Point
+    mul(self, k: real) -> Point = Point(self.x * k, self.y * k)
+
+impl Mul[Point, Point] for real
+    mul(self, p: Point) -> Point = Point(p.x * self, p.y * self)
+
+val p = Point(1.0, 2.0)
+
+print(p * 2.0, 2.0 * p)
+```
+
+```output
+(2, 4) (2, 4)
+```
 
 What the rule forbids is the case with no home: **a foreign trait implemented for a foreign type**,
-where two unrelated modules could each supply a different implementation and no rule picks one.
+where two unrelated modules could each supply a different implementation and no rule picks one. So
+`impl Mul[real, real] for real` is refused in any module but the library's, naming nothing of its
+own in either place:
+
+```error
+impl Mul[real, real] for real
+    mul(self, k: real) -> real = self
+
+print(1)
+```
+
+The built-in keeps everything it had. `real` is a member of `Mul` whatever anybody writes, and only
+the argument list tells the two apart — so `2.0 * 3.0` is still the machine's multiply, and the
+block above reaches `real` only at the pair it was written for.
 
 An `impl` is part of its module's public surface. Adding, removing, or changing one is an interface
 change visible to everything downstream — the same reasoning that puts implicit-resolution schemes
@@ -1564,6 +1601,40 @@ print(1)
 ```error
 'Box' does not implement 'Seq': the associated type 'Item' is missing
 ```
+
+**`Self` inside such a bound is the associated type, not the type implementing the trait.** A bound
+asks something of the thing it is written on, and what `type W: Add` is written on is `W` — so
+[`Add`](/reference/expressions/)'s defaults, which are `Self`, are filled from `W`. `type W: Add` on
+an implementation supplying `type W = u32` therefore asks whether `u32` is `Add[u32, u32]`, which it
+is, and never whether it can be added to the implementing type:
+
+```sysl
+trait Holder
+    type W: Add
+    one(self) -> Self::W
+
+struct N
+    v: u32
+
+impl Holder for N
+    type W = u32
+    one(self) -> u32 = self.v
+
+sum[H: Holder](h: H) -> H::W = h.one() + h.one()
+
+print(sum(N(21)))
+```
+
+```output
+42
+```
+
+It is the same reading `Self` has in a bound anywhere else, and it is stated here because the
+associated type is the one place where two types are in play and either would be a plausible answer.
+
+**And the bound is answered once every `impl` in the program is registered**, so the block making
+the supplied type a member of it may be written below the block that chose it — the same rule a
+[required trait](#a-trait-may-require-another-trait) follows, and for the same reason.
 
 ### One name per type, because a projection does not name its trait
 
