@@ -188,7 +188,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // does — which is what a fixed offset, or one read out of a captured table, is written as.
     // One more again: a date the calendar does not have is a day count to `date_at` and `None` to
     // `checked_date`, and the section runs both so the pair is visible rather than described.
-    "docs/content/library/time.md"                       -> (23, 4, 4),
+    "docs/content/library/time.md"                       -> (24, 3, 4),
     "docs/content/library/env.md"                        -> (1, 0, 0),
     // Two more for `capture`'s `stderr`: the reason a failed child gives, and the difference between
     // a stream nobody collected and one that was collected and empty.
