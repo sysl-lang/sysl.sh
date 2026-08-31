@@ -896,7 +896,7 @@ print(show(1))
 ```
 
 ```error
-this declaration has no type parameter 'U', so a 'where' clause has nothing to bound
+this declaration has no type parameter 'U', so a 'where' clause has nothing to bound — it takes 'T'
 ```
 
 A **value** parameter is the one case that reads as though it ought to work and cannot. `[const N:
@@ -910,7 +910,7 @@ print(sum([1, 2]))
 ```
 
 ```error
-'N' stands for a value rather than a type, and a value implements no trait
+'N' stands for a value rather than a type, and a value implements no trait — its 'const' declaration is where the type its argument must have is written
 ```
 
 **`where` is not a reserved word**, and the two jobs it already had are untouched. It introduces a

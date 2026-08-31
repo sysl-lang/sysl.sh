@@ -80,6 +80,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
+    // Two more runnable and two more refusals: a property may belong to the type rather than to a
+    // value of it, so the section reads one off a struct and one through a bound — and refuses the
+    // read on a value and the default body on a trait's, which are the two ways the form looks like
+    // an ordinary property and is not.
     "docs/content/reference/declarations.md"          -> (40, 15, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
@@ -122,6 +126,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And two more runnable for the other half of the same machinery: a callable is held back like a
     // 'null' and contributes on the way back, so one arrow's result is what another takes — written
     // both ways round, since neither order is privileged.
+    // Four more runnable and two more refusals: a bound may be written after the signature with
+    // `where`, so the section runs the clause form, the two spellings bounding one parameter
+    // between them, a struct written that way, and the word still doing its other two jobs — then
+    // refuses a clause naming a parameter the declaration has not got, and one naming a value.
     "docs/content/reference/generics.md"              -> (36, 19, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
