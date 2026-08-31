@@ -590,12 +590,14 @@ impl Mul[Point, Point] for real
     mul(self, p: Point) -> Point = Point(p.x * self, p.y * self)
 
 val p = Point(1.0, 2.0)
+val a = p * 2.0
+val b = 2.0 * p
 
-print(p * 2.0, 2.0 * p)
+print(a.x, a.y, b.x, b.y)
 ```
 
 ```output
-(2, 4) (2, 4)
+2 4 2 4
 ```
 
 What the rule forbids is the case with no home: **a foreign trait implemented for a foreign type**,
@@ -603,11 +605,15 @@ where two unrelated modules could each supply a different implementation and no 
 `impl Mul[real, real] for real` is refused in any module but the library's, naming nothing of its
 own in either place:
 
-```error
+```sysl
 impl Mul[real, real] for real
     mul(self, k: real) -> real = self
 
 print(1)
+```
+
+```error
+an 'impl' may be written only in the module that declares the trait or in one that declares a type the block names, and 'sysl.Mul' is the library's while nothing this block names is declared outside the library — so this one has no home
 ```
 
 The built-in keeps everything it had. `real` is a member of `Mul` whatever anybody writes, and only

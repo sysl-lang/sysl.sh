@@ -9,7 +9,7 @@ requires: "no alloc"
 
 ## Index
 
-[`hmac1`](#hmac1) [`hmac224`](#hmac224) [`hmac256`](#hmac256) [`hmac384`](#hmac384) [`hmac512`](#hmac512) [`new_sha1`](#new_sha1) [`new_sha224`](#new_sha224) [`new_sha256`](#new_sha256) [`new_sha384`](#new_sha384) [`new_sha512`](#new_sha512) [`sha1`](#sha1) [`sha224`](#sha224) [`sha256`](#sha256) [`sha384`](#sha384) [`sha512`](#sha512) [`verify`](#verify) [`Fault`](#fault) [`Sha1`](#sha1-1) [`Sha224`](#sha224-1) [`Sha256`](#sha256-1) [`Sha384`](#sha384-1) [`Sha512`](#sha512-1) [Word for u32](#word-for-u32) [Word for u64](#word-for-u64)
+[`hmac1`](#hmac1) [`hmac224`](#hmac224) [`hmac256`](#hmac256) [`hmac384`](#hmac384) [`hmac512`](#hmac512) [`new_sha1`](#new_sha1) [`new_sha224`](#new_sha224) [`new_sha256`](#new_sha256) [`new_sha384`](#new_sha384) [`new_sha512`](#new_sha512) [`sha1`](#sha1) [`sha224`](#sha224) [`sha256`](#sha256) [`sha384`](#sha384) [`sha512`](#sha512) [`verify`](#verify) [`Fault`](#fault) [`Sha1`](#sha1-1) [`Sha224`](#sha224-1) [`Sha256`](#sha256-1) [`Sha384`](#sha384-1) [`Sha512`](#sha512-1) [Compression for Sha1C](#compression-for-sha1c) [Compression for Sha2Narrow](#compression-for-sha2narrow) [Compression for Sha2Wide](#compression-for-sha2wide) [Word for u32](#word-for-u32) [Word for u64](#word-for-u64)
 
 ## Functions
 
@@ -153,11 +153,7 @@ enum Fault
 
 ```sysl
 struct Sha1
-    h: [5]u32
-    block: [block_bytes]u8
-    used: usize
-    total: u64
-    dlen: usize
+    inner: Sha[Sha1C]
 ```
 
 A SHA-1 hash in progress. **SHA-1 is broken** -- see `sha1` for what that does and does not
@@ -172,7 +168,7 @@ rule out.
 
 ```sysl
 struct Sha224
-    inner: Sha[u32]
+    inner: Sha[Sha2Narrow]
 ```
 
 | Member | Signature | Description |
@@ -184,7 +180,7 @@ struct Sha224
 
 ```sysl
 struct Sha256
-    inner: Sha[u32]
+    inner: Sha[Sha2Narrow]
 ```
 
 | Member | Signature | Description |
@@ -196,7 +192,7 @@ struct Sha256
 
 ```sysl
 struct Sha384
-    inner: Sha[u64]
+    inner: Sha[Sha2Wide]
 ```
 
 | Member | Signature | Description |
@@ -208,7 +204,7 @@ struct Sha384
 
 ```sysl
 struct Sha512
-    inner: Sha[u64]
+    inner: Sha[Sha2Wide]
 ```
 
 | Member | Signature | Description |
@@ -217,6 +213,24 @@ struct Sha512
 | `finish` | `finish(*self, digest: []u8) -> Result[unit, Fault]` |  |
 
 ## Implementations
+
+### Compression for Sha1C
+
+```sysl
+impl Compression for Sha1C
+```
+
+### Compression for Sha2Narrow
+
+```sysl
+impl Compression for Sha2Narrow
+```
+
+### Compression for Sha2Wide
+
+```sysl
+impl Compression for Sha2Wide
+```
 
 ### Word for u32
 

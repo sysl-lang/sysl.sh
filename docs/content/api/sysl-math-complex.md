@@ -9,7 +9,7 @@ requires: "no alloc"
 
 ## Index
 
-[`Complex`](#complex) [Add for Complex[F]](#add-for-complexf) [Add for Complex[F]](#add-for-complexf-1) [Display for Complex[F]](#display-for-complexf) [Div for Complex[F]](#div-for-complexf) [Div for Complex[F]](#div-for-complexf-1) [Eq for Complex[F]](#eq-for-complexf) [Magnitude for Complex[F]](#magnitude-for-complexf) [Mul for Complex[F]](#mul-for-complexf) [Mul for Complex[F]](#mul-for-complexf-1) [Neg for Complex[F]](#neg-for-complexf) [One for Complex[F]](#one-for-complexf) [Sub for Complex[F]](#sub-for-complexf) [Sub for Complex[F]](#sub-for-complexf-1) [Zero for Complex[F]](#zero-for-complexf)
+[`Complex`](#complex) [Add for Complex[F]](#add-for-complexf) [Add for Complex[F]](#add-for-complexf-1) [Add for f32](#add-for-f32) [Add for real](#add-for-real) [Display for Complex[F]](#display-for-complexf) [Div for Complex[F]](#div-for-complexf) [Div for Complex[F]](#div-for-complexf-1) [Div for f32](#div-for-f32) [Div for real](#div-for-real) [Eq for Complex[F]](#eq-for-complexf) [Magnitude for Complex[F]](#magnitude-for-complexf) [Mul for Complex[F]](#mul-for-complexf) [Mul for Complex[F]](#mul-for-complexf-1) [Mul for f32](#mul-for-f32) [Mul for real](#mul-for-real) [Neg for Complex[F]](#neg-for-complexf) [One for Complex[F]](#one-for-complexf) [Sub for Complex[F]](#sub-for-complexf) [Sub for Complex[F]](#sub-for-complexf-1) [Sub for f32](#sub-for-f32) [Sub for real](#sub-for-real) [Zero for Complex[F]](#zero-for-complexf)
 
 ## Types
 
@@ -101,6 +101,18 @@ impl[F: Float] Add for Complex[F]
 impl[F: Float] Add[F] for Complex[F]
 ```
 
+### Add for f32
+
+```sysl
+impl Add[Complex[f32], Complex[f32]] for f32
+```
+
+### Add for real
+
+```sysl
+impl Add[Complex[real], Complex[real]] for real
+```
+
 ### Display for Complex[F]
 
 ```sysl
@@ -157,6 +169,18 @@ that has a direction in mind knows it, and `is_zero` is the test.
 impl[F: Float] Div[F] for Complex[F]
 ```
 
+### Div for f32
+
+```sysl
+impl Div[Complex[f32], Complex[f32]] for f32
+```
+
+### Div for real
+
+```sysl
+impl Div[Complex[real], Complex[real]] for real
+```
+
 ### Eq for Complex[F]
 
 ```sysl
@@ -191,6 +215,18 @@ impl[F: Float] Mul for Complex[F]
 impl[F: Float] Mul[F] for Complex[F]
 ```
 
+### Mul for f32
+
+```sysl
+impl Mul[Complex[f32], Complex[f32]] for f32
+```
+
+### Mul for real
+
+```sysl
+impl Mul[Complex[real], Complex[real]] for real
+```
+
 ### Neg for Complex[F]
 
 ```sysl
@@ -213,6 +249,18 @@ impl[F: Float] Sub for Complex[F]
 
 ```sysl
 impl[F: Float] Sub[F] for Complex[F]
+```
+
+### Sub for f32
+
+```sysl
+impl Sub[Complex[f32], Complex[f32]] for f32
+```
+
+### Sub for real
+
+```sysl
+impl Sub[Complex[real], Complex[real]] for real
 ```
 
 ### Zero for Complex[F]
