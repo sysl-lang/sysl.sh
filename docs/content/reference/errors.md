@@ -774,18 +774,17 @@ A `new` type over a scalar arrives with **everything the scalar could do** — t
 operators, the remainder, the bitwise operators and the shifts, unary `-` and `~`, the comparisons,
 the compound assignments, `++` and `--`, and `str` — working at itself and producing itself.
 
-And no `impl` may replace or extend any of it:
+And no `impl` may **replace** any of it:
 
 ```sysl
 type Stamp = new i64
-type Span = new i64
 
-impl Add[Span] for Stamp
-    add(self, other: Span) -> Stamp = Stamp(i64(self) + i64(other))
+impl Add for Stamp
+    add(self, other: Stamp) -> Stamp = Stamp(0i64)
 ```
 
 ```error
-'add' is how 'Add' is implemented for Stamp, and the compiler provides that — a member of this name would hide it
+'Stamp' already implements 'sysl.Add' — the compiler provides it
 ```
 
 ```sysl
@@ -800,9 +799,31 @@ impl Display for Span
 ```
 
 The two refusals arrive by different routes, which the messages say. `Add` is a membership the
-**compiler** provides, so a member of that name would hide something with no block behind it.
+**compiler** provides, so a block writing no arguments is asking for the one that is already there.
 `Display` is an ordinary `impl` the **library** writes — one blanket block covering every integer —
 and a derivation has its base's memberships, so the block covers `Span` too.
+
+**Extending it at an argument list the base does not have is a different thing, and it is allowed.**
+A trait that takes arguments is a family of promises, and the base is a member of exactly one of
+them: the compiler provides `Stamp + Stamp` and has nothing to say about `Stamp + Span`. So the
+timeline a struct can describe is one a derivation can describe too:
+
+```sysl
+type Stamp = new i64
+type Span = new i64
+
+impl Add[Span] for Stamp
+    add(self, other: Span) -> Stamp = Stamp(i64(self) + i64(other))
+
+print(i64(Stamp(100i64) + Span(7i64)), i64(Stamp(100i64) + Stamp(5i64)))
+```
+
+```output
+107 105
+```
+
+The second number is the point: the base's own addition is untouched, and only the argument list
+tells the two apart.
 
 Both halves are deliberate. **Inheriting is right** because a derivation does not change what the
 values *are*: a `Slot` is some of the `u8`s, not a different set of things that happens to be stored

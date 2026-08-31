@@ -206,10 +206,24 @@ It is the type's own `abs` and nothing more. What the trait adds is that a gener
 the `sh.sysl.linalg` package pivots on exactly this, which is what lets one Gaussian elimination run over the
 reals and over the plane.
 
-**There is no scalar on the left.** `2.0 * z` would need an `impl Mul[Complex[F]] for F`, which is an
-implementation of a library trait for a built-in written by a module that owns neither — and it could
-not be one generic block, since `F` is a parameter rather than a type an `impl` can be written for.
-`z * 2.0` is the same product.
+**A scalar may be on either side.** `2.0 * z` and `z * 2.0` are the same product, and `1.0 - z` and
+`2.0 / z` are the ones that are not the mirror of anything:
+
+```sysl
+import sysl.math.complex.Complex
+
+var z = Complex(3.0, 4.0)
+
+print(2.0 * z, 1.0 + z, 1.0 - z, 2.0 / z)
+```
+
+```output
+6+8i 4+4i -2-4i 0.24-0.32i
+```
+
+It is two blocks per operator rather than one, at `real` and at `f32`, because an `impl` may not be
+written for a bare type parameter — so `F` cannot be the subject and each float width writes its
+own. That is the same reason `sysl.ops` writes `Zero` and `One` one block per width.
 
 ## Constructing one
 

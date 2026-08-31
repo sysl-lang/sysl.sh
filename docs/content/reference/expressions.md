@@ -1412,6 +1412,9 @@ from* — never the rule:
 - **A built-in scalar** satisfies the operator traits by a compiler-provided impl, and codegen keeps
   emitting the native machine instruction. No call, no vtable. The membership exists so the type
   system agrees a scalar satisfies `Add`, which is what lets one be passed where `[T: Add]` is wanted.
+  That membership is at **one** argument list — `real` is `Mul[real, real]` — so a block written for
+  a scalar at another one is reached without disturbing it, which is what puts a scalar on the
+  [left of an operator](/reference/traits/#where-an-impl-may-live).
 - **A user type with `impl Op for S`** lowers to the member the impl produced. Overloading an
   operator *is* implementing its trait; there is no separate operator-method syntax.
 - **A bounded parameter `[T: Op]`** resolves abstractly at the definition, and monomorphization binds

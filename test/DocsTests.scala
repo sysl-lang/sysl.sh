@@ -133,7 +133,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/reference/errors.md"                 -> (25, 27, 2),
+    "docs/content/reference/errors.md"                 -> (26, 27, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -180,7 +180,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (24, 10, 3),
-    "docs/content/library/complex.md"                   -> (8, 1, 1),
+    "docs/content/library/complex.md"                   -> (9, 1, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
