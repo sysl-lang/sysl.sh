@@ -90,17 +90,26 @@ print(h.finish(too_small[0..<32]).is_err())
 true
 ```
 
-## One algorithm at two widths
+## Five digests, one shell
 
-The four SHA-2 digests are **two** algorithms. SHA-224 and SHA-256 are the same 32-bit compression started
-from different initial values and truncated differently; SHA-384 and SHA-512 are the same 64-bit one.
-So the width is what a type parameter carries, and the compression is written **once** over a bound
-that `u32` and `u64` both satisfy.
+The four SHA-2 digests are **two** algorithms. SHA-224 and SHA-256 are the same 32-bit compression
+started from different initial values and truncated differently; SHA-384 and SHA-512 are the same
+64-bit one. So each compression is written **once**, over a bound that `u32` and `u64` both satisfy.
 
-**That genericity does not reach this page's surface, and that is deliberate.** The four hashers are
-four ordinary types; the trait behind them is private to the module. A public generic would have
-dragged its bound out with it, and a bound declaring `bits`, `rounds` and `k` is the standard library
-claiming names general enough that the next program to want one would collide with it.
+**And SHA-1 shares everything around them.** A message is buffered into fixed-size blocks, each full
+block is compressed into a running state, and the tail is padded with a one bit, zeros and the
+message length in bits — which is the same in all five and is written once. What differs is the
+compression function and the two sizes that go with it, and those are what the bound names.
+
+The width is an **associated** type rather than a parameter, which is what makes that possible at
+all: SHA-1 and SHA-256 both compress 32-bit words, so the width is not what tells them apart, and a
+generic whose parameter *is* the width has no way to hold both.
+
+**None of that reaches this page's surface, and that is deliberate.** The five hashers are five
+ordinary types; everything behind them is private to the module. A public generic would have dragged
+its bound out with it, and a bound declaring `block_bytes`, `word_bytes` and `compress` is the
+standard library claiming names general enough that the next program to want one would collide with
+it.
 
 That is why the truncated pair are not prefixes of the untruncated ones — the published initial
 values for SHA-224 and SHA-384 are chosen so that they cannot be.
