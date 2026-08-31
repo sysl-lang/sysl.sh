@@ -309,8 +309,10 @@ worth reading on a machine that could not build it. What it does share with a co
 reading, so a file the compiler would refuse — a tab in an indent, a fence that is never closed — is
 refused here too, with the same message.
 
-This is not an API reference generated from declarations. sysl has no documentation comment yet, so
-there is nothing for such a thing to read, and `doc` is left unclaimed for the day there is.
+This is not an API reference generated from declarations. That is [`doc`](#doc), further down: sysl
+has [documentation comments](/reference/lexical/#documentation-comments) and `sysl doc` reads them.
+The two answer different questions — `weave` renders a document somebody *wrote*, `doc` renders what
+the declarations *say* — so a tree usually wants both, and neither is a substitute for the other.
 
 ### `tangle`
 
