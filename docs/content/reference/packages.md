@@ -374,8 +374,43 @@ sysl build . --include-path lwip=$PICO_SDK_PATH/lib/lwip/src/include
 **The package names the requirement and the driver supplies the path.** That is the same split as
 [`@link("png")` and `--link-path`](/reference/ffi/#where-the-library-is-where-its-headers-are-and-what-they-are-configured-with):
 a path in a committed file would be one machine's directory layout published as though it were a
-property of the package, and an environment variable read out of the consumer's shell would be a
-build that works for whoever wrote it.
+property of the package.
+
+### A requirement may name the variable its path conventionally lives in
+
+Some libraries have an agreed name for where they are installed. The pico-sdk's is `PICO_SDK_PATH` —
+its own CMake reads it, and every project that uses it sets it. Where such a name exists the package
+may say so, and then a consumer who has it set needs no flag at all:
+
+```hocon
+requires {
+  headers {
+    pico_sdk = { note = "the pico-sdk's headers", env = "PICO_SDK_PATH" }
+  }
+}
+```
+
+**A variable's *name* is not a path.** `PICO_SDK_PATH` is the same string on every machine in the
+world, so it is a property of the library's ecosystem rather than of whoever is building — which is
+exactly the test the paragraph above applies, and it passes it where a directory does not.
+
+**A flag still wins, and an unset variable still refuses.** The variable is consulted only where
+nothing on the command line named that requirement, so it can turn a failure into a success and can
+never turn one success into a different one — and `--include-path` remains the way to build against
+something other than what the variable points at. An empty variable counts as unset.
+
+The `note` stays required, because it is what a consumer *without* the variable is shown, and the
+refusal names both:
+
+```
+this project needs the 'pico_sdk' headers and nothing supplied them — the pico-sdk's headers.
+Set PICO_SDK_PATH, which is where this package's own ecosystem looks for it, or say where they
+are with '--include-path pico_sdk=<dir>'
+```
+
+**Most requirements have no such variable and take the bare string**, which means exactly what it
+always meant. `FreeRTOSConfig.h` is the application's own file and no convention names it; there is
+no agreed variable for lwIP either.
 
 **The value is the reason, not a path.** It is prose for a person — what the headers are and where
 they come from — quoted back at whoever has to find them. A name on its own would report that
