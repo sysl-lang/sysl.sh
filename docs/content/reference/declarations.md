@@ -1079,7 +1079,8 @@ print(r.perimeter())
 as though it were a field, so it should cost what a field costs; a member that walks, allocates, or
 can fail takes the list, and its parentheses are the warning. Note that `self` is what makes a member
 a *method* at all — a parameter list with no receiver in it declares an **associated function**,
-reached through the type rather than through a value.
+reached through the type rather than through a value. A property has no parameter list to write one
+in, which is what [`static`](#a-static-property) is for.
 
 ### A property may be settable
 
@@ -1192,6 +1193,106 @@ print(p.x, p.y)
 ```output
 0 0
 ```
+
+### A static property
+
+**A property has nowhere to say `self`.** A member's receiver is written in its parameter list, and
+a property is a method with that list left off — so the one thing that separates an instance member
+from an associated one cannot be spelled, and every property above is an instance member by
+construction. `static` is what says otherwise:
+
+```sysl
+struct Temp
+    n: int
+
+    static freezing -> int = 32
+
+print(Temp.freezing)
+```
+
+```output
+32
+```
+
+It is read on the **type**, with no parentheses — `Temp.freezing`. That is an associated function
+whose call the reader does not write, and it is what the form is: `static` says the member belongs to
+the type rather than to a value of it, and everything else about a property is unchanged, including
+the body forms and the rule about what a property should cost.
+
+**Reading one on a value is refused**, which is the mirror of the refusal an instance property gets
+when it is read on a type:
+
+```sysl
+struct Temp
+    n: int
+
+    static freezing -> int = 32
+
+print(Temp(1).freezing)
+```
+
+```error
+'freezing' is a property of the type 'Temp' rather than of a value of it — read it as 'Temp.freezing'
+```
+
+**The body has no receiver either**, so it cannot name `self`. That is why the word is required
+rather than inferred: "a property that never names `self` is static" would make a member's
+reachability depend on its body, so deleting a `self.` from an expression would silently move the
+member from the value to the type and break every call site.
+
+**A trait may require one, and that is what a static property is chiefly for.** A type parameter is
+not a value, so a fact *about the type* — a zero, a limit, a width — has nowhere to arrive from
+unless a bound can carry it:
+
+```sysl
+trait Bounded
+    static lowest -> int
+
+struct Age
+    n: int
+
+impl Bounded for Age
+    static lowest -> int = 18
+
+lowest_of[T: Bounded]() -> int = T.lowest
+
+print(lowest_of[Age]())
+```
+
+```output
+18
+```
+
+`lowest_of` never mentions `Age`, and there is no value of it anywhere in the program.
+
+**A trait's static property is a requirement rather than a default**, so it carries no body — the
+same rule every receiverless trait member has, since a default would give every implementation one
+constant:
+
+```sysl
+trait Bounded
+    static lowest -> int = 0
+
+struct Age
+    n: int
+
+impl Bounded for Age
+
+print(Age.lowest)
+```
+
+```error
+'Bounded.lowest' is a property of the type, so a default body would give every implementation the same value — drop the body and let each one supply it
+```
+
+**It takes no type parameters**, for the reason an ordinary property does not: a read has no
+arguments and no receiver, so there would be nothing to solve them from. And a member written with a
+parameter list is an associated function already, reached the same way and called with `()` — so
+`static` in front of one is refused rather than being a second spelling of what already exists.
+
+`static` is not a new word: it is the same one that makes a binding in an entry file belong to the
+module rather than to that file's body ([bindings](#a-module-member-states-its-type)). The two are
+told apart by what follows it.
 
 ### `invariant`
 

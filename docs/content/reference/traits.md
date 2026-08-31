@@ -45,6 +45,7 @@ the same way:
 | property | `size -> int` | `x.size`, with no parentheses |
 | a property's setter | `set size(n)` | `x.size = n` |
 | associated function | `zero() -> Self` | `T.zero()`, through the type |
+| [static property](/reference/declarations/#a-static-property) | `static lowest -> int` | `T.lowest`, through the type and with no parentheses |
 
 **A property is asked for by dropping the body from its declaration form**, and supplied by an
 implementation writing that body:
@@ -117,7 +118,8 @@ write.
 
 **Which kind a member is has to match between the trait and the implementation**, and that is a real
 check rather than a formality — a property and an associated function both have no receiver to
-compare, so `size(self) -> int` would otherwise quietly stand in for `size -> int`.
+compare, so `size(self) -> int` would otherwise quietly stand in for `size -> int`. A **static**
+property is a third member with no receiver, and the word is what tells it from the other two.
 
 **`Self` is the implementing type**, written wherever a signature has to name it. Inside a generic
 `impl` it is the subject applied to that block's parameters, so `-> Self` and `-> Box[T]` are the one

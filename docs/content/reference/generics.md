@@ -826,6 +826,112 @@ member's signature and body, a field's type, a variant's payload. It is not rest
 Restating it is Rust's rule and its own users regret it; declaring once is the Swift/Kotlin behaviour
 and the one that matches how the bound reads.
 
+### A bound may be written out of line, with `where`
+
+The bracket list is one place to put a bound and it is not always the readable one. A declaration
+with several parameters and several bounds pushes its parameter list, its result and its body off to
+the right, and what the reader came for — what the function *takes* — is the part that moves. `where`
+puts the bounds after the signature instead:
+
+```sysl
+show[T](x: T) -> string where T: Display = str(x)
+
+print(show(42))
+```
+
+```output
+42
+```
+
+**It is the same bound in a different place, and nothing downstream can tell the two apart.** A
+clause is folded into the list the brackets fill, so `show[T: Display](x: T)` and the form above are
+one declaration written two ways — same inference, same refusals, same monomorphization. Which to
+write is a question about the line, not about the meaning.
+
+**The two may be mixed**, which is what makes the choice per-bound rather than per-declaration: the
+short obvious constraint stays in the brackets, and the long one that would crowd the signature goes
+below it.
+
+```sysl
+same[T: Eq](a: T, b: T) -> string where T: Display =
+    if a == b then str(a) else "different"
+
+print(same(3, 3))
+print(same(3, 4))
+```
+
+```output
+3
+different
+```
+
+The clause is a comma-separated list, and each entry joins its traits with `+` exactly as a bracketed
+bound does. It goes at the end of the header line — after the result type, before the `=` or the
+indented block — and it is written the same way on a function, a member, a struct, an enum, a trait
+and an `impl`:
+
+```sysl
+struct SortedPair[T] where T: Ord
+    lo: T
+    hi: T
+
+    ordered(self) -> bool = self.lo < self.hi
+
+var s = SortedPair(1, 2)
+
+print(s.ordered())
+```
+
+```output
+true
+```
+
+**A clause may only bound a parameter the declaration actually declares**, and saying otherwise is
+refused where it is written rather than at some later use:
+
+```sysl
+show[T](x: T) -> string where U: Display = str(x)
+
+print(show(1))
+```
+
+```error
+this declaration has no type parameter 'U', so a 'where' clause has nothing to bound
+```
+
+A **value** parameter is the one case that reads as though it ought to work and cannot. `[const N:
+usize]` already states a type, and that type is what the argument must *be* rather than a promise
+about what it implements — a value implements no trait, so there is nothing for a clause to add:
+
+```sysl
+sum[const N: usize](xs: [N]int) -> int where N: Display = 0
+
+print(sum([1, 2]))
+```
+
+```error
+'N' stands for a value rather than a type, and a value implements no trait
+```
+
+**`where` is not a reserved word**, and the two jobs it already had are untouched. It introduces a
+[constrained type's predicate](/reference/errors/#constrained-types) in a `type` declaration,
+where it follows a type rather than a signature, and it remains an ordinary name everywhere else —
+so a program may still call something `where`:
+
+```sysl
+type Even = new int where value % 2 == 0
+
+where(n: int) -> int = n + 1
+
+var e = Even(4)
+
+print(int(e), where(1))
+```
+
+```output
+4 2
+```
+
 ## A parameter may carry a default
 
 A parameter of a **trait**, a **struct**, or an **enum** may name the type to use where a use leaves it
