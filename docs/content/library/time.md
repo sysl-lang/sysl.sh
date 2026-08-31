@@ -211,19 +211,37 @@ print(whole_seconds(2 * d))
 6
 ```
 
-**The two sides are two `impl` blocks and they are not the same shape**, which is worth a moment
-because it is what a bare literal costs. `d * 3` reaches `impl Mul[long] for Duration`, and the `3`
-takes the `long` that block's parameter names rather than the `int` a literal with nothing to take
-would fall back to. On the left there is nothing to take it *from* — `2` is an `int` before the
-operator is looked at — so the block that answers is written over the whole integer family,
-`impl[N: Integer] Mul[Duration, Duration] for N`. A block for `long` alone would have compiled and
-then refused the spelling everybody actually writes.
+**Each side is a block of its own**, which is worth a moment because it is what a bare literal
+costs. `d * 3` reaches `impl Mul[long] for Duration`, and the `3` takes the `long` that block's
+parameter names rather than the `int` a literal with nothing to take would fall back to. On the left
+there is nothing to take it *from* — `2` is an `int` before the operator is looked at — so the module
+writes a second block, over the whole integer family at once:
 
-`Integer` may be a blanket subject where an ordinary trait may not, and the reason is that its
+```sysl
+impl[N: Integer] Mul[Duration, Duration] for N
+    mul(self, d: Duration) -> Duration = d * long(self)
+```
+
+**`Integer` may be a blanket subject where an ordinary trait may not**, and the reason is that its
 membership is the compiler's to settle: every `iN` and `uN` is in it — an
 [open family](/reference/types/#integers-are-an-open-family) of arbitrary widths — and nothing a
 program declares can join. A blanket over an ordinary trait would be a blanket over every type at
 once, which is refused.
+
+So a count of any width scales a duration, not only the two an `int` and a `long` reach:
+
+```sysl
+import sysl.time.*
+
+var d = seconds(3i64)
+var w: u8 = 4
+
+print(whole_seconds(w * d))
+```
+
+```output
+12
+```
 
 ### Writing a duration number-first
 
