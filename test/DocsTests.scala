@@ -89,7 +89,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
     "docs/content/reference/patterns.md"              -> (14, 13, 0),
-    "docs/content/reference/memory.md"                -> (37, 23, 1),
+    "docs/content/reference/memory.md"                -> (38, 23, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     // One more running and one more refused: the two views of a slice meet at the read-only one
@@ -112,7 +112,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // And the two views of a slice on top of that: two more running and one more refused, since a
     // block for `[]T` reaches a `[]const T` receiver now — so the page shows the covering, the write
     // that the read-only instance refuses, and the same member writing freely on a `[]int`.
-    "docs/content/reference/traits.md"                -> (42, 37, 0),
+    "docs/content/reference/traits.md"                -> (43, 38, 0),
     // One more runnable: a type parameter is solved to the type that was written, so a transparent
     // subtype reaches one and the two routes that say which type a call is at agree on the page.
     // One more again, and one more refusal, for the same rule seen from here: a trait's member may
@@ -227,7 +227,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // replaced.
     "docs/content/library/seq.md"                         -> (10, 2, 1),
     "docs/content/library/encoding.md"                    -> (6, 0, 0),
-    "docs/content/library/crypto.md"                   -> (10, 0, 0),
+    "docs/content/library/crypto.md"                   -> (14, 0, 0),
     "docs/content/library/rand.md"                        -> (6, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),
     // The four runnable ones are real suites whose report is checked to the byte, which is possible

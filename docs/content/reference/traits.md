@@ -2502,6 +2502,45 @@ rule about a member with no receiver has to say what it *lowers to* rather than 
 value. `T.zero()` at an integer is the literal, so a bounded accumulator costs no call.
 [Expressions](/reference/expressions/) has the rule and the two types it stops at.
 
+**It may carry a default**, exactly as a member with a receiver may, and it is inherited and replaced
+by the same rules: an implementation that leaves the member out gets the trait's body, and one that
+wants its own says `override`. That is what lets a trait made *entirely* of receiverless members
+grow — `sysl.crypto`'s internal `Compression` gained a member saying which end of a word goes first,
+and the three compressions for which the answer was already the common one needed no edit.
+
+```sysl
+trait Sized
+    width() -> usize
+    doubled() -> usize = Self.width() * 2
+
+struct Word
+end Word
+
+impl Sized for Word
+    width() -> usize = 4
+
+show[T: Sized]() = print(T.width(), T.doubled())
+
+show[Word]()
+```
+
+```output
+4 8
+```
+
+**The one member that may not carry a default is a [static property](/reference/declarations/#a-static-property)**,
+and its reason is its own rather than anything about receivers: it has no parameter list and no
+receiver, so there is nothing available to vary what it would hand every implementation.
+
+```sysl
+trait Maker
+    static size -> int = 1
+```
+
+```error
+'Maker.size' is a property of the type, so a default body would give every implementation the same value — drop the body and let each one supply it
+```
+
 **It is static dispatch only, and nothing was added to keep it that way.** Object safety already
 excludes a member with no receiver, because a table slot is selected *by* the receiver and there is
 nothing here to select with. A trait declaring one is usable as a bound and not as an object, exactly

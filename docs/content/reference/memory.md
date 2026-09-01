@@ -1337,9 +1337,15 @@ because an element of a local array of arrays is part of that array's storage; a
 not, because that storage belongs to a struct. Only arrays that are *both* sliced *and* escaped are
 promoted.
 
-**An array LITERAL is promoted too, and it has no declaration to promote.** A whole one, viewed, is a
-temporary of the frame that wrote it — which is exactly what promotion exists for — so it is given
-storage of its own, the same storage a literal written where a `[]T` is expected already gets:
+**A TEMPORARY is promoted too, and it has no declaration to promote.** A whole array the frame
+computed and nobody named — an array literal, a call's answer, a field of either — is a temporary of
+the frame that made it, which is exactly what promotion exists for, so a view of it that gets out is
+given storage of its own: the same storage a literal written where a `[]T` is expected already gets.
+
+What makes something a temporary is having **no address of its own**. That is the same line the
+paragraph above draws from the other side: a local array, a field of one, an element of one and a
+parameter are all storage that is somewhere, and the question for each is whose it is to move. A
+temporary is nowhere yet, so it is nobody's, so it is this frame's:
 
 ```sysl
 trait Sink
@@ -1366,10 +1372,36 @@ arguments into exactly `[a, b, c][..]`, so a `...T` member reached through a tra
 literal that has to outlive the frame. It costs an allocation there and nothing at a call whose slice
 stays put.
 
+A **call's answer** is the same temporary written a different way, and it is the one a reader meets
+first: a digest is a `[32]u8`, so slicing one straight into something that keeps it is a view of an
+array with no declaration behind it.
+
+```sysl
+import sysl.crypto.sha256
+
+static var fingerprint: []const u8 = []
+
+record(data: []const u8)
+    fingerprint = sha256(data)[..]
+
+record("abc".bytes)
+
+print(fingerprint.len, fingerprint[0], fingerprint[31])
+```
+
+```output
+32 186 173
+```
+
+**Binding it to a name first would have worked all along**, and that is the point: `val d =
+sha256(data)` then `d[..]` is a declared array, promoted by the paragraph above. The two spellings are
+one frame slot, so refusing the shorter one bought nothing.
+
 Two roots have nowhere to be promoted to, and are diagnostics rather than promotions — an array a
-caller passed **by value**, which is the caller's layout, and an array that is a **field** of a struct
-on the frame. A **part** of a literal is a third: it is a different node from its own storage, so
-there is nothing whole to move.
+caller passed **by value**, which is the caller's layout, and an array that is a **field** of a
+**named** struct on the frame, where moving the field alone or the struct with it is the choice this
+reference leaves unspecified. A **part** of a temporary is a third: it is a different node from its
+own storage, so there is nothing whole to move.
 
 ```sysl
 first_two(a: [4]int) -> []int = a[0..<2]
