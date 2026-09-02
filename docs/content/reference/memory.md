@@ -1475,6 +1475,11 @@ print(n.value, sizeof(Node), usize(n) == usize(&arena[0]))
 42 4 true
 ```
 
+**The address of a function converts as well**, and for the same reason: `&f` is an address, it is a
+pointer's width, and the number that comes out cannot be dereferenced any more than the one above
+can. It is what a binding reaches for when a C library wants a callback registered through something
+that takes a number, and it is the same row of the table rather than a special case.
+
 **The target type comes from whatever receives the result** — the same way `va_arg`, a bare `None`,
 and a bare `null` all take theirs. Where that is not where a reader wants to say it, it may be
 written on the form: `ptr_cast[*Node](&arena[0])` is

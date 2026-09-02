@@ -1219,9 +1219,10 @@ A call is checked against the declared parameters exactly as any other call is �
 excuses nothing that comes before it, arity included, and the escape analysis still assumes the
 callee keeps every argument. What the ellipsis governs is only what follows:
 
-**Only what C varargs can carry may go in the tail** — an integer, a float, a `char`, or a raw
-pointer. What is refused there and not at a declared parameter is a `bool`: C would promote it to
-`int`, and sysl has no conversion that says so, so there is nothing to promote it *with*:
+**Only what C varargs can carry may go in the tail** — an integer, a float, a `char`, a raw pointer,
+or the **address of a function**. What is refused there and not at a declared parameter is a `bool`:
+C would promote it to `int`, and sysl has no conversion that says so, so there is nothing to promote
+it *with*:
 
 ```sysl
 extern printf(fmt: *u8, ...) -> int
@@ -1230,8 +1231,38 @@ print(printf(null, true))
 ```
 
 ```error
-a bool cannot be passed to '...' — a variadic argument must be an integer, a float, a char, or a raw pointer
+a bool cannot be passed to '...' — a variadic argument must be an integer, a float, a char, a raw pointer, or the address of a function
 ```
+
+The function address is there because a variadic setter is how a C library takes a callback —
+`curl_easy_setopt(h, CURLOPT_WRITEFUNCTION, f)` is the shape, and every option that registers one
+goes through it. A code pointer is the width of a data pointer and travels in the same register, so
+C's own rules take it exactly as they take a `void *`:
+
+```sysl
+doubler(n: int) -> int = n * 2
+
+address(n: int, ...) -> usize
+    var ap: va_list
+
+    va_start(ap)
+
+    val a: usize = va_arg(ap)
+
+    va_end(ap)
+
+    a
+
+print(address(1, &doubler) == usize(&doubler))
+```
+
+```output
+true
+```
+
+The alternative was `ptr_cast(&f)` to a `*u8`, which travels identically and throws the signature
+away — so a callback registered at the wrong arity stopped being a compile error anywhere, on the
+one option class where getting it wrong corrupts the stack at run time rather than failing to link.
 
 **A tail argument is passed already widened**, by C's default argument promotions: an integer
 narrower than 32 bits becomes `i32` or `u32` following its own signedness, and an `f16` or `f32`

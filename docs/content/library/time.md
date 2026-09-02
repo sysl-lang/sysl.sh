@@ -273,7 +273,8 @@ print(whole_millis(250.ms * 4))
 
 **The short units are symbols and the long ones are words**, which is a split about where each is
 used rather than a compromise. A timeout, a poll interval and a debounce are the sub-second end, they
-are written constantly, and `ms` is the spelling every datasheet already uses — `sleep(5.ms)` and
+are written constantly, and `ms` is the spelling every datasheet already uses —
+[`sleep(5.ms)`](#waiting) and
 `join(ssid, pw, auth, 20.s)` say at a glance what `millis(5)` and `seconds(20)` say a moment later.
 At the other end the number is small and the line is not dense, so `30.days` costs nothing and says
 more than `30.d` would.
@@ -837,6 +838,62 @@ error: 't' of 'sysl.time.instant_text' is sysl.time.Instant, but sysl.time.Durat
 ```
 
 Both require `posix`.
+
+### Waiting
+
+Asking to be put to sleep is asking the operating system for something, so `sleep` is here for the
+same reason `now` is rather than beside `Duration`. It takes a `Duration`, which is what makes the
+line read the same on a host and on a board — `sysl-lang/pico2` has a `sleep` of its own over the
+SDK's timer, with this signature.
+
+```sysl
+import sysl.posix.time.{monotonic, sleep}
+import sysl.time.*
+
+val t0 = monotonic()
+
+sleep(50.ms)
+
+print(whole_millis(monotonic() - t0) >= 50)
+```
+
+```output
+true
+```
+
+**A signal cuts a wait short, and `sleep` carries on.** The system call it is built on returns early
+when anything arrives, handing back the time still owed — so a wait written as one call is quietly
+shorter than it asked for whenever a program has a handler installed, which is exactly when a test
+that depends on it starts looking flaky. `sleep` retries with the remainder until nothing is left,
+and answers nothing, because by the time it returns there is nothing left to say.
+
+A duration of zero or less returns at once. That is not the same as yielding: `sleep(0.s)` is not a
+way to offer the processor to something else.
+
+`nanosleep` is the other half, and it is two differences rather than one. It counts **nanoseconds**,
+where a `Duration` counts microseconds and so cannot name a wait shorter than one; and it **answers
+what was still owed**, which is what lets a program with a handler tell "the wait finished" from
+"something happened". Zero means the whole time passed.
+
+```sysl
+import sysl.posix.time.{monotonic, nanosleep}
+import sysl.time.*
+
+val t0 = monotonic()
+
+var left = nanosleep(2_000_000)
+
+while left > 0
+    left = nanosleep(left)
+
+print(whole_micros(monotonic() - t0) >= 2000)
+```
+
+```output
+true
+```
+
+Reach for `sleep` unless the resolution or the remainder is the point.
 
 ### The zone the host is set to
 
