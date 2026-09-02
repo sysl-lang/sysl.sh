@@ -1239,25 +1239,28 @@ The function address is there because a variadic setter is how a C library takes
 goes through it. A code pointer is the width of a data pointer and travels in the same register, so
 C's own rules take it exactly as they take a `void *`:
 
+**What may be written into a tail is what may be read back out of one**, so a callee names the
+signature rather than reading an address and casting it:
+
 ```sysl
 doubler(n: int) -> int = n * 2
 
-address(n: int, ...) -> usize
+apply(x: int, ...) -> int
     var ap: va_list
 
     va_start(ap)
 
-    val a: usize = va_arg(ap)
+    var f: *extern(int) -> int = va_arg(ap)
 
     va_end(ap)
 
-    a
+    f(x)
 
-print(address(1, &doubler) == usize(&doubler))
+print(apply(21, &doubler))
 ```
 
 ```output
-true
+42
 ```
 
 The alternative was `ptr_cast(&f)` to a `*u8`, which travels identically and throws the signature
