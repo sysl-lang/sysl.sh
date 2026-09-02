@@ -129,10 +129,7 @@ lock may not be running at all and nothing else will make it so.
 ```sysl
 struct Channel[T]
     held: i32
-    slots: *T
-    room: usize
-    head: usize
-    live: usize
+    ring: Ring[T]
     closed: i32
 ```
 

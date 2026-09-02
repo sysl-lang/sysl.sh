@@ -21,6 +21,14 @@ None of them is a type the compiler knows. Each is ordinary sysl over a `[]T` or
 [`Buf[T]`](/library/buf/), in files a program could have written — which is the same thing worth
 saying about `Buf` itself, and it stays true as the containers get more interesting.
 
+**There is a sixth thing in this namespace and it is a module rather than a type**:
+[`sysl.container.ring`](/library/ring/), holding `Ring[T]` — the queue of a **fixed** capacity, laid
+over storage the caller supplies. It sits below this module rather than inside it because it declares
+`@no_alloc` and [a capability is a property of the whole
+module](/reference/modules/#capabilities-are-a-module-property), which the five types here could not
+claim: every one of them grows. So a program that has given the allocator up imports that module and
+not this one.
+
 ## One flat table, and why that is the whole design
 
 `Map` and `Set` are **open-addressed**: entries live in the table, and a key is found by probing

@@ -557,6 +557,13 @@ a count that is not atomic. A channel that kept the slice would have been refuse
 shares it — one line before the first `send`, and for the only thing the type is for. A raw pointer
 carries no count, so it crosses; the caller writes a slice at `channel(…)` and never sees the pointer.
 
+**The ring is [`Ring[T]`](/library/ring/#the-storage-is-a-pointer-and-that-is-the-crossing-rule)
+rather than four fields of this struct's own**, which it was until that module existed. A bounded
+queue over caller-supplied storage is what a channel is made of and is also a thing on its own, so
+what is left in this file is the lock and the closed flag; the wrapping arithmetic is over there and
+tested there. The pointer-and-count shape travelled with it for exactly the reason this section
+gives, which is why a channel can embed one.
+
 **The copying half of the crossing rule is still not written.** [The memory
 model](/reference/memory/) allows a channel to take a heap-backed view *because it copies the bytes*,
 and this one assigns a slot — the same share the sender held. So a view is refused here exactly as it

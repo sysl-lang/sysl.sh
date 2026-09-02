@@ -30,6 +30,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.regex`](/library/regex/) | POSIX Extended Regular Expressions — `regex`, `Regex`, `Match` | — |
 | [`sysl.buf`](/library/buf/) | `Buf[T]`, the growable sequence, and `ByteSink` | — |
 | [`sysl.container`](/library/container/) | five containers — [`Map`](/library/container/#the-map) and [`Set`](/library/container/#the-set) over one flat probe table, [`Deque`](/library/container/#the-queue-at-both-ends), [`Heap`](/library/container/#the-priority-queue), and an immutable [`List`](/library/container/#the-immutable-list) that shares its tail | — |
+| [`sysl.container.ring`](/library/ring/) | `Ring[T]`, a queue of a **fixed** capacity over storage the caller supplies — no allocator, a full ring that answers rather than grows, and [`overwrite`](/library/ring/#overwrite-is-what-makes-it-a-ring-rather-than-a-bounded-queue) for a window over an unbounded stream | — |
 | [`sysl.io`](/library/io/) | `Reader`, `stdin()`, `lines()` and `console_lines()`, and the in-memory `bytes_reader()` / `bytes_writer()` | — |
 | [`sysl.path`](/library/path/) | a path by the string alone — `join`, `parent`, `file_name`, `extension`, `stem`, `normalize`, `relative_to`. It opens nothing | — |
 | [`sysl.fs`](/library/fs/) | what is at the end of a path — `read_text`, `write_bytes`, `metadata`, the links, `make_dir_all`, `copy_file`, `canonicalize`, and `IoError` | `os` |

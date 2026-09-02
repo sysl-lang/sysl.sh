@@ -16,6 +16,7 @@ These pages are generated from the library's own doc comments: every declaration
 | [`sysl.args`](sysl-args/) |  |
 | [`sysl.buf`](sysl-buf/) | The growable sequence and the sink built on it. |
 | [`sysl.container`](sysl-container/) | A singly linked list that is never modified: every operation answers a **new** list, and the old one is still there and still correct. |
+| [`sysl.container.ring`](sysl-container-ring/) |  |
 | [`sysl.crypto`](sysl-crypto/) |  |
 | [`sysl.encoding`](sysl-encoding/) | Fixed-width integers to and from bytes, at both byte orders. |
 | [`sysl.env`](sysl-env/) |  |
