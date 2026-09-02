@@ -166,10 +166,9 @@ You have seen the whole language. What is left is depth:
   does to a `&T` payload, which slice forms exist.
 - **The [library](/library/)** documents each module the table in
   [modules](/tour/modules/) named, one page each, down to what a `no alloc` program may reach.
-- **The [guide programs](/guides/)** are complete programs at the size where the choices start to
-  matter — a ring buffer, a slab allocator — each written to force a language decision rather than
-  to demonstrate a finished one. The pages say what each found, which is most of the reason the
-  language is shaped the way it is.
+- **The [packages](https://github.com/sysl-lang)** are the language used rather than described — a
+  PNG reader, a fast Fourier transform, a slab allocator, bindings to SQLite, SDL3 and OpenSSL, all
+  ordinary sysl over the same features this tour covered.
 - **The standard library's own source** is the best worked example there is. `Buf`, `StrBuilder` and
   the `Reader` above are ordinary sysl over the same features this tour covered — there is no
   privileged layer underneath them.

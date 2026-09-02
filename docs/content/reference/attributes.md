@@ -125,8 +125,8 @@ written `@` would send a reader to write `@test`, which a member is refused just
 
 **An annotation's name is an ordinary identifier**, which is the point of writing these as
 annotations at all: nothing here is reserved, so a program may still call something `test`, `link`,
-`alloc`, `no` or `requires`. `guide/slab`'s allocator calls its central function `alloc` and threads
-its free list through a field called `link`.
+`alloc`, `no` or `requires`. The [`slab`](https://github.com/sysl-lang/slab) package's allocator
+calls its central function `alloc` and threads its free list through a function called `link`.
 
 The `@` is also read **inside a pattern**, where it binds a name to what a sub-pattern matched
 ([patterns](/reference/patterns/)). The two never compete: an annotation's `@` is a prefix at the
@@ -873,8 +873,9 @@ assertion failed: a free block has to hold the link through it — the left side
 
 **This is the check `require` cannot make.** A precondition over `sizeof(T)` written as a `require` is
 a runtime branch for a fact that was settled at the call: a container instantiated at a type too
-narrow compiles, ships, and traps the first time anybody uses it. `guide/slab` was written that way
-before this and is the worked example of the difference.
+narrow compiles, ships, and traps the first time anybody uses it. The
+[`slab`](https://github.com/sysl-lang/slab) package was written that way before this landed and is
+the worked example of the difference.
 
 A **value** parameter is bound the same way and so is checked the same way, which is what lets a
 generic hold its caller to a bound on a length:

@@ -163,9 +163,6 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/attributes.md"             -> (26, 33, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
-    "docs/content/guides/_index.md"                    -> (0, 0, 0),
-    "docs/content/guides/ring.md"                      -> (0, 0, 0),
-    "docs/content/guides/slab.md"                      -> (0, 0, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
 // One more again: a `real` renders at the shortest precision that reads back equal, and the

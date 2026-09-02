@@ -58,9 +58,10 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
 
   /** Where the generated section sits in the navigation, passed to the generator like the two above.
    *
-   * **45 puts the signatures directly after the prose that explains them** — `library` is 40 and
-   * `guides` is 50 — which is the relationship the note already describes: start with the written
-   * section to learn a module, come here when you know what you want.
+   * **45 puts the signatures directly after the prose that explains them** — `library` is 40 —
+   * which is the relationship the note already describes: start with the written section to learn a
+   * module, come here when you know what you want. (`guides` was 50 until that section was retired,
+   * which is why 45 rather than 41.)
    *
    * It was the only section index on the site with no `weight` at all, so its place was whatever the
    * unweighted default happened to be. That is plausibly why the duplicate title read as a duplicate:

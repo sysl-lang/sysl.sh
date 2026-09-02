@@ -98,5 +98,7 @@ be a set of numbered design chapters in the compiler's repository, and those wer
 stale, and this one has a test suite behind it. They are in that repository's history if the argument
 for a rule is what you are after.
 
-The **guide programs** stay there too, in `guide/`, where they are gated against the compiler's dev
-branch rather than against a release.
+There used to be a `guide/` directory there as well — programs written to force a language decision
+rather than to demonstrate a finished one. The set was retired on 2026-09-02, every finding
+discharged and every program moved to a [package](https://github.com/sysl-lang) or into the standard
+library.
