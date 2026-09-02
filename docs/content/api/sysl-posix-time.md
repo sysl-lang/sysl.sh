@@ -9,7 +9,7 @@ requires: "requires { posix }"
 
 ## Index
 
-[`default_zoneinfo_root`](#default_zoneinfo_root) [`from_local`](#from_local) [`local`](#local) [`local_offset`](#local_offset) [`local_text`](#local_text) [`local_zone_data`](#local_zone_data) [`monotonic`](#monotonic) [`now`](#now) [`zone_data`](#zone_data) [`zone_data_in`](#zone_data_in) [`zoneinfo_root`](#zoneinfo_root)
+[`default_zoneinfo_root`](#default_zoneinfo_root) [`from_local`](#from_local) [`local`](#local) [`local_offset`](#local_offset) [`local_text`](#local_text) [`local_zone_data`](#local_zone_data) [`monotonic`](#monotonic) [`nanosleep`](#nanosleep) [`now`](#now) [`sleep`](#sleep) [`zone_data`](#zone_data) [`zone_data_in`](#zone_data_in) [`zoneinfo_root`](#zoneinfo_root)
 
 ## Constants
 
@@ -100,6 +100,27 @@ print(s"took ${(monotonic() - t0).us}us")
 It never goes backwards and nothing can set it, which is the difference from `now` and the reason
 a measurement wants this one.
 
+### `nanosleep`
+
+```sysl
+nanosleep(nanos: long) -> long
+```
+
+Wait for `nanos` nanoseconds, and answer how many were still owed when it stopped.
+
+**Zero means the whole time passed.** Anything else is what a signal interrupted, and handing it
+back rather than swallowing it is the difference from `sleep`: a program with a handler installed
+can tell "the wait finished" from "something happened", which one call to `sleep` cannot.
+
+    var left = nanosleep(2_000_000)
+
+    while left > 0 && !cancelled()
+        left = nanosleep(left)
+
+**Nanoseconds, where `sleep` takes a `Duration`, and that is what this is for.** A `Duration`
+counts microseconds, so it cannot name a wait shorter than one -- and `nanosleep(2)` can. Reach
+for `sleep` unless you need the resolution or the remainder.
+
 ### `now`
 
 ```sysl
@@ -111,6 +132,27 @@ The wall clock: where the host thinks it is on the timeline.
 **Two readings of this may differ by anything at all**, including a negative amount, because it is
 the clock a person and an `ntpd` are both allowed to set. Use it to stamp something, and use
 `monotonic` to measure something.
+
+### `sleep`
+
+```sysl
+sleep(d: Duration)
+```
+
+Wait for `d`, however many attempts that takes.
+
+**A signal cuts a wait short, and this one carries on.** `nanosleep(2)` returns early with `EINTR`
+and the time still owed, so a wait written as one call is a wait that is quietly shorter than it
+asked for whenever anything arrives -- which is exactly when a test that depends on it starts
+looking flaky. This retries with the remainder until nothing is left.
+
+**It answers nothing, because there is nothing left to say**: it returns when the time has passed.
+A caller that wants to *know* it was interrupted wants `nanosleep` below.
+
+    sleep(50.ms)
+
+A duration of zero or less returns at once rather than yielding, which is not the same thing --
+`sleep(0.s)` is not a way to offer the processor to something else.
 
 ### `zone_data`
 
