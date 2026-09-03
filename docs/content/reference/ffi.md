@@ -729,10 +729,92 @@ anything calls, and a rule asking whether you *called* something there would dro
 export exists for.
 
 **If a package wants a symbol, a handler or a placed definition published regardless, it puts it in a
-module its consumers import.** Each is a claim about what *your* image contains, and an image that
-never reaches the module has not asked for it. That reading is at its strongest where the attributes
-matter most: a vector table slot and a RAM-resident `.ramfunc` region are the scarcest things on the
-parts they exist for, so gaining every unimported module's silently is the worse way to be wrong.
+module its consumers import** — with the one exception the next section is about. Each is a claim
+about what *your* image contains, and an image that never reaches the module has not asked for it.
+That reading is at its strongest where the attributes matter most: a vector table slot and a
+RAM-resident `.ramfunc` region are the scarcest things on the parts they exist for, so gaining every
+unimported module's silently is the worse way to be wrong.
+
+## A module may supply another module's `extern`
+
+The rule above has one exception, and it is not a relaxation of it: **an `@export` whose symbol
+answers an `extern` your program actually calls is kept, whether or not you reach its module.**
+
+That is the accounting a linker already applies to an archive member, arrived at from the other side.
+A definition is taken because something is going to ask for that name and left out otherwise — so
+nothing is published because a package felt like publishing it, which is what the previous section
+refuses.
+
+### What it is for is a seam
+
+A module declares a symbol and defines nothing:
+
+```sysl
+module clock
+
+private extern "app_wall_us" c_wall_us() -> long
+
+now() -> long = c_wall_us()
+```
+
+Whoever is linked defines it. A program importing `clock` calls `now()` and never names the supplier
+— which is the point, since on an embedded target naming one is naming the chip:
+
+```sysl
+import clock.now
+
+print(now() > 0)
+```
+
+The supplier is an ordinary `@export` in a module of its own, and the program does not import it:
+
+```sysl
+module rtc
+
+@export("app_wall_us")
+wall_us() -> long = 1700000000000000
+```
+
+**Those three blocks are three files and are shown rather than run**, which every multi-module example
+on this page is: a block here is compiled as a whole program, so a seam — which needs a declaring
+module, a supplier and a consumer that names only the first — has no single-file form. What *is* run
+on this site is the standard library's own instance of it, on the
+[time page](/library/time/#reading-a-clock-sysl-posix-time).
+
+Without this rule that definition is pruned — nothing imports `rtc`, so by the previous section it
+contributes nothing — and the build then fails at the link, naming a symbol no line of the program
+contains. Which is the exact friction the seam exists to remove.
+
+### It is narrow, and the narrowness is what keeps the previous section true
+
+Three things it does **not** do:
+
+- **It does not keep an export nothing asks for.** A package carrying its own test application
+  exports `main`, and nothing anywhere declares `extern "main"` — so no symbol the program calls
+  answers to it, and the rule never fires. That is the collision the previous section exists to
+  prevent, still prevented.
+- **It does not keep a supplier the program has no use for.** If your program never calls `now()`,
+  the `extern` is not live, and `rtc` contributes nothing.
+- **It does not choose between two suppliers.** Two modules exporting one symbol is refused, naming
+  both — you get exactly one clock, and finding out which at the link is not a thing anybody should
+  have to do.
+
+**A supplier's own body is followed**, so a supplier that itself calls an `extern` some third module
+answers pulls that one in as well.
+
+### Where the declaration is compiled is where the seam is decided
+
+The standard library ships as a prebuilt artifact on a hosted target, and it was compiled whole — so
+a module in it that both declares a seam and supplies it has already been bound, and a package
+supplying the same symbol later cannot displace it. `sysl.time`'s clock is the worked example: on a
+host, [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) answers it out of the
+artifact and you get the host clock without asking.
+
+Where a board is served there is no such artifact: `sysl build-c` and every freestanding target
+compile the library from source into your program, so the declaration and the supplier meet in one
+compilation and the package's definition is the one that answers. **Overriding a seam is therefore
+something a board does and not something a host does** — a host program that wants a different clock
+is not asking for a seam, it is asking to call something else.
 
 ## `@link` — which library resolves the externs
 

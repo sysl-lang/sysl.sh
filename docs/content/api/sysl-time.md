@@ -28,7 +28,7 @@ the rare question, paid for below where it is asked.
 
 ## Index
 
-[`us_per_day`](#us_per_day) [`us_per_hour`](#us_per_hour) [`us_per_milli`](#us_per_milli) [`us_per_minute`](#us_per_minute) [`us_per_second`](#us_per_second) [`at_offset`](#at_offset) [`checked_date`](#checked_date) [`civil_from_days`](#civil_from_days) [`date_at`](#date_at) [`date_text`](#date_text) [`datetime_at`](#datetime_at) [`datetime_text`](#datetime_text) [`day_of`](#day_of) [`day_of_year`](#day_of_year) [`days`](#days) [`days_from_civil`](#days_from_civil) [`days_in_month`](#days_in_month) [`from_offset`](#from_offset) [`hour_of`](#hour_of) [`hours`](#hours) [`instant_text`](#instant_text) [`leap_year`](#leap_year) [`micros`](#micros) [`millis`](#millis) [`minute_of`](#minute_of) [`minutes`](#minutes) [`month_name`](#month_name) [`month_of`](#month_of) [`odd_hours`](#odd_hours) [`odd_minutes`](#odd_minutes) [`odd_seconds`](#odd_seconds) [`odd_us`](#odd_us) [`offset_text`](#offset_text) [`on_or_after`](#on_or_after) [`parse_date`](#parse_date) [`parse_datetime`](#parse_datetime) [`parse_offset`](#parse_offset) [`parse_time`](#parse_time) [`parse_timestamp`](#parse_timestamp) [`plus_days`](#plus_days) [`plus_months`](#plus_months) [`plus_years`](#plus_years) [`resolve`](#resolve) [`second_of`](#second_of) [`seconds`](#seconds) [`since`](#since) [`time_at`](#time_at) [`time_text`](#time_text) [`timestamp_text`](#timestamp_text) [`us_of`](#us_of) [`wall_of`](#wall_of) [`wall_us`](#wall_us) [`weekday`](#weekday) [`weekday_name`](#weekday_name) [`whole_days`](#whole_days) [`whole_hours`](#whole_hours) [`whole_micros`](#whole_micros) [`whole_millis`](#whole_millis) [`whole_minutes`](#whole_minutes) [`whole_seconds`](#whole_seconds) [`year_of`](#year_of) [`Civil`](#civil) [`Duration`](#duration) [`Instant`](#instant) [`LocalDate`](#localdate) [`LocalDateTime`](#localdatetime) [`LocalTime`](#localtime) [`Offset`](#offset) [`Resolution`](#resolution) [`TimeParseError`](#timeparseerror) [`Weekday`](#weekday-1) [`DurationUnits`](#durationunits) [Add for Duration](#add-for-duration) [Add for Instant](#add-for-instant) [Display for Instant](#display-for-instant) [Display for LocalDate](#display-for-localdate) [Display for LocalDateTime](#display-for-localdatetime) [Display for LocalTime](#display-for-localtime) [Display for Offset](#display-for-offset) [Display for Resolution](#display-for-resolution) [Display for TimeParseError](#display-for-timeparseerror) [DurationUnits for T](#durationunits-for-t) [Eq for Duration](#eq-for-duration) [Eq for Instant](#eq-for-instant) [Eq for LocalDate](#eq-for-localdate) [Eq for LocalDateTime](#eq-for-localdatetime) [Eq for LocalTime](#eq-for-localtime) [Eq for Offset](#eq-for-offset) [Mul for Duration](#mul-for-duration) [Mul for N](#mul-for-n) [Neg for Duration](#neg-for-duration) [Ord for Duration](#ord-for-duration) [Ord for Instant](#ord-for-instant) [Ord for LocalDate](#ord-for-localdate) [Ord for LocalDateTime](#ord-for-localdatetime) [Ord for LocalTime](#ord-for-localtime) [Ord for Offset](#ord-for-offset) [Sub for Duration](#sub-for-duration) [Sub for Instant](#sub-for-instant) [Sub for Instant](#sub-for-instant-1)
+[`us_per_day`](#us_per_day) [`us_per_hour`](#us_per_hour) [`us_per_milli`](#us_per_milli) [`us_per_minute`](#us_per_minute) [`us_per_second`](#us_per_second) [`at_offset`](#at_offset) [`checked_date`](#checked_date) [`civil_from_days`](#civil_from_days) [`date_at`](#date_at) [`date_text`](#date_text) [`datetime_at`](#datetime_at) [`datetime_text`](#datetime_text) [`day_of`](#day_of) [`day_of_year`](#day_of_year) [`days`](#days) [`days_from_civil`](#days_from_civil) [`days_in_month`](#days_in_month) [`from_offset`](#from_offset) [`hour_of`](#hour_of) [`hours`](#hours) [`instant_text`](#instant_text) [`leap_year`](#leap_year) [`micros`](#micros) [`millis`](#millis) [`minute_of`](#minute_of) [`minutes`](#minutes) [`monotonic`](#monotonic) [`month_name`](#month_name) [`month_of`](#month_of) [`now`](#now) [`odd_hours`](#odd_hours) [`odd_minutes`](#odd_minutes) [`odd_seconds`](#odd_seconds) [`odd_us`](#odd_us) [`offset_text`](#offset_text) [`on_or_after`](#on_or_after) [`parse_date`](#parse_date) [`parse_datetime`](#parse_datetime) [`parse_offset`](#parse_offset) [`parse_time`](#parse_time) [`parse_timestamp`](#parse_timestamp) [`plus_days`](#plus_days) [`plus_months`](#plus_months) [`plus_years`](#plus_years) [`resolve`](#resolve) [`second_of`](#second_of) [`seconds`](#seconds) [`since`](#since) [`time_at`](#time_at) [`time_text`](#time_text) [`timestamp_text`](#timestamp_text) [`us_of`](#us_of) [`wall_of`](#wall_of) [`wall_us`](#wall_us) [`weekday`](#weekday) [`weekday_name`](#weekday_name) [`whole_days`](#whole_days) [`whole_hours`](#whole_hours) [`whole_micros`](#whole_micros) [`whole_millis`](#whole_millis) [`whole_minutes`](#whole_minutes) [`whole_seconds`](#whole_seconds) [`year_of`](#year_of) [`Civil`](#civil) [`Duration`](#duration) [`Instant`](#instant) [`LocalDate`](#localdate) [`LocalDateTime`](#localdatetime) [`LocalTime`](#localtime) [`Offset`](#offset) [`Resolution`](#resolution) [`TimeParseError`](#timeparseerror) [`Weekday`](#weekday-1) [`DurationUnits`](#durationunits) [Add for Duration](#add-for-duration) [Add for Instant](#add-for-instant) [Display for Instant](#display-for-instant) [Display for LocalDate](#display-for-localdate) [Display for LocalDateTime](#display-for-localdatetime) [Display for LocalTime](#display-for-localtime) [Display for Offset](#display-for-offset) [Display for Resolution](#display-for-resolution) [Display for TimeParseError](#display-for-timeparseerror) [DurationUnits for T](#durationunits-for-t) [Eq for Duration](#eq-for-duration) [Eq for Instant](#eq-for-instant) [Eq for LocalDate](#eq-for-localdate) [Eq for LocalDateTime](#eq-for-localdatetime) [Eq for LocalTime](#eq-for-localtime) [Eq for Offset](#eq-for-offset) [Mul for Duration](#mul-for-duration) [Mul for N](#mul-for-n) [Neg for Duration](#neg-for-duration) [Ord for Duration](#ord-for-duration) [Ord for Instant](#ord-for-instant) [Ord for LocalDate](#ord-for-localdate) [Ord for LocalDateTime](#ord-for-localdatetime) [Ord for LocalTime](#ord-for-localtime) [Ord for Offset](#ord-for-offset) [Sub for Duration](#sub-for-duration) [Sub for Instant](#sub-for-instant) [Sub for Instant](#sub-for-instant-1)
 
 ## Constants
 
@@ -247,6 +247,18 @@ minute_of(t: LocalTime) -> int
 minutes(n: long) -> Duration
 ```
 
+### `monotonic`
+
+```sysl
+monotonic() -> Duration
+```
+
+A monotonic counter, as a length of time from an origin this deliberately does not name.
+
+One reading answers nothing. **Two readings subtracted answer how long something took**, and that
+is the only question it can be asked. It never goes backwards and nothing can set it, which is the
+difference from `now` and the reason a measurement wants this one.
+
 ### `month_name`
 
 ```sysl
@@ -258,6 +270,22 @@ month_name(m: int) -> string
 ```sysl
 month_of(d: LocalDate) -> int
 ```
+
+### `now`
+
+```sysl
+now() -> Instant
+```
+
+The wall clock: where whatever is keeping time thinks it is on the timeline.
+
+**Two readings of this may differ by anything at all**, including a negative amount, because it is
+the clock a person and an `ntpd` are both allowed to set. Use it to stamp something, and use
+`monotonic` to measure something.
+
+`sysl.posix.time.now` is the same reading on a host and needs no seam, so a program that is only
+ever going to run on one is free to import that instead. What this one buys is that the same source
+compiles against a board's clock as well.
 
 ### `odd_hours`
 

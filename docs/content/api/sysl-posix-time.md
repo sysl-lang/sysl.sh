@@ -9,7 +9,7 @@ requires: "requires { posix }"
 
 ## Index
 
-[`default_zoneinfo_root`](#default_zoneinfo_root) [`from_local`](#from_local) [`local`](#local) [`local_offset`](#local_offset) [`local_text`](#local_text) [`local_zone_data`](#local_zone_data) [`monotonic`](#monotonic) [`nanosleep`](#nanosleep) [`now`](#now) [`sleep`](#sleep) [`zone_data`](#zone_data) [`zone_data_in`](#zone_data_in) [`zoneinfo_root`](#zoneinfo_root)
+[`default_zoneinfo_root`](#default_zoneinfo_root) [`from_local`](#from_local) [`local`](#local) [`local_offset`](#local_offset) [`local_text`](#local_text) [`local_zone_data`](#local_zone_data) [`monotonic`](#monotonic) [`nanosleep`](#nanosleep) [`now`](#now) [`sleep`](#sleep) [`supply_monotonic_us`](#supply_monotonic_us) [`supply_wall_us`](#supply_wall_us) [`zone_data`](#zone_data) [`zone_data_in`](#zone_data_in) [`zoneinfo_root`](#zoneinfo_root)
 
 ## Constants
 
@@ -153,6 +153,29 @@ A caller that wants to *know* it was interrupted wants `nanosleep` below.
 
 A duration of zero or less returns at once rather than yielding, which is not the same thing --
 `sleep(0.s)` is not a way to offer the processor to something else.
+
+### `supply_monotonic_us`
+
+```sysl
+supply_monotonic_us() -> long
+```
+
+Answers `sysl.time`'s monotonic seam. **Call `monotonic` instead**, for the reason above.
+
+### `supply_wall_us`
+
+```sysl
+supply_wall_us() -> long
+```
+
+Answers `sysl.time`'s wall-clock seam. **Call `now` instead** -- this exists to be linked, not to
+be called, and it is public only because an `@export` may not be `private`: a private declaration
+promises every caller is inside its module and an export promises the opposite, so the compiler
+refuses a definition making both claims.
+
+The name says what it is for rather than what it reads, so that it does not compete with anything
+a program would reach for -- and a package answering the same seam on a board writes the same two
+lines with its own chip behind them.
 
 ### `zone_data`
 

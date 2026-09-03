@@ -152,7 +152,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A struct now names itself in the header: one more runnable, showing that the sysl side is
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
     // typedef and a function, a generic struct, and a private one.
-    "docs/content/reference/ffi.md"                    -> (22, 31, 12),
+    "docs/content/reference/ffi.md"                    -> (22, 31, 15),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
@@ -197,7 +197,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // The scaling section then traded its refusal for two runs -- a count goes on either side of a
     // duration now, and on the left at any width -- and gained a fragment: the blanket over the
     // integer family that the left-hand side is written as.
-    "docs/content/library/time.md"                       -> (27, 3, 5),
+    "docs/content/library/time.md"                       -> (28, 3, 5),
     "docs/content/library/env.md"                        -> (1, 0, 0),
     // Two more for `capture`'s `stderr`: the reason a failed child gives, and the difference between
     // a stream nobody collected and one that was collected and empty.

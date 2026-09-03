@@ -1531,7 +1531,7 @@ disturbs nothing.
 |---|---|
 | operating system | `macos`, `linux`, `windows`, `freestanding`, `android` |
 | processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`, `craft` |
-| derived | `hosted` (not `freestanding`), `posix` (`macos`, `linux` or `android`) |
+| derived | `hosted` (not `freestanding`), `posix` (`macos`, `linux` or `android`), `bsd` (`macos`) |
 
 That is the whole vocabulary. There is **no `#define`**, nothing a project can add, and no dependence
 on a project config. A condition is a symbol, `!`, `&&`, `||`, and parentheses; `&&` binds tighter
@@ -1547,6 +1547,20 @@ this one asks **is this a POSIX system**, a fact about the machine settled by th
 capability asks **may this module use POSIX**, a permission a project grants and a `no posix` clause
 takes away. They agree today only because nothing denies anything yet.
 
+**`bsd` is narrower than `posix` and is about the libc rather than the machine.** A BSD and a glibc
+system are both POSIX, and yet they disagree about a handful of things a source file has to get
+right: `errno` is reached through `__error` on one and `__errno_location` on the other, `ENOTEMPTY`
+is 66 against 39, `ENAMETOOLONG` is 63 against 36, and `mode_t` is sixteen bits against thirty-two.
+Every one of those is a *libc* fact with nothing about any particular system in it, which is why the
+standard library's own gates for them say `bsd` and not `macos`.
+
+That distinction is worth making before it is needed rather than after. macOS is the only BSD sysl
+targets today, so `#if macos` and `#if bsd` select identically — and a second BSD would route into
+the glibc branch at every one of those sites, where exactly one of them says anything: the `errno`
+accessor fails at the link, while a wrong `ENOTEMPTY` merely stops matching and a `mode_t` at the
+wrong width appears to work. **A symbol that means what it says costs nothing today and is the whole
+of the fix later.**
+
 **A symbol nobody knows is an error, not false:**
 
 ```sysl
@@ -1560,7 +1574,7 @@ print(say())
 ```
 
 ```error
-'darwin' is not something a target says about itself — sysl knows aarch64, android, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasi, wasm32, windows, x86, x86_64
+'darwin' is not something a target says about itself — sysl knows aarch64, android, bsd, craft, freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasi, wasm32, windows, x86, x86_64
 ```
 
 The set is closed, so a name outside it is a mistake rather than a fact this build happens not to

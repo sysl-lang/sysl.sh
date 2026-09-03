@@ -688,12 +688,13 @@ is the point of the feature.
 __macos__            one operating system
 __macos,linux__      either of two
 __posix__            whichever operating systems POSIX means
+__bsd__              whichever of them carry a BSD libc
 __hosted__           any machine with an operating system under it
 ```
 
 **The vocabulary is `#if`'s** — the operating systems `macos`, `linux`, `windows` and
-`freestanding`, plus the two facts that hold without naming one, `hosted` and `posix`. They are the
-same words because they are the same idea: a machine named one way in a directory and another way in
+`freestanding`, plus the three facts that hold without naming one: `hosted`, `posix` and `bsd`. They
+are the same words because they are the same idea: a machine named one way in a directory and another way in
 a `#if` would be a thing to look up rather than a thing to know. A directory of the `__x__` shape
 naming anything else is an **error** — a misspelled `__linx__` read as an ordinary module directory
 would compile nothing on any target and be reported, much later, as a missing function. The message

@@ -938,19 +938,44 @@ of a repeated reading and says nothing, and for one that never happened it rewri
 fields and answers a time nobody asked for — so the decision is made in sysl out of the offset
 lookup rather than handed to the C library.
 
-### What a freestanding target does instead
+### The portable spelling — `sysl.time.now`
 
-**Nothing in the library, and deliberately nothing shared with it.** A board's clock is a board's
-decision: two boards carrying the same chip — so the same *target* — can count time from a different
-RTC, which is precisely the case a compile-time switch on the target cannot express. So an embedded
-environment supplies a module of its own with these two function names, in its own package, and a
-program picks its clock by which one it imports.
+**A board's clock is a board's decision**: two boards carrying the same chip — so the same *target* —
+can count time from a different RTC, which is precisely the case a compile-time switch on the target
+cannot express. So the choice is made at the **link** instead. `sysl.time` declares two symbols and
+defines neither:
 
-What that gives up, for now, is a program that compiles unchanged against both a host clock and a
-board's. The shape that would buy it is a symbol declared in capability-free `sysl.time` that a host
-module and a board package alike link an implementation of — [`sysl.harness`](/library/harness/)'s
-`attach` one layer down — and it is not built, for want of a second thing that needs it. The names
-above are chosen so that adding it later moves no caller.
+```sysl
+import sysl.time.{now, monotonic, since, whole_micros, Instant}
+
+val y2020 = Instant(1577836800000000)
+
+print(whole_micros(since(now(), y2020)) > 0, whole_micros(monotonic()) >= 0)
+```
+
+```output
+true true
+```
+
+That program names no capability, no chip and no package — and `sysl.time` still asks for nothing, so
+the calendar goes on running on a bare machine. What supplies the numbers is whatever it is linked
+against: `sysl.posix.time` above, on a host, and a package binding an RTC over I²C on a board. Moving
+the same source between the two is a change to `package.hocon` rather than to any line of it.
+
+The mechanism is the general one — [a module may supply another module's
+`extern`](/reference/ffi/#a-module-may-supply-another-module-s-extern) — and a supplier is an ordinary
+`@export` of `sysl_wall_us` or `sysl_monotonic_us` answering a `long` of microseconds.
+
+**Both spellings are right and neither is deprecated.** A program that is only ever going to run on a
+host imports `sysl.posix.time` and calls `now` directly, which needs no linker cooperation at all; a
+program that wants to move imports `sysl.time` instead. What used to be written here — that no such
+shape existed and a program therefore could not compile unchanged against both — is what this
+replaces.
+
+**Overriding the clock is something a board does and not something a host does.** On a hosted target
+the standard library arrives prebuilt and was compiled whole, so its own supplier is already bound and
+a package cannot displace it. On a board there is no such artifact — the library is compiled from
+source into the program — and the package's definition is the one that answers.
 
 ## A zone by name
 
