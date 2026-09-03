@@ -160,7 +160,8 @@ A duration of zero or less returns at once rather than yielding, which is not th
 supply_monotonic_us() -> long
 ```
 
-Answers `sysl.time`'s monotonic seam. **Call `monotonic` instead**, for the reason above.
+Answers `sysl.time`'s monotonic seam. **Call `monotonic` instead** -- this exists to be linked
+rather than called, and `supply_wall_us` beside it says why it is public.
 
 ### `supply_wall_us`
 
