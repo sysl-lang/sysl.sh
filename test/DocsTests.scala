@@ -57,7 +57,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and one more refusal: a line may now continue the one above it by starting
     // with a dot, so the page shows a chain broken before the dot, refuses the trailing spelling,
     // and shows the `match` whose arms the rule's second half is what keeps.
-    "docs/content/reference/lexical.md"               -> (19, 4, 3),
+    // Two more runnable and two more refusals: a block comment nests, which is what lets a block of
+    // commented-out code carry comments — and which makes a glob pattern in one end the comment
+    // early or not at all, in two diagnostics that mention no comment.
+    "docs/content/reference/lexical.md"               -> (21, 6, 3),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound.
@@ -84,7 +87,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // value of it, so the section reads one off a struct and one through a bound — and refuses the
     // read on a value and the default body on a trait's, which are the two ways the form looks like
     // an ordinary property and is not.
-    "docs/content/reference/declarations.md"          -> (40, 15, 1),
+    // One more runnable: a variant that carries nothing is constant data, so a module-level slot may
+    // start out unset — which is what `Option[T] = None` is and what a board program needs it to be.
+    "docs/content/reference/declarations.md"          -> (41, 15, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
@@ -171,7 +176,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // `os()` and `cpu()` gained a section of their own -- one runnable block, since what the platform
     // constants add over a directive is that they can be compared, passed and matched on.
     "docs/content/library/core.md"                     -> (34, 6, 12),
-    "docs/content/library/text.md"                      -> (18, 6, 4),
+    // Three more runnable: trimming a `string` against trimming its bytes, the `_fold` family
+    // against `to_lower`, and `grapheme_columns` against `columns` on a joined emoji.
+    "docs/content/library/text.md"                      -> (21, 6, 4),
     "docs/content/library/unicode.md"                   -> (8, 0, 0),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (12, 6, 3),
@@ -182,12 +189,20 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/io.md"                        -> (7, 3, 3),
     // Two more runnable blocks for where a directory belongs: the four answers, and the leaf a
     // program appends for itself.
-    "docs/content/library/fs.md"                        -> (14, 5, 3),
-    "docs/content/library/path.md"                      -> (6, 0, 0),
+    // One more runnable: a walk filtered by a glob, over a tree with a hidden directory in it.
+    "docs/content/library/fs.md"                        -> (15, 5, 3),
+    // Three more runnable: what a glob matches, what a leading dot hides from it, and what a
+    // malformed pattern answers.
+    "docs/content/library/path.md"                      -> (9, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     "docs/content/library/math.md"                      -> (24, 10, 3),
     "docs/content/library/complex.md"                   -> (9, 1, 1),
+    "docs/content/library/bigint.md"                    -> (5, 0, 0),
+    "docs/content/library/decimal.md"                   -> (7, 0, 0),
+    // One fragment, and deliberately: the opening example logs to standard error at `now()`, so
+    // there is nothing a page could assert about it. Every other program on that page is run.
+    "docs/content/library/log.md"                       -> (4, 0, 1),
     // One refusal became a runnable program when `Sub` grew an `Out`: the difference of two instants
     // is the operator now, so the block that asserted it was refused runs instead. The clock section
     // then added one of each: the two readings, and the refusal that says a `Duration` is not a date.
@@ -225,7 +240,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // the page said could not be written, and the block that asserted a range is refused is what it
     // replaced.
     "docs/content/library/seq.md"                         -> (10, 2, 1),
-    "docs/content/library/encoding.md"                    -> (6, 0, 0),
+    // Four more runnable: a v4 and a v7, the entropy-fed constructor a token wants, and the nil
+    // value beside what `parse` refuses.
+    "docs/content/library/encoding.md"                    -> (9, 0, 0),
     "docs/content/library/crypto.md"                   -> (14, 0, 0),
     "docs/content/library/rand.md"                        -> (6, 0, 0),
     "docs/content/library/args.md"                        -> (10, 4, 1),

@@ -457,6 +457,39 @@ because [a `[]T` is accepted wherever a `[]const T` is wanted](/reference/types/
 is part of one type rather than making two, and a receiver is such a place. The reverse does not
 hold, and must not: a member written for a `[]T` may write through its receiver.
 
+## Trimming a `string` is Unicode; trimming bytes is not
+
+`trim`, `trim_start` and `trim_end` are `Search` members, so both receivers have them — and they
+answer **differently**, on purpose.
+
+```sysl
+import sysl.text.Search
+
+val s = "\u{a0}\u{3000}hi\u{85}\u{a0}"
+
+print(s.trim())
+print(s.bytes.trim().len, s.trim().len)
+```
+
+```output
+hi
+7 2
+```
+
+Those are a no-break space, an ideographic space and the next-line control. **A `string` is text**, so
+the question has a character-level answer: the receiver decodes and tests
+[`sysl.unicode.is_space`](/library/unicode/), which is the database's own `White_Space` property.
+**A `[]const u8` is not text**, so it walks bytes and tests `Ascii.is_space` — and it must, because a
+byte is not a character: a no-break space is `0xc2 0xa0`, and neither of those is a space on its own.
+A wire format wants the ASCII answer, and that is the receiver a program reading one has.
+
+This was ASCII on both receivers until the Unicode database arrived in the library, which is an
+accident of ordering rather than a decision — the set only widened, so every ASCII input answers
+exactly as it did. A caller that wants the old behaviour on text has `s.bytes.trim()`.
+
+**No locale enters into it**, here or anywhere else in this module. Whitespace is not
+locale-sensitive in any case; casing is where that bites, and `to_upper` says so.
+
 ## The half that allocates
 
 `split`, `fields`, `join`, `repeat`, `replace_all`, `to_upper` and `to_lower` are free functions over
@@ -577,6 +610,47 @@ That diagnostic names `sysl.buf`, three calls down, because [`alloc` is checked 
 *calls*](/reference/modules/) rather than on which modules it depends on — the standard library is
 exactly why. Inferring it per module would put the whole of `sysl.text` on one side of a line that
 runs through the middle of it.
+
+## Comparing without regard to case: the `_fold` family
+
+`eq_fold`, `starts_with_fold`, `ends_with_fold` and `contains_fold` are what a caller comparing a
+header name, a filename, a scheme or a keyword actually wants.
+
+**`to_lower(a) == to_lower(b)` is the obvious spelling and it is wrong.** Simple case mapping is one
+character in and one out; case *folding* is not, and folding is the operation Unicode defines for
+exactly this question.
+
+```sysl
+import sysl.text.{contains_fold, eq_fold, starts_with_fold, to_lower}
+
+print(eq_fold("STRASSE", "stra\u{df}e"))
+print(to_lower("STRASSE") == to_lower("stra\u{df}e"))
+print(eq_fold("\u{fb01}le", "file"))
+print(starts_with_fold("STRASSENBAHN", "stra\u{df}e"), contains_fold("eine STRASSE", "gasse"))
+```
+
+```output
+true
+false
+true
+true false
+```
+
+`"STRASSE"` and `"straße"` are the same word. Lowercased they are `"strasse"` and `"straße"`, which
+differ; folded, both are `"strasse"`. The ligature `"ﬁ"` and the letters `"fi"` go the same way.
+
+**Both sides are folded rather than either alone**, which is what makes it right at a boundary:
+folding can change a string's length, so a prefix folded against an unfolded haystack would be
+looking for bytes that are not there.
+
+**Each call folds both sides, so each allocates two strings.** A caller comparing one needle against
+many haystacks folds the needle once with [`sysl.unicode.fold`](/library/unicode/) and compares
+against `fold(h)` itself. That is why these are free functions rather than an operator: `==` on two
+strings is a byte comparison and stays one.
+
+**There is no locale.** The one common casualty is Turkish, where a dotless `ı` and an `i` are
+different letters and this reports them as the same; a program that has to make that distinction has
+a notion of locale this library does not.
 
 ## Gathering text: `StrBuilder`
 
@@ -950,6 +1024,39 @@ knows where the next border falls, so what the library owes it is a *number*, no
 
 **A `no alloc` module may use all of it.** The tables are static, the search allocates nothing, and a
 program that calls neither function links neither table.
+
+### Emoji need a fourth answer, and it is `grapheme_columns`
+
+`columns` sums what each code point is worth, which is right for text and for a combining accent — a
+mark measures zero, so `e` and an acute come to one either way. It is wrong for a sequence a terminal
+draws as **one glyph**: a family emoji joined with zero-width joiners is four emoji at two columns
+each, and it occupies two.
+
+```sysl
+import sysl.text.{columns, grapheme_columns}
+
+val family = "\u{1f468}\u{200d}\u{1f469}\u{200d}\u{1f467}\u{200d}\u{1f466}"
+
+print(columns(family.bytes), grapheme_columns(family.bytes))
+print(grapheme_columns("\u{1f44d}\u{1f3fd}".bytes), grapheme_columns("\u{2764}\u{fe0f}".bytes))
+```
+
+```output
+8 2
+2 2
+```
+
+`grapheme_columns` walks [grapheme clusters](/library/unicode/) and `cluster_columns` measures one.
+A cluster is as wide as the character it starts with — everything after the first is there to modify
+it — raised to two where the cluster carries `U+FE0F`, the variation selector that asks for emoji
+presentation, or begins with a regional indicator, which is a letter never drawn alone.
+
+**`columns` is the one to reach for by default and this is the one for text that might hold emoji**,
+and the reason is a cost rather than a preference. Segmenting into clusters needs the whole Unicode
+Character Database — about 330 KB of tables — where `columns` needs 499 ranges and nothing else.
+`columns` is what lays out a diagnostic's caret and a table of numbers, on a board as much as on a
+workstation; a program measuring user-supplied text with emoji in it has asked for the database and
+gets it.
 
 ## Reaching the module
 

@@ -193,6 +193,39 @@ An address that is a constant is laid into the object file rather than stored by
 `val` at pointer type needs nothing ordered and is readable before the first initializer runs — which
 is what a freestanding program starting at a reset vector requires.
 
+**A variant that carries nothing is constant data too**, which is what lets a module-level slot start
+out *unset*. `None` is the one that matters: a sink nobody has installed, a handle nobody has opened,
+a cache nobody has filled.
+
+```sysl
+static val held: Option[int] = None
+static var chosen: Option[int] = None
+
+pick(n: int) = chosen = Some(n)
+
+report() -> int = chosen match
+    Some(v) -> v
+    None -> held.unwrap_or(0)
+
+print(report())
+pick(7)
+print(report())
+```
+
+```output
+0
+7
+```
+
+Both slots are laid down rather than filled, so a module holding one is reachable from an `@export`
+on a target with no loader to run an initializer. A variant that **carries** something is a different
+matter and is stored by a prologue: a payload lives in a region every variant shares, so laying one
+down means knowing which bytes of that union the variant's fields occupy, and that is a store rather
+than a constant.
+
+An enum whose variants *all* carry nothing never had this question — it lowers to its discriminant,
+so `static val mode: Colour = Colour.Red` has always been a number in the object file.
+
 Writing to a `val` twice is refused:
 
 ```sysl

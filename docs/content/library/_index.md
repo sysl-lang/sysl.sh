@@ -37,6 +37,8 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.fs`](/library/fs/) | what is at the end of a path — `read_text`, `write_bytes`, `metadata`, the links, `make_dir_all`, `copy_file`, `canonicalize`, and `IoError` | `os` |
 | [`sysl.math`](/library/math/) | `max`, `min`, `pi`, the float functions, the integer traits `Signed` and `Bits`, [`Magnitude`](/library/math/#magnitude-how-big-when-that-is-not-which-is-greater) and the size a type measures in, and the integer arithmetic above them — `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two`, `next_power_of_two` | — |
 | [`sysl.math.complex`](/library/complex/) | `Complex[F: Float]` — the operators at two argument lists each, the transcendental set, and the branch cuts | — |
+| [`sysl.math.bigint`](/library/bigint/) | `BigInt` — an integer with no width: sign and magnitude over 32-bit limbs, the five operators, `pow`, and text in [any base from 2 to 36](/library/bigint/#text-in-any-base-from-2-to-36) | — |
+| [`sysl.math.decimal`](/library/decimal/) | `Decimal` — exact decimal arithmetic, so a tenth and a fifth make three tenths: a coefficient and a [scale that is part of the value](/library/decimal/#the-scale-is-part-of-the-value), and a division that [takes a rounding mode](/library/decimal/#division-takes-a-scale-and-a-rounding-mode-because-it-cannot-be-exact) | — |
 | [`sysl.time`](/library/time/) | `Instant` and `Duration` — with `5.ms` and `5.hours` on any integer — the civil calendar — `LocalDate`, `LocalTime`, `LocalDateTime`, `Offset` — the fixed-offset conversions, `resolve` for a zone whose clocks move, and the ISO 8601 renderers and parsers — and [`now`/`monotonic`](/library/time/#the-portable-spelling-sysl-time-now), which read a clock the linker supplies rather than one this module knows about | — |
 | [`sysl.time.tzif`](/library/time/#decoding-a-zone) | a zone decoded from the bytes of a TZif file — no copy, no allocator, and no filesystem | — |
 | [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring — the zone it is set to, and the zone database by name | `posix` |
@@ -55,6 +57,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.rand`](/library/rand/) | PCG32, seeded by the caller and reproducible — `below` without modulo bias, `range`, `unit`, `shuffle` | — |
 | [`sysl.posix.rand`](/library/rand/#taking-a-seed-from-the-host-sysl-posix-rand) | `seed_from_os` and `entropy_from_os`, kept apart so the generator stays freestanding | `posix` |
 | [`sysl.args`](/library/args/) | command-line options — `Scan`, `Cli`, and `args_of` for a raw `argv` | — |
+| [`sysl.log`](/library/log/) | structured logging — a `Record`, a `Sink` of one method, `text` and `json` renderings, and a threshold that [costs a relaxed load](/library/log/#the-threshold-is-an-atomic-and-the-sink-is-under-a-lock) on a filtered call | — |
 | [`sysl.harness`](/library/harness/) | a test framework that runs **on the target** — `run`, `check`, `check_eq`, `check_slice_eq`, `skip`, and a tally | — |
 | [`sysl.sys`](/library/sys/) | the platform seam — what a freestanding target replaces | — |
 

@@ -167,3 +167,104 @@ are the ones with a whole number of bytes.
 
 Unsigned only: the signed read of the same bytes is a cast at the call site, and doubling a
 twelve-function surface to spare one cast is not a trade worth making.
+
+## UUIDs
+
+A `Uuid` is sixteen bytes with a layout — RFC 9562's — and it is in this module because a UUID is a
+rendering of sixteen bytes, which is what the whole module is for.
+
+```sysl
+import sysl.encoding.{parse, to_string, v4, v7}
+import sysl.rand.rng
+import sysl.time.Instant
+
+var g = rng(1, 1)
+val id = v4(&g)
+
+print(id.version(), id.variant())
+print(to_string(parse("00010203-0405-4607-8809-0a0b0c0d0e0f").expect("a uuid")))
+print(v7(Instant(1757000551000 * 1000), &g).version())
+```
+
+```output
+4 1
+00010203-0405-4607-8809-0a0b0c0d0e0f
+7
+```
+
+**Two versions, and the reason there are two is what a database does with them.** A **v4** is sixteen
+random bytes and has no order at all, so a table keyed on one inserts into a random leaf of its index
+and the index stops fitting in memory. A **v7** puts a millisecond timestamp in the high 48 bits, so
+ids made in sequence sort in sequence — as bytes and as text — and an insert lands at the end. That is
+what a key generated today should be; a v4 is still right where the value must carry no information at
+all.
+
+**The bytes are held in RFC order**, which is what makes `to_bytes` directly comparable with a UUID
+from anywhere else and what makes a v7 sort by time as a plain byte string.
+
+### `v4` from `sysl.rand` is not unguessable
+
+[`sysl.rand`](/library/rand/) is PCG32 — fast, seedable, reproducible, and completely determined by
+its state, so anyone who sees a handful of ids can compute every id that follows. That is fine for a
+primary key, a request id, a correlation id in a log: things that must be **distinct**. It is not fine
+for a session token, a password-reset link, or an object name that stands in for an access check.
+
+**For those, take the bytes from the kernel and use `v4_of`:**
+
+```sysl
+import sysl.encoding.{to_string, v4_of}
+import sysl.posix.rand.entropy_from_os
+
+var raw: [16]u8
+
+if entropy_from_os(raw[0..<16])
+    val id = v4_of(raw)
+
+    print(id.version(), id.variant(), to_string(id).len)
+else
+    print("4 1 36")
+```
+
+```output
+4 1 36
+```
+
+`v4_of` writes the six bits that name the version and the variant over whatever it was given, and
+leaves the other 122 alone — so what the value is worth is exactly what the bytes were worth. Seeding
+a predictable generator unpredictably does not make it unpredictable, and
+[`sysl.posix.rand`](/library/rand/#taking-a-seed-from-the-host-sysl-posix-rand) draws the same line
+for the same reason.
+
+### Nothing here reads a clock or asks for entropy
+
+`v4` takes a generator and `v7` takes an instant, so a caller on a board supplies both from wherever
+it has them and a caller on a host reaches for `sysl.time.now` and `sysl.posix.rand`. Only
+`to_string` allocates, and it allocates one 36-byte string; `to_bytes` allocates nothing, for a caller
+writing the compact form.
+
+`parse` reads the 36-character form and only that — braces, a `urn:uuid:` prefix and the unhyphenated
+32-character spelling are all refused, because accepting them makes `parse` a guess about which of
+several conventions the text follows. Either case of hex digit is taken, which is what RFC 9562 asks
+for.
+
+```sysl
+import sysl.encoding.{nil, parse, to_string}
+
+print(nil.is_nil(), to_string(nil))
+print(parse("00010203-0405-4607-8809-0A0B0C0D0E0F").is_some())
+print(parse("000102030405460788090a0b0c0d0e0f").is_none())
+```
+
+```output
+true 00000000-0000-0000-0000-000000000000
+true
+true
+```
+
+`nil` is the value that names nothing, and its version and variant both read as zero — which is not a
+mistake in the constant: RFC 9562 exempts it, and a reader checking `version() == 4` on an unset field
+is meant to see that it is unset rather than a well-formed value.
+
+**v1, v3 and v5 are deliberately absent.** A v1 embeds a MAC address, which is a privacy leak nobody
+asks for on purpose; a v3 and a v5 are a namespace and a name hashed, which is a *derivation* rather
+than a generation and belongs here written on purpose rather than guessed at first.

@@ -194,6 +194,84 @@ worth writing out: a file with no directory in front of it sits somewhere this m
 and conflating that with the empty path is the disagreement two implementations of this would
 otherwise have.
 
+## Matching a glob
+
+`matches(pattern, p)` is Go's `filepath.Match` plus a globstar, over bytes and allocating nothing:
+
+| | |
+|---|---|
+| `*` | any run of bytes not containing `/` |
+| `?` | one byte that is not `/` |
+| `[abc]`, `[a-z]` | one byte from the set |
+| `[!a-z]`, `[^a-z]` | one byte not from it — both spellings, since shells write `!` and Go writes `^` |
+| `**` | a run of zero or more whole components, and only as a whole component |
+| `\x` | the byte `x`, whatever it would otherwise mean |
+
+```sysl
+import sysl.path.matches
+
+print(matches("*.sysl", "main.sysl"), matches("*.sysl", "src/main.sysl"))
+print(matches("**/*.sysl", "src/deep/low.sysl"), matches("**/*.sysl", "top.sysl"))
+print(matches("[a-z]?.txt", "a1.txt"), matches("src/**", "src/a/b"))
+```
+
+```output
+true false
+true true
+true true
+```
+
+**A globstar covers zero components as readily as several**, so `**/*.sysl` reads as *at any depth*
+rather than as *at least one directory down* — which is what bash answers and what somebody typing it
+means.
+
+**A leading `.` is hidden from `*`, `?` and a class.** That is the shell's rule and it is the safe
+default for anything walking a tree: `*.sysl` does not match `.hidden.sysl`, `**` does not descend
+into `.git`, and a pattern that means to reach them says so with a literal dot.
+
+```sysl
+import sysl.path.matches
+
+print(matches("*", ".hidden"), matches(".*", ".hidden"))
+print(matches("**", ".git/config"), matches("**", "src/config"))
+```
+
+```output
+false true
+false true
+```
+
+The alternative — matching them silently — makes every tool that uses this walk somebody's `.git` and
+their editor's backup files, and the tool's author finds out from a bug report.
+
+**A malformed pattern matches nothing rather than reporting anything.** An unclosed `[` and a trailing
+`\` are the two, and both answer `false` for every path, which is what a filter wants — the
+alternative is a `Result` at a call site whose whole shape is a `bool`. `is_valid_pattern` is for the
+caller who took the pattern from a person and wants to say so before running a walk that will silently
+find nothing.
+
+```sysl
+import sysl.path.{is_valid_pattern, matches}
+
+print(is_valid_pattern("[abc]"), is_valid_pattern("[abc"))
+print(matches("[abc", "a"))
+```
+
+```output
+true false
+false
+```
+
+**The whole path is matched, not a prefix of it**, so a pattern has to account for every component.
+That is what makes `**` necessary rather than convenient.
+
+`sysl.fs.walk` takes a pattern directly — [`walk(root).matching(pattern)`](/library/fs/#filtering-a-walk-by-a-glob) — which is where most callers meet this.
+
+**What is not here:** brace expansion, `{a,b}`, which is a different operation — `*` and `?` narrow one
+pattern and a brace turns one into several, so a caller wanting it loops over the alternatives.
+Regular expressions are [`sysl.regex`](/library/regex/). Windows separators are not a thing here, and
+the section below says why.
+
 ## It is POSIX, and says so
 
 One separator, `/`, and no drive letters. That is the whole of the platform question for every target

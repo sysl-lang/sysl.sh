@@ -717,6 +717,60 @@ loop
     if e.is_dir() && hidden(e.path) then w.skip_dir()
 ```
 
+### Filtering a walk by a glob
+
+`walk(root).matching(pattern)` reports only the entries whose path matches a
+[glob](/library/path/#matching-a-glob), which is what a build tool, a test runner and a `--exclude`
+flag all want and what every caller was otherwise writing by hand:
+
+```sysl
+import sysl.fs.{make_dir_all, remove_dir_all, walk, write_text}
+import sysl.path.relative_to
+
+var dir = "/tmp/sysl-fs-doc-matching"
+
+remove_dir_all(dir).unwrap()
+make_dir_all(dir + "/src/deep").unwrap()
+make_dir_all(dir + "/.git").unwrap()
+write_text(dir + "/notes.md", "x").unwrap()
+write_text(dir + "/src/mid.sysl", "x").unwrap()
+write_text(dir + "/src/deep/low.sysl", "x").unwrap()
+write_text(dir + "/.git/config", "x").unwrap()
+
+var found: [8]string
+var n = 0
+
+for item in walk(dir).matching("**/*.sysl")
+    found[n] = relative_to(item.unwrap().path, dir).unwrap()
+    n += 1
+
+print(n)
+
+remove_dir_all(dir).unwrap()
+```
+
+```output
+2
+```
+
+**The pattern is matched against the path relative to the root**, which is what makes a pattern
+portable between one caller walking `.` and another walking `/home/ed/project`. The `.git` tree is
+absent because a leading `.` is hidden from every wildcard, and `notes.md` because it is not a
+`.sysl` file.
+
+**The root itself never matches.** Its relative path is `"."`, which no pattern here matches — and
+that is the answer a caller wants: a walk filtered by `*.sysl` is asking for files rather than for the
+directory it started in.
+
+**It filters and does not prune.** Every directory is still descended into, because a directory whose
+own name does not match may hold a file whose path does — which is the whole point of a pattern with a
+separator in it. A caller that wants whole subtrees skipped wants `skip_dir`, which is a decision
+about where to *go* rather than about what to report, and the two compose: drive the walk by hand,
+prune what you do not want to enter, and ask `matches` yourself.
+
+**An `Err` passes through unfiltered**, since a directory that could not be read is not an entry with
+a path to test, and losing it would turn a permission failure into an empty result.
+
 ### Copying a tree
 
 `copy_dir_all` is the walk with a leaf action, and `remove_dir_all` is the same walk asked the other

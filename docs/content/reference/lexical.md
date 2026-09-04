@@ -157,6 +157,69 @@ print(x)
 3
 ```
 
+### A block comment **nests**
+
+`/*` inside a block comment opens another one, and it takes a matching `*/` to close. That is what
+lets a block of code with comments in it be commented out, which is the reason most modern languages
+do it and C does not:
+
+```sysl
+/* commented out, /* including this */ and on to here */
+print(1)
+```
+
+```output
+1
+```
+
+**What it costs is that `/*` and `*/` mean something inside a comment, and backticks do not protect
+them.** The lexer has no idea it is reading Markdown. So a comment about anything whose text contains
+those two characters — a glob pattern above all — is a comment that does not end where it looks like
+it does, and neither diagnostic mentions comments:
+
+```sysl
+/* a glob pattern: src/** */
+print(1)
+```
+
+```error
+unclosed comment
+```
+
+That one opened a second comment at `c/*` and closed only that, so the outer ran to the end of the
+file. The other direction is worse, because the caret lands on prose:
+
+```sysl
+/** matches "**/*.sysl" at any depth */
+f() -> int = 1
+
+print(f())
+```
+
+```error
+unterminated string literal
+```
+
+There the `*/` inside `**/` closed the comment early, and everything after it was read as code — so
+the complaint is about a quote in what the writer believed was a sentence.
+
+**Write such a comment with `//`**, where neither sequence means anything:
+
+```sysl
+// matches "**/*.sysl" at any depth
+f() -> int = 1
+
+print(f())
+```
+
+```output
+1
+```
+
+That is a real constraint on a doc comment rather than a curiosity: `/** … */` is the only form
+`sysl doc` reads, so a module whose subject is globs documents its grammar in `//` lines above the
+declarations rather than in the doc comments on them.
+
 ## Documentation comments
 
 A comment opening `/**` is a **doc comment**: prose about the declaration below it, which `sysl doc`
