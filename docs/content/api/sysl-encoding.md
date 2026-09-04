@@ -20,7 +20,7 @@ a field of anything. What the bytes *mean* belongs to whatever asked for them.
 
 ## Index
 
-[`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`of_bytes`](#of_bytes) [`parse`](#parse) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`to_string`](#to_string) [`v4`](#v4) [`v4_of`](#v4_of) [`v7`](#v7) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [`Uuid`](#uuid) [Display for DecodeError](#display-for-decodeerror) [Display for Uuid](#display-for-uuid) [Hash for Uuid](#hash-for-uuid) [Ord for Uuid](#ord-for-uuid)
+[`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`of_bytes`](#of_bytes) [`parse`](#parse) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`to_string`](#to_string) [`v4`](#v4) [`v4_of`](#v4_of) [`v7`](#v7) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [`Uuid`](#uuid) [Display for DecodeError](#display-for-decodeerror) [Display for Uuid](#display-for-uuid)
 
 ## Functions
 
@@ -341,6 +341,13 @@ anywhere else, and what makes a v7 sort by time as a plain byte string.
 first -- the whole point of that version. For a v4 it is an arbitrary total order, which is what
 a sorted container wants and means nothing else.
 
+**All three traits are DERIVED, which they could not be until an array had `Ord` and `Hash`.**
+The one field is a `[16]u8` and an array's ordering is lexicographic, first element first -- so
+the derived comparison is byte order, which is exactly what this type wants and what the two
+hand-written blocks here used to spell out. `Hash` is FNV-1a over the elements, and a UUID's
+bytes are already well distributed, so all a hash has to add is that a table bucketing on the low
+bits sees all of them.
+
 | Member | Signature | Description |
 |---|---|---|
 | `to_bytes` | `to_bytes(self) -> [16]u8` | The sixteen bytes, in RFC order. |
@@ -363,31 +370,3 @@ The rendering, so that a refusal can be printed without matching on it.
 ```sysl
 impl Display for Uuid
 ```
-
-### Hash for Uuid
-
-```sysl
-impl Hash for Uuid
-```
-
-FNV-1a over the sixteen bytes, which is what `hash_str` does to a string's and is the mixer to
-reach for over a run of bytes with no structure to walk.
-
-A UUID's bytes are already well distributed -- 122 of them are random in a v4 -- so what a hash
-has to add is only that a table bucketing on the low bits sees all of them. It is written out for
-the same reason `Ord` is.
-
-### Ord for Uuid
-
-```sysl
-impl Ord for Uuid
-```
-
-Ordering is over the sixteen bytes in RFC order, first byte first -- which is what makes a v7
-sort by the time it was made, since that is where its timestamp is.
-
-**It is written out rather than derived because `[N]T` implements neither `Ord` nor `Hash`.**
-`derives Eq` works, since an array compares; `derives Ord` and `derives Hash` are refused with
-`'<' is not defined for [16]byte` and `type '[16]byte' has no method 'hash'`. The library gives
-a tuple both of them structurally and gives an array neither, which is a gap in the library
-rather than a decision about UUIDs.

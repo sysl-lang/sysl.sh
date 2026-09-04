@@ -1197,6 +1197,40 @@ print(oldest)
 122
 ```
 
+**The refusal names which of the two halves it is applying.** An aggregate type is storage rather
+than a value, so what is wrong is not that the initializer failed to fold — a `val` one keyword away
+lays exactly that expression into the object file:
+
+```sysl
+struct Id
+    raw: [16]u8
+
+const nil: Id = Id([0; 16])
+
+print(1)
+```
+
+```error
+is storage — write 'nil' as a 'val', which is laid into the object file as constant data
+```
+
+```sysl
+struct Id
+    raw: [16]u8
+
+val nil: Id = Id([0; 16])
+
+print(nil.raw.len)
+```
+
+```output
+16
+```
+
+That is `sysl.encoding.nil` exactly: the nil UUID is a module-level `val` for this reason and no
+other. A `const` whose *type* is a scalar and whose *value* is genuinely not constant still gets the
+older wording, which is the case it was written for and is the `size()` example below.
+
 ```sysl
 type Age = int within 0..150
 

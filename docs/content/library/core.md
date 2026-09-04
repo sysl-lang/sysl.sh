@@ -1025,19 +1025,68 @@ so it decides what two of them mean without the element having an opinion. The
 [section below](#saying-how-a-slice-of-your-type-renders) is the same keyword doing the same job for
 the rendering, and says what it deliberately does not let you do.
 
-**There is no `Ord`.** Lexicographic ordering is a separate claim from element-wise equality, and it
-is left out rather than pending — the same independence
-[the two traits have everywhere](#operators-are-here-and-are-documented-elsewhere):
+**A slice and an array both order, and the order is lexicographic.** `impl[T: Ord] Ord for []T` and
+`impl[const N: usize, T: Ord] Ord for [N]T` sit beside the `Eq` blocks above: the first differing
+element decides, and a sequence that is a prefix of another orders before it.
 
 ```sysl
-var a = [1, 2]
+var a = [1, 2, 3]
+var b = [1, 2, 4]
+var c = [1, 2]
 
-print(a[..] < a[..])
+print(a[..] < b[..], b[..] < a[..])
+print(c[..] < a[..], a[..] < c[..])
+print(a < b, a == a)
+```
+
+```output
+true false
+true false
+true true
+```
+
+Length decides only once the shared prefix is exhausted, which is the opposite order from `Eq` — that
+tests the length first, because two sequences of different lengths cannot be equal and the walk is
+wasted. An ordering has no such shortcut: `[1, 2]` and `[1, 2, 3]` differ in length and the shorter
+one still has to be read to the end before anything is known.
+
+That is the rule a `string` already follows and the one a tuple's `Ord` follows over its parts, so a
+struct wrapping an array derives an ordering that means what a reader expects:
+
+```sysl
+struct Id derives Eq, Ord
+    raw: [4]u8
+
+var lo = Id([0, 0, 0, 1])
+var hi = Id([0, 0, 1, 0])
+
+print(lo < hi)
+```
+
+```output
+true
+```
+
+**An array hashes and a slice does not**, which is the one place the two part company:
+`impl[const N: usize, T: Hash] Hash for [N]T` folds the elements' hashes in order, so `[1, 2]` and
+`[2, 1]` are different keys. There is no matching block for `[]T`:
+
+```sysl
+val xs: [3]u32 = [1, 2, 3]
+val view = xs[..]
+
+print(view.hash())
 ```
 
 ```error
-'<' is not defined for []int
+type '[]const uint' has no method 'hash'
 ```
+
+**A hash is a promise about a key, and a slice is a view.** Putting one in a table leaves the storage
+reachable and writable by whoever owns it, so the key can change under the table and the entry
+becomes unfindable — a failure that surfaces as a lookup quietly missing rather than as anything
+going wrong where it was caused. An array is a value and copies, so it has no such owner, and a
+caller holding a slice it means as a key hashes something it owns.
 
 [`sysl.slices.equal`](/library/slices/#comparing-and-rearranging) answers the same question as a free function and is not
 going anywhere: it takes `[]const T`, it lives in an `@no_alloc` module a freestanding target can

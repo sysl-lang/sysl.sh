@@ -91,6 +91,26 @@ true true
 [`Eq` when its elements are](/library/core/#a-slice-or-an-array-of-anything-equatable), so `a == b`
 answers the same question, and `assert_eq` takes two slices and prints both when they disagree.
 
+**And ordering came with it.** A slice is
+[`Ord` when its elements are](/library/core/#a-slice-or-an-array-of-anything-equatable) — first
+differing element deciding, and a prefix ordering before what extends it — so `a[..] < b[..]` is a
+question this module never had a function for:
+
+```sysl
+var a = [1, 2, 3]
+var b = [1, 2]
+
+print(a[..] < b[..], b[..] < a[..])
+```
+
+```output
+false true
+```
+
+**A slice still has no `Hash`, and that is a decision rather than a gap.** A hash is a promise about
+a key and a view's storage stays writable by whoever owns it, so a slice used as a key can change
+under the table. An array copies, so it hashes; [`core`](/library/core/#hashing) has the reasoning.
+
 What `equal` still has is its **signature and its module**: it takes `[]const T` and it lives here,
 under `@no_alloc`, reachable from a freestanding target — so a caller holding two slices and wanting
 a `bool` loses nothing by keeping it, and a binding that must not acquire an allocator has it

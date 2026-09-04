@@ -140,7 +140,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // section shows one in range and refuses one outside it.
     // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no
     // single block can be — a page block is one file, and the rule is about two.
-    "docs/content/reference/modules.md"                -> (17, 15, 16),
+    "docs/content/reference/modules.md"                -> (18, 16, 16),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),
@@ -175,7 +175,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // every value — which is the comparison the function exists for.
     // `os()` and `cpu()` gained a section of their own -- one runnable block, since what the platform
     // constants add over a directive is that they can be compared, passed and matched on.
-    "docs/content/library/core.md"                     -> (34, 6, 12),
+    "docs/content/library/core.md"                     -> (36, 6, 12),
     // Three more runnable: trimming a `string` against trimming its bytes, the `_fold` family
     // against `to_lower`, and `grapheme_columns` against `columns` on a joined emoji.
     "docs/content/library/text.md"                      -> (21, 6, 4),
@@ -228,7 +228,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable: taking the terminal over (`raw`/`cooked`, whose program takes the *declining*
     // branch here, since these run with input closed) and the line editor over an in-memory pair.
     "docs/content/library/term.md"                        -> (4, 0, 2),
-    "docs/content/library/slices.md"                      -> (11, 0, 0),
+    "docs/content/library/slices.md"                      -> (12, 0, 0),
     // The fragment is the trait itself, listed rather than run: what `sysl.seq` is, is its ten
     // signatures, and a page that only showed calls would never show the two members whose type
     // parameter is their own.

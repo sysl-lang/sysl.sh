@@ -321,6 +321,15 @@ impl One for BigInt
 impl Ord for BigInt
 ```
 
+*Written out, and it stays written out now that an array has `Ord` -- a `BigInt` is not
+structurally ordered.** Its fields are a sign and a little-endian limb view, so a derived
+comparison would take the sign first, putting every positive before every negative, and then
+compare limbs from the *least* significant end, making `2^32` less than `1`. The numeric order
+needs the magnitudes' lengths first and their limbs from the top, which is `cmp_mag`.
+
+It could not be derived in any case: `bool` has no `Ord`, so `derives Ord` on this shape is
+refused with `'<' is not defined for bool`.
+
 ### Rem for BigInt
 
 ```sysl
