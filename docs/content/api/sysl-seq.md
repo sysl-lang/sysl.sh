@@ -4,50 +4,8 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.seq
+summary: "What a sequence of values can be asked, in one trait, so that a slice and a `Buf` answer the same names."
 ---
-
-## Index
-
-[`generate`](#generate) [`Sequence`](#sequence) [Sequence for []const E](#sequence-for-const-e) [Sequence for Buf[E]](#sequence-for-bufe) [Sequence for Range[E]](#sequence-for-rangee)
-
-## Functions
-
-### `generate`
-
-```sysl
-generate[U](n: usize, f: usize -> U) -> []U
-```
-
-A sequence of `n` elements, each produced from its index.
-
-**The one thing here that makes a sequence rather than taking one**, and a free function because a
-creator has no receiver: there is nothing for `self` to be until the call has already done the
-work.
-
-It is in this module because the shape a caller wants is `map`'s -- an index goes in and an element
-comes out. **`(0..<n).map(f)` says the same thing now** and is what a reader reaches for first;
-what this keeps is the allocation, since a count is a length and a range is two bounds.
-
-`f` is called exactly once for each index, in order, and the buffer is given the length the answer
-is known to have, so it grows once.
-
-## Traits
-
-### `Sequence`
-
-```sysl
-trait Sequence[T]
-    fold[A](self, init: A, f: (A, T) -> A) -> A
-    any(self, p: T -> bool) -> bool
-    all(self, p: T -> bool) -> bool
-    find(self, p: T -> bool) -> Option[T]
-    position(self, p: T -> bool) -> Option[usize]
-    count_where(self, p: T -> bool) -> usize
-    each(self, f: T -> unit)
-    map[U](self, f: T -> U) -> []U
-    filter(self, p: T -> bool) -> []T
-    flat_map[U](self, f: T -> []U) -> []U
-```
 
 What a sequence of values can be asked, in one trait, so that a slice and a `Buf` answer the same
 names.
@@ -98,6 +56,52 @@ and it is here rather than in `sysl.buf` because the shape it has is `map`'s.
 thing. What it still has that the range does not is the **length**: a count is a `usize` in hand,
 so `generate` gives its buffer the size the answer will be and grows once, where a range's `map`
 would have to work its length out generically from bounds the trait says only are integers.
+
+## Index
+
+[`generate`](#generate) [`Sequence`](#sequence) [Sequence for []const E](#sequence-for-const-e) [Sequence for Buf[E]](#sequence-for-bufe) [Sequence for Range[E]](#sequence-for-rangee)
+
+## Functions
+
+### `generate`
+
+```sysl
+generate[U](n: usize, f: usize -> U) -> []U
+```
+
+A sequence of `n` elements, each produced from its index.
+
+**The one thing here that makes a sequence rather than taking one**, and a free function because a
+creator has no receiver: there is nothing for `self` to be until the call has already done the
+work.
+
+It is in this module because the shape a caller wants is `map`'s -- an index goes in and an element
+comes out. **`(0..<n).map(f)` says the same thing now** and is what a reader reaches for first;
+what this keeps is the allocation, since a count is a length and a range is two bounds.
+
+`f` is called exactly once for each index, in order, and the buffer is given the length the answer
+is known to have, so it grows once.
+
+## Traits
+
+### `Sequence`
+
+```sysl
+trait Sequence[T]
+    fold[A](self, init: A, f: (A, T) -> A) -> A
+    any(self, p: T -> bool) -> bool
+    all(self, p: T -> bool) -> bool
+    find(self, p: T -> bool) -> Option[T]
+    position(self, p: T -> bool) -> Option[usize]
+    count_where(self, p: T -> bool) -> usize
+    each(self, f: T -> unit)
+    map[U](self, f: T -> U) -> []U
+    filter(self, p: T -> bool) -> []T
+    flat_map[U](self, f: T -> []U) -> []U
+```
+
+The ten operations a sequence of `T` answers: seven that walk it and answer something, and three
+that build a new sequence.
 
 | Member | Signature | Description |
 |---|---|---|

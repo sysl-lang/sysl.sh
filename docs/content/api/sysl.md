@@ -4,24 +4,19 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl
-summary: "What a program does when something it was sure of turns out not to hold."
+summary: "The core: what every program has without importing anything."
 ---
 
-These are the *runtime* half of the language's checking, and they sit beside rather than inside the
-half `16-constrained-types-and-contracts.md` describes. A `require` clause is a promise about a
-call, checked where the call arrives and nowhere else; these are a promise about a moment, checked
-where the moment is. A function whose fifth statement has just computed something it can verify has
-no contract to hang that on -- the contract was about the arguments, four statements ago.
+`Option` and `Result`, the operator and rendering traits, `print` and the assertions, `exit` for a
+program that chooses its own status. Nothing here is asked for by name — a file that declares no
+imports at all can still write `Some(3)`, `assert`, `f"..."` and `x + y`, and that is what makes
+this module the one a reader meets first.
 
-Both stop the program the way `unwrap` does: a line naming what happened, then the hosted exit that
-`11-error-handling.md` gives a trap under the `os` capability. That is deliberately not
-`llvm.trap`. A trap is what the compiler emits for a check the *language* makes -- a bounds
-violation, a broken contract -- and it stops with a signal and no message, because there is nothing
-it could say that the source line does not already. These are checks a *program* makes, about
-things it knows and the compiler does not, so the message is the whole point of them.
-
-Under `sysl test` either one fails the test it is written in, since a test's verdict is whether it
-came back and neither of these comes back.
+**It is fourteen files and none of them speaks for the whole**, which is why this one exists and
+holds nothing else. `check.sysl` is the assertions, `option.sysl` the optional value,
+`ops.sysl` the trait catalog, `print.sysl` the printing surface; each is a good file with a good
+header, and any one of them standing in for the module would describe a corner of it as though it
+were the middle.
 
 ## Index
 

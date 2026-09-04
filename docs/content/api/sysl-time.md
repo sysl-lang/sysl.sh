@@ -4,27 +4,18 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.time
-summary: "The calendar: a date and a time of day with no zone attached, and the arithmetic that turns one into the other."
+summary: "Points on the timeline, lengths of it, and the calendar that turns one into a date."
 ---
 
-The calendar: a date and a time of day with no zone attached, and the arithmetic that turns one
-into the other.
+`Instant` and `Duration` are the two quantities everything else here is written in terms of, with
+`5.ms` and `5.hours` available on any integer. Above them sit the civil types — `LocalDate`,
+`LocalTime`, `LocalDateTime` and `Offset` — the fixed-offset conversions, `resolve` for a zone
+whose clocks move, and the ISO 8601 renderers and parsers.
 
-A **local** date-time is a reading on a wall clock. It is not a point on the timeline and it does
-not become one until somebody says where the wall is. Kept apart from `Instant` it is an ordinary,
-boring value: a day number and a count of microseconds since midnight, both plain integers with no
-calendar hidden inside.
-
-**A day number, not packed civil fields.** The alternative — year, month, day, hour and minute as
-bit fields inside one word — is the design most people reach for, and the arithmetic says no.
-Packing to the nanosecond needs 30 bits for the nanosecond, 17 for the time of day and 9 for the
-day and month, which is 56, leaving 8 bits of year: a range of ±128 years, which is not a
-calendar. Dropping to microseconds leaves 18 bits of year and does fit. But a *count* fits more
-comfortably at the same width — microseconds within a day need 37 bits, leaving 27 for the day
-number and a range of ±183,000 years — and it costs nothing to compute with, because comparing,
-subtracting and adding a length of time are one instruction each on a count and an
-unpack-recompute-repack on packed fields. Only "what month is it" wants the fields, and that is
-the rare question, paid for below where it is asked.
+**It reads no clock itself.** `now` and `monotonic` are declared here and *supplied by the
+linker*, so a program on a board provides its own and a hosted one gets `sysl.posix.time`'s. That
+is what keeps a calendar usable on a target with no operating system to ask, and it is why the two
+are separate modules.
 
 ## Index
 

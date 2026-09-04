@@ -4,26 +4,21 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.fs
-summary: "What a filesystem call reports when it does not succeed, and the one number it comes from."
+summary: "What is at the end of a path: reading and writing whole files, metadata, directories, links, and the errors any of it can answer with."
 requires: "requires { os }"
 ---
 
-`reference/errors.md § Which channel — the policy` puts this class of failure — something outside
-the program, a file or a user or a device — on `Result` rather than on a trap, and this is the
-error half of every `Result` the module hands back. It is an enum rather than a bare `int` for
-the reason `Result` carries its error as a type parameter at all: a caller that wants to act on
-*why* wants to match, and a match over named cases is exhaustive where a comparison against a
-number is a guess that compiled.
+What is at the end of a path: reading and writing whole files, metadata, directories, links, and
+the errors any of it can answer with.
 
-The cases are the ones a program branches on. Everything else arrives as `Other`, carrying the
-number, because a library that mapped every `errno` to a name of its own would be a table nobody
-could keep current and a program could not extend -- and the number is what a reader looks up
-anyway.
+`read_text`, `write_bytes`, `metadata`, `make_dir_all`, `copy_file`, `canonicalize`, the walk, and
+`IoError` — which carries the platform's own number so that a caller can act on *which* failure it
+was rather than only on there having been one.
 
-**The module requires `os`.** Nothing here is language, and nothing here can be given a body on a
-target with no filesystem under it: a freestanding image has no `fopen` to call and no `errno` to
-read. `reference/modules.md § Capabilities are a module property` reserves `os` for exactly this
-and the clause is what says so in the one place a reader of the file will see it.
+**This module requires `os` and `sysl.path` requires nothing, which is why they are two.** A
+capability requirement is module-wide, so one `getcwd` filed beside `join` would take path
+handling away from every program with no operating system to ask. Deciding what a path *says* is
+`sysl.path`'s; going and looking is this module's.
 
 ## Index
 

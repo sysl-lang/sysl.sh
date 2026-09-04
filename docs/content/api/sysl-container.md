@@ -4,40 +4,17 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.container
-summary: "A singly linked list that is never modified: every operation answers a **new** list, and the old one is still there and still correct."
+summary: "Five containers, each with a shape a slice and a `Buf` cannot give you."
 ---
 
-A singly linked list that is never modified: every operation answers a **new** list, and the old
-one is still there and still correct.
+`Map` and `Set` over one flat probe table, `Deque` for a queue cheap at both ends, `Heap` for a
+priority queue, and `List` — an immutable singly linked list that shares its tail. Every one of
+them owns its elements and grows, so every one of them needs an allocator; the fixed-capacity
+complement is `sysl.container.ring`, which needs none.
 
-**The reason this belongs in a reference-counted language specifically is structural sharing.**
-Putting an element on the front of a list does not copy the list -- it makes one cell holding the
-new element and a reference to the list that was there, so two lists that differ by one element
-share every cell but one. That is what makes an immutable list cheap: `prepend` is one allocation
-whatever the length, where the same operation on an array is a copy of the whole thing.
-
-Reference counting is what makes the sharing *safe* without anyone thinking about it. A cell is
-released when the last list holding it goes, and neither list has to know the other exists. A
-language without it would need either a garbage collector or an ownership rule saying which of the
-two lists owns the shared tail, and there is no good answer to that question.
-
-**A list cannot form a cycle**, which is the property that makes counting sufficient here rather
-than merely convenient: a cell's tail is always a list that existed before the cell did, so no
-chain of tails can arrive back where it started. Where that is not true -- an environment holding a
-closure that names it -- a count cannot reclaim and `weak T` is what breaks the edge; nothing in
-this module can reach that case.
-
-## What it is for, and what it is not for
-
-Reach for this where a value has to be **kept** as well as extended -- a scope chain where an
-inner scope is the outer one plus a binding, an undo history where each step is the last plus a
-change, a search where a path is its parent's path plus a step. All three share almost everything
-and all three would copy almost everything with a `Buf`.
-
-Do not reach for it to hold a sequence and walk it. There is no index: getting to the `i`th
-element walks `i` cells, and those cells are wherever the allocator put them rather than next to
-each other, so a walk of a long list is a walk of memory in no particular order. `Buf` is what a
-sequence wants; this is what a *shared history* wants.
+**A module rather than five**, because what a program wants from here is a data structure and the
+choice between them is the interesting part. Each file's own header says what its structure costs
+and when to reach for it instead of its neighbour.
 
 ## Index
 

@@ -4,24 +4,9 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.math.complex
+summary: "Complex numbers, at whichever floating-point width the program is already using."
 requires: "no alloc"
 ---
-
-## Index
-
-[`Complex`](#complex) [Add for Complex[F]](#add-for-complexf) [Add for Complex[F]](#add-for-complexf-1) [Add for f32](#add-for-f32) [Add for real](#add-for-real) [Display for Complex[F]](#display-for-complexf) [Div for Complex[F]](#div-for-complexf) [Div for Complex[F]](#div-for-complexf-1) [Div for f32](#div-for-f32) [Div for real](#div-for-real) [Eq for Complex[F]](#eq-for-complexf) [Magnitude for Complex[F]](#magnitude-for-complexf) [Mul for Complex[F]](#mul-for-complexf) [Mul for Complex[F]](#mul-for-complexf-1) [Mul for f32](#mul-for-f32) [Mul for real](#mul-for-real) [Neg for Complex[F]](#neg-for-complexf) [One for Complex[F]](#one-for-complexf) [Sub for Complex[F]](#sub-for-complexf) [Sub for Complex[F]](#sub-for-complexf-1) [Sub for f32](#sub-for-f32) [Sub for real](#sub-for-real) [Zero for Complex[F]](#zero-for-complexf)
-
-## Types
-
-### `Complex`
-
-```sysl
-struct Complex[F: Float]
-    re: F
-    im: F
-```
-
-Complex numbers, at whichever floating-point width the program is already using.
 
 **Generic over the width rather than fixed at `real`, because `Float` already paid for that.**
 `sysl.math` made the one-trait-two-widths investment so that `x.sqrt()` is the same three words at
@@ -44,6 +29,23 @@ textbook formula assumes. Three places differ from the obvious expression, and e
 where the obvious one overflows or loses digits at inputs that are perfectly ordinary:
 `abs` goes through `hypot`, division scales before it divides, and `sqrt` never squares what it is
 about to take the root of.
+
+## Index
+
+[`Complex`](#complex) [Add for Complex[F]](#add-for-complexf) [Add for Complex[F]](#add-for-complexf-1) [Add for f32](#add-for-f32) [Add for real](#add-for-real) [Display for Complex[F]](#display-for-complexf) [Div for Complex[F]](#div-for-complexf) [Div for Complex[F]](#div-for-complexf-1) [Div for f32](#div-for-f32) [Div for real](#div-for-real) [Eq for Complex[F]](#eq-for-complexf) [Magnitude for Complex[F]](#magnitude-for-complexf) [Mul for Complex[F]](#mul-for-complexf) [Mul for Complex[F]](#mul-for-complexf-1) [Mul for f32](#mul-for-f32) [Mul for real](#mul-for-real) [Neg for Complex[F]](#neg-for-complexf) [One for Complex[F]](#one-for-complexf) [Sub for Complex[F]](#sub-for-complexf) [Sub for Complex[F]](#sub-for-complexf-1) [Sub for f32](#sub-for-f32) [Sub for real](#sub-for-real) [Zero for Complex[F]](#zero-for-complexf)
+
+## Types
+
+### `Complex`
+
+```sysl
+struct Complex[F: Float]
+    re: F
+    im: F
+```
+
+A complex number at the width `F`: a real part and an imaginary one, laid out as two fields of
+that width and nothing else.
 
 | Member | Signature | Description |
 |---|---|---|

@@ -4,8 +4,19 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.sync
+summary: "What two threads may touch at once: `Atomic[T]`, `SpinLock`, and the five memory orderings."
 requires: "no alloc"
 ---
+
+An atomic is a word an operation reads, writes or exchanges indivisibly; an `Ordering` says how
+strongly that operation is ordered against the ordinary accesses around it; and a `SpinLock` is
+mutual exclusion for code that cannot block — an interrupt handler, a signal handler, a board with
+no scheduler.
+
+**This module requires nothing, which is what puts it below `sysl.posix.threads` rather than
+inside it.** The threads a program spawns are POSIX's and are behind a capability; the ordering
+rules are the machine's, and a freestanding program that shares a word with an interrupt needs
+them exactly as much as a hosted one that shares it with a thread.
 
 ## Index
 

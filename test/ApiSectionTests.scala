@@ -145,6 +145,36 @@ class ApiSectionTests extends AnyFreeSpec with Matchers {
         }
     }
 
+    "says something about every module it lists" in {
+      // **The one case here that is about the LIBRARY rather than about the generator**, and the
+      // reason it exists: a module's summary comes from the doc comment at the top of the file named
+      // for it, and a module with no such comment gets an empty cell. Twenty of thirty-five were
+      // empty when this was written (card `0413`) and nobody had noticed, because a blank cell reads
+      // as a module nobody has documented rather than as a defect.
+      //
+      // It fails the day a new module lands without a headline, which is the moment it is cheapest
+      // to fix — the person adding the module is the person who knows what it is for.
+      //
+      // Asserted over the committed index rather than over `regenerated`, because what a reader sees
+      // is what is committed, and a staleness failure should not be able to hide this one.
+      assume(isDirectory(Out), "the API section is not present")
+
+      val Row = """^\| \[`([^`]+)`\]\([^)]*\) \| *(.*?) *\|$""".r
+
+      val rows =
+        readFile(s"$Out/_index.md").split("\n").toList.collect { case Row(name, summary) => name -> summary }
+
+      // A floor, so that a table which stopped being generated cannot pass this vacuously.
+      withClue("the index lists no modules at all: ") { rows.length should be >= 30 }
+
+      val silent = rows.collect { case (name, "") => name }
+
+      withClue(s"no headline in the file named for the module: ${silent.mkString(", ")} — " +
+        "a module's summary is the doc comment at the top of <last segment>.sysl. ") {
+        silent shouldBe empty
+      }
+    }
+
     "weighs its index and nothing else" in {
       // A weight orders sections against each other, and the module pages are inside one — a weight
       // on each of them would order them against their own index. Checked over the committed files

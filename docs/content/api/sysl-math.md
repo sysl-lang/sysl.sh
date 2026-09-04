@@ -4,24 +4,22 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.math
-summary: "Choosing between two values, and holding one to a range."
+summary: "Mathematics on the numeric types: the float functions, the integer ones, and the traits that let a program write both at whichever width it is already using."
 requires: "no alloc"
 ---
 
-These are generic over `Ord` rather than being members of `Float`, and that is the whole reason
-they are in a file of their own. Nothing about picking the smaller of two things is arithmetic:
-`min` over the integers is the same three words as `min` over the floats, and over a tuple, and
-over any type a program has written a `lt` for. A version living on `Float` would have been the
-narrowest useful one and would have left every other type asking why.
+Mathematics on the numeric types: the float functions, the integer ones, and the traits that let
+a program write both at whichever width it is already using.
 
-**What each does at a NaN follows from the comparison and is worth knowing rather than relying
-on.** A NaN is less than nothing and greater than nothing, so the one comparison each of these
-makes is false whichever way round the operands go, and both fall through to the arm holding the
-*first* argument: `min(nan(), x)` answers `nan()` and `min(x, nan())` answers `x`. A program that
-must reject a NaN should test for one. These will not do it on its behalf, and propagating it
-from one argument position while dropping it from the other is the behaviour C's `fmin` was
-criticised for -- said here rather than worked around, because the alternative is a comparison
-per argument on every call to spare the case a caller can see coming.
+`max`, `min` and `clamp` over anything ordered; `pi` and the constants a float program stops to
+look up; `Float` so that `x.sqrt()` is the same three words at `real` and at `f32`; `Signed` and
+`Bits` over the integer widths, with `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two` and
+`next_power_of_two` above them; and `Magnitude` for how large a value is, when that is a different
+question from which of two is greater.
+
+**What is here is arithmetic and what is a domain is a submodule.** `sysl.math.complex`,
+`sysl.math.bigint` and `sysl.math.decimal` are each a type a program should have to ask for by
+name, and each says in its own header why it is not part of this one.
 
 ## Index
 

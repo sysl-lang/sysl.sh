@@ -4,23 +4,18 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.text
-summary: "What a program says when it means text as bytes: the validator, the two conversions either side of C, the character cursor, and the builder in the file beside this one."
+summary: "The whole text surface: what a `string` is made of, and every operation over one."
 ---
 
-What a program says when it means text as bytes: the validator, the two conversions either side of
-C, the character cursor, and the builder in the file beside this one.
+Validation and the two conversions either way, the character cursors, `Ascii` for asking a byte or
+a character what kind of thing it is, `Search` and the trimming that makes no new bytes, splitting
+and joining, `StrBuilder` for text gathered a piece at a time, the parsers, `CString` for the
+boundary with C, and the terminal width — which is a third answer to how long text is, after bytes
+and after characters.
 
-A module of its own for the reason a submodule exists at all. None of this is what the language
-desugars onto -- a `string` literal, `+`, and an interpolation are all the compiler's own doing and
-reach none of these names -- so a program that converts says so with an `import`, and one that
-never leaves `string` never sees them. The one exception is reached without being named: `s.chars`
-is a member the compiler provides, and it calls `chars_of` by key rather than by resolving the
-word, so the cursor moving costs a `for` over characters nothing at all.
-
-Everything here reaches the standard module's names freely -- `Option`, `Result`, `Iterate` --
-which `reference/modules.md § The module graph is acyclic` allows so long as `sysl` does not name
-back. It could not have moved while the reading surface was still in `sysl`, since `line_text`
-validates.
+**What is here is the encoding and what is the character database is `sysl.unicode`.** This module
+knows that UTF-8 says where a character begins and what `Ascii` makes of a byte; it does not know
+that `ß` upper-cases to `ẞ`, and it is the other module that does.
 
 ## Index
 

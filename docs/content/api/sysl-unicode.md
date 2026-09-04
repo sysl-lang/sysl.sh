@@ -4,25 +4,46 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.unicode
-summary: "Where one *user-perceived character* ends and the next begins, which is a third answer to *how long is this text* and the one a person would give."
+summary: "What the Unicode Character Database says about a character, and the operations over text that only that database can answer."
 ---
 
-Where one *user-perceived character* ends and the next begins, which is a third answer to *how
-long is this text* and the one a person would give.
+What the Unicode Character Database says about a character, and the operations over text that
+only that database can answer.
 
-`"é"` written as `e` and a combining acute is two code points and one grapheme cluster; a flag is
-two; a family emoji joined with zero-width joiners is one. A program that moves a cursor, wraps a
-line, truncates a field or counts "characters" for a user is asking this question, and every
-other measurement in the standard library answers a different one -- `s.len` is bytes and a
-`Chars` walk is code points.
+**The module is three files and the boundary is the allocator**, which is the same split
+`sysl.text` draws between `find.sysl` and `edit.sysl` and for the same reason: a program that only
+asks what a character is should not link an allocator on account of a `normalize` it never calls.
 
-**It walks bytes and answers views onto them, so nothing here allocates.** A cluster is a run of
-the input rather than a new string, which is what lets this be used on a caller's buffer and
-inside a `no alloc` module; a caller that wants each cluster as a `string` of its own can build
-one from the view.
+| | |
+|---|---|
+| this file | what a character *is* -- the case mappings, the predicates, the category. Allocates nothing |
+| `graphemes.sysl` | where one user-perceived character ends, over a byte view. Allocates nothing |
+| `map.sysl` | `fold` and `normalize`, which answer with a whole new string and so need a heap |
 
-The decoding is utf8proc's rather than `sysl.text`'s for the same layering reason `unicode.sysl`
-walks its own NUL: `sysl.text` imports this module, so this module may not import it back.
+==Why this is in the standard library rather than in a package==
+
+Case mapping, case folding, normalization and grapheme segmentation are properties of *strings*.
+A language whose `to_upper` is ASCII-only has a `string` type that is Unicode in its storage and
+ASCII in its operations, and every program that meets a name with an accent in it has to go and
+find a binding. Done once here, every sysl program gets it.
+
+==Where the data comes from==
+
+`utf8proc.c` beside this file, vendored -- the same library Julia's `Base` uses behind its own
+string functions, for exactly this set. `README.md` records the version, its checksum, and the
+five lines this copy carries on top of it.
+
+==What is deliberately NOT here: display width==
+
+utf8proc answers it and this module does not expose it, because `sysl.text.char_columns` already
+does, out of tables of its own. Two answers to one question in one standard library is worse than
+either of them, and the tables are the half that has to agree.
+
+**Which one stays is decided by who pays.** `sysl.text.columns` is what places a diagnostic's
+caret, so it is reached by programs that never asked for anything Unicode -- including on a board,
+where it links about four kilobytes of ranges today and would link three hundred through here.
+A program reaches `to_upper` by deciding to uppercase a string, so what it pulls in is a cost it
+opted into. Width is inherited; case mapping is asked for.
 
 ## Index
 

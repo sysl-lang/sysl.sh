@@ -4,7 +4,15 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.regex
+summary: "Matching text against a pattern: compile one, then find, replace or split with it."
 ---
+
+Compiling is separated from matching because it is the expensive half and a pattern is
+usually used more than once. Every span a match reports is a **byte offset into the input**
+and is always on a character boundary, so `s[a..<b]` takes one without a boundary check
+failing; a group that took no part in the match has no span rather than an empty one.
+
+This module is the surface. `parse`, `compile` and `vm` beside it are the engine.
 
 ## Index
 

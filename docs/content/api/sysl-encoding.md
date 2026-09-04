@@ -4,23 +4,19 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.encoding
-summary: "Fixed-width integers to and from bytes, at both byte orders."
+summary: "Bytes as text and text as bytes: hexadecimal, base64, UUIDs, and fixed-width integers at either byte order."
 ---
 
-**These are free functions at concrete widths, and that is exactly why they can exist.**
-`math/integer.sysl` deliberately leaves `swap_bytes` out of the `Bits` trait, because every member
-of that trait must be total over every integer type and a `u24` or a `u4` has no byte order at all
--- a member working at `u32` and not at `u24` would turn a bound that was supposed to have proven
-an operation into a failure at somebody else's instantiation. Nothing here is a trait member, so
-nothing here reopens that: `get_u32_le` names its width, and the widths that have a whole number of
-bytes are the only ones written.
+Bytes as text and text as bytes: hexadecimal, base64, UUIDs, and fixed-width integers at either
+byte order.
 
-**Unsigned only.** The signed read of the same bytes is a cast at the call site, and doubling a
-twelve-function surface to spare one cast is not a trade worth making.
+Every conversion here is total in one direction and fallible in the other — encoding cannot fail,
+decoding can — so the decoders answer a `Result` carrying `DecodeError`, which says why at the
+granularity a caller can act on rather than only that something was wrong.
 
-**Reading answers `Option` and writing answers `bool`**, rather than trapping on a slice that is
-too short. Walking a buffer whose length came from somewhere else is the ordinary use, and running
-off the end of one is an expected condition there rather than a program's mistake.
+**None of it interprets what it moves.** A base64 decoder does not know whether the bytes it
+produced are a key, an image or a sentence, and a `u32` read out of four bytes is a number and not
+a field of anything. What the bytes *mean* belongs to whatever asked for them.
 
 ## Index
 

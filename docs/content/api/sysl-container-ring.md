@@ -4,41 +4,9 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.container.ring
+summary: "A queue of a **fixed** capacity, laid over storage the caller supplies, cheap to take from at either end and needing no allocator at all."
 requires: "no alloc"
 ---
-
-## Index
-
-[`ring`](#ring) [`Ring`](#ring-1) [`RingCursor`](#ringcursor) [Index for Ring[T]](#index-for-ringt) [IndexSet for Ring[T]](#indexset-for-ringt) [Iterate for RingCursor[T]](#iterate-for-ringcursort)
-
-## Functions
-
-### `ring`
-
-```sysl
-ring[T](slots: []T) -> Ring[T]
-```
-
-Builds an empty ring over storage the caller supplies.
-
-A function rather than an associated `new`, because the element type is inferred from the slots and
-there is no receiver for it to be read off: `ring(slots[..])` says everything, where
-`Ring[int].new(...)` would say the element type twice.
-
-**The slice is read here and not kept**, for the reason the `slots` field gives: what is stored is
-its address and its length.
-
-## Types
-
-### `Ring`
-
-```sysl
-struct Ring[T]
-    slots: *T
-    room: usize
-    head: usize
-    live: usize
-```
 
 A queue of a **fixed** capacity, laid over storage the caller supplies, cheap to take from at
 either end and needing no allocator at all.
@@ -74,6 +42,42 @@ region something else owns. It is the same contract `channel(slots[..])` already
 **The length is not rounded to a power of two**, unlike `Deque`'s, because the capacity is the
 caller's number rather than one this file chose -- a program that asked for six slots gets six.
 So wrapping is a compare and a subtract instead of a mask, which is what `seat` below is.
+
+## Index
+
+[`ring`](#ring) [`Ring`](#ring-1) [`RingCursor`](#ringcursor) [Index for Ring[T]](#index-for-ringt) [IndexSet for Ring[T]](#indexset-for-ringt) [Iterate for RingCursor[T]](#iterate-for-ringcursort)
+
+## Functions
+
+### `ring`
+
+```sysl
+ring[T](slots: []T) -> Ring[T]
+```
+
+Builds an empty ring over storage the caller supplies.
+
+A function rather than an associated `new`, because the element type is inferred from the slots and
+there is no receiver for it to be read off: `ring(slots[..])` says everything, where
+`Ring[int].new(...)` would say the element type twice.
+
+**The slice is read here and not kept**, for the reason the `slots` field gives: what is stored is
+its address and its length.
+
+## Types
+
+### `Ring`
+
+```sysl
+struct Ring[T]
+    slots: *T
+    room: usize
+    head: usize
+    live: usize
+```
+
+The ring itself: where the caller's storage is, how much of it there is, and the live run inside
+it.
 
 | Member | Signature | Description |
 |---|---|---|

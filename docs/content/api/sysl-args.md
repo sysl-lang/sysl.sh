@@ -4,7 +4,30 @@ layout: api-module
 headingShift: 0
 slugStyle: github
 module: sysl.args
+summary: "How a program's arguments become a `[]string`, written here because every line of it is ordinary sysl."
 ---
+
+How a program's arguments become a `[]string`, written here because every line of it is ordinary
+sysl. What the platform hands the entry point is C's `argc` and `argv` -- a count and a vector of
+NUL-terminated byte runs -- and what a sysl program asks for is a slice of strings, so something
+has to walk the one and build the other. Doing it in the library is what keeps the pair out of
+every sysl signature: a `main(args: []string)` is called with the result of this, and the two
+foreign types are named in one place instead of in each program that wants its arguments.
+
+It is a module of its own rather than part of `sysl`, and the reason is what a submodule is for.
+Almost no program writes a call to this: a `main(args: []string)` is what asks for the conversion,
+and the entry point the compiler lays out is what makes it. A name nearly nobody writes has no
+business in the set every file gets for free, so a program that does want it -- one handed an
+`argv` by something other than the platform -- names `sysl.args.args_of` and says so.
+
+It stays public for that reason and for one more: this is the only surface on which an argument
+vector's *failure* can be reached at all, since a well-formed one is all a real process will ever
+hand over.
+
+It is also why it cannot live beside the platform externs in `sysl.sys`. This calls `print` and
+`exit`, which are `sysl`'s, and `sysl` reaches `sysl.sys` for its printing -- putting both here
+would make the two modules depend on each other, which `13 s6` refuses. What is left in `sys` is a
+leaf that needs nothing, which is what a platform module should be.
 
 ## Index
 
@@ -32,12 +55,7 @@ otherwise do to a table of short ones.
 args_of(argc: i32, argv: **u8) -> []string
 ```
 
-How a program's arguments become a `[]string`, written here because every line of it is ordinary
-sysl. What the platform hands the entry point is C's `argc` and `argv` -- a count and a vector of
-NUL-terminated byte runs -- and what a sysl program asks for is a slice of strings, so something
-has to walk the one and build the other. Doing it in the library is what keeps the pair out of
-every sysl signature: a `main(args: []string)` is called with the result of this, and the two
-foreign types are named in one place instead of in each program that wants its arguments.
+The conversion itself, from the two values the platform handed the entry point.
 
 Each run's length is found by looking for the terminator rather than by calling `strlen`, so the
 conversion asks the platform for nothing beyond the two values it was handed. The bytes are then
@@ -45,21 +63,6 @@ validated and copied: a `string` owns what it holds, so an argument outlives the
 from and nothing a program does to it reaches memory the platform still owns. An argument that is
 not UTF-8 stops the program the way `unwrap` does, with the offset of the byte that made it
 ill-formed -- `04` puts that check at the boundary, and this is one.
-
-It is a module of its own rather than part of `sysl`, and the reason is what a submodule is for.
-Almost no program writes a call to this: a `main(args: []string)` is what asks for the conversion,
-and the entry point the compiler lays out is what makes it. A name nearly nobody writes has no
-business in the set every file gets for free, so a program that does want it -- one handed an
-`argv` by something other than the platform -- names `sysl.args.args_of` and says so.
-
-It stays public for that reason and for one more: this is the only surface on which an argument
-vector's *failure* can be reached at all, since a well-formed one is all a real process will ever
-hand over.
-
-It is also why it cannot live beside the platform externs in `sysl.sys`. This calls `print` and
-`exit`, which are `sysl`'s, and `sysl` reaches `sysl.sys` for its printing -- putting both here
-would make the two modules depend on each other, which `13 s6` refuses. What is left in `sys` is a
-leaf that needs nothing, which is what a platform module should be.
 
 ### `cli`
 
