@@ -484,33 +484,41 @@ print(to_upper("héllo"), to_lower("HÉLLO"))
 x-y-z
 ababab true
 ba
-HéLLO hÉllo
+HÉLLO héllo
 ```
 
-**`to_upper("héllo")` is `HéLLO`.** The `é` is untouched, which is the ASCII promise made visible
-rather than merely stated. These walk *characters* rather than bytes and go through `push_char`, so
-every way into the builder still carries the UTF-8 guarantee and no unchecked primitive is named —
-and it works because `Ascii for char` is total, so a character outside the range is re-encoded to
-exactly the bytes it arrived as. A byte map would be the faster loop and would need a raw-byte way
-into a builder, which is the one thing the builder deliberately does not offer.
+**`to_upper("héllo")` is `HÉLLO`.** These walk *characters* rather than bytes and go through
+`push_char`, so every way into the builder still carries the UTF-8 guarantee and no unchecked
+primitive is named — and it works because [`sysl.unicode.to_upper`](/library/unicode/#case-mapping-is-a-character-at-a-time-and-folding-is-not) is total, so a
+character the database has no mapping for is re-encoded to exactly the bytes it arrived as. A byte
+map would be the faster loop and would need a raw-byte way into a builder, which is the one thing the
+builder deliberately does not offer.
 
-**`to_upper` AND `to_lower` MAP ASCII AND NOTHING ELSE, WHICH THEIR NAMES DO NOT SAY.** `Ascii` says
-so in its own name; these two are general words over a per-character call into it, so `to_upper` on a
-`string` is the one place in the library where a fully general name promises more than it delivers.
-It is a documented choice rather than an oversight — a caller who passes text outside the range gets
-that text back unchanged, never a wrong mapping and never a refusal — but it is the reader who did
-nothing wrong and got `HéLLO`, so it is said in the signature's own words rather than
-left to be read off the output above.
+**These used to map ASCII and nothing else, and this page used to say why.** `to_upper("héllo")` was
+`HéLLO` — half the string changed and half not, because the mapping was `Ascii for char` under a
+fully general name. The argument for leaving it there was a measurement: the simple case table is
+about 1,357 range entries and roughly 16KB, and `sysl.text` is not optional, being what places a
+diagnostic's caret, so *every freestanding program would link it*.
 
-**What full Unicode case mapping would cost is why it is not here.** The simple mapping alone —
-one code point to one — is about 1,357 range entries, roughly 16KB, against the 499 entries of
-Unicode data [`columns`](#how-wide-is-it-on-screen-columns) already carries. `sysl.text` is not
-optional: it is what places a diagnostic's caret, so every freestanding program links it. Beyond the
-simple mapping there is *special* casing, where `ß` uppercases to `SS` and the result is longer than
-the input, and *locale-sensitive* casing — Turkish dotless `ı` — which needs a notion of locale the
-library does not have. So the table belongs in a package rather than here, which is the line
-[`sysl.math.complex`](/library/complex/) already sits on: the standard library keeps the type and a
-package carries the data.
+**The measurement was right and the inference was wrong.** What a program links is decided by the
+functions it calls, not by the modules it names: the standard library is an archive with an object
+per C file, a member is pulled in only to resolve a symbol something already referenced, and the link
+drops what nothing reaches. A program whose whole text is `print(1)` carries no table today, and
+`sysl.unicode` is in the standard library — the whole Unicode Character Database, not just the case
+mapping. [Its page](/library/unicode/#what-it-costs) has the numbers.
+
+**For a protocol identifier, reach for [`Ascii`](#classification-ascii) instead**, which
+is unchanged and is named for the range it answers over. An HTTP header name, a scheme and a hostname
+label are ASCII by definition, and Unicode case mapping carries characters *into* that range — the
+Kelvin sign lowercases to a plain `k` — so two identifiers that were not equal can compare equal once
+either is lowered.
+
+**What is still true is the shape of the mapping.** It is the *simple* one, character for character,
+so `ß` uppercases to the capital sharp s `ẞ` rather than to `SS` — the full casing most languages
+answer with. A caller who wanted `SS` was comparing two strings, and
+[`fold`](/library/unicode/#case-mapping-is-a-character-at-a-time-and-folding-is-not) is that
+operation. *Locale-sensitive* casing — Turkish dotless `ı` — still needs a notion of locale the
+library does not have.
 
 **`split` drops nothing and `fields` drops whitespace.** Adjacent separators yield an empty piece
 between them and a separator at either end yields an empty piece outside it, so `"a,b,,c"` is four

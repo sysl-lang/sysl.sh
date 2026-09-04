@@ -135,6 +135,12 @@ be in a kernel, and making the default element type the one that requires them w
 O(n) and force an opaque index type on every program that just wants a byte offset. Go's choice is
 right for a systems language; Swift's is right for an application language.
 
+**The tables are in the standard library, and that does not change the element type.**
+[`sysl.unicode`](/library/unicode/#what-a-character-is) carries the whole Unicode Character Database and answers grapheme
+breaking, case mapping, folding and normalization over a byte view — which is the library built over
+the scalar view this section describes, and is why a `char` is still a scalar value and `s.len` is
+still bytes. A program links none of it unless it calls into it.
+
 | operation | spelling | cost |
 |---|---|---|
 | byte length | `s.len` | O(1) |
@@ -142,6 +148,7 @@ right for a systems language; Swift's is right for an application language.
 | substring | `s[a..b] -> string` | O(1), shares; bounds-checked **and** boundary-checked |
 | bytes | `s.bytes -> []const u8` | O(1) view |
 | scalar values | `s.chars` | O(1) per step, total — no replacement characters |
+| grapheme clusters | `sysl.unicode.graphemes_of(s.bytes)` | O(1) per step, allocates nothing |
 | copy out | `s.copy()` | O(n), allocates; releases the parent |
 | concatenation | `a + b` | O(n), allocates |
 | repeated append | `str_builder()` | amortized |

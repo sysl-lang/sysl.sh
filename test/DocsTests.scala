@@ -172,6 +172,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // constants add over a directive is that they can be compared, passed and matched on.
     "docs/content/library/core.md"                     -> (34, 6, 12),
     "docs/content/library/text.md"                      -> (18, 6, 4),
+    "docs/content/library/unicode.md"                   -> (8, 0, 0),
     "docs/content/library/regex.md"                      -> (16, 0, 0),
     "docs/content/library/buf.md"                       -> (12, 6, 3),
     "docs/content/library/container.md"                -> (6, 0, 3),
