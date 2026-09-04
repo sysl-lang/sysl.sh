@@ -27,7 +27,7 @@ and the clause is what says so in the one place a reader of the file will see it
 
 ## Index
 
-[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_dir_all`](#copy_dir_all) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`walk`](#walk) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`Entry`](#entry) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Meta`](#meta) [`Walk`](#walk-1) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Iterate for Walk](#iterate-for-walk) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
+[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_dir_all`](#copy_dir_all) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`walk`](#walk) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`Entry`](#entry) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Matching`](#matching) [`Meta`](#meta) [`Walk`](#walk-1) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Iterate for Matching](#iterate-for-matching) [Iterate for Walk](#iterate-for-walk) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
 
 ## Functions
 
@@ -658,6 +658,21 @@ make an ordinary use of the older name ambiguous, one program away.
 | `is_dir` | `is_dir(self) -> bool` | So that `k == Directory` reads as itself. |
 | `name` | `name(self) -> string` | The word for what this is. |
 
+### `Matching`
+
+```sysl
+struct Matching
+    inner: Walk
+    root: string
+    pattern: string
+```
+
+A walk with a glob over it -- what `Walk.matching` answers, and not a thing to construct.
+
+It holds the root separately from the walk because the walk's own is private to it and the
+pattern is matched against a relative path. That is one string per filtered walk rather than per
+entry, since `relative_to` is what allocates here and it allocates once per entry either way.
+
 ### `Meta`
 
 ```sysl
@@ -722,6 +737,7 @@ body makes the first `Err` fatal, and ignoring it makes the walk best effort.
 |---|---|---|
 | `bottom_up` | `bottom_up(self) -> Walk` | The same walk, reporting a directory *after* everything under it. |
 | `skip_dir` | `skip_dir(*self)` | Do not descend into the directory just reported. |
+| `matching` | `matching(self, pattern: string) -> Matching` | The same walk, reporting only the entries whose path matches a glob. |
 
 ## Implementations
 
@@ -785,6 +801,12 @@ reports this way (`reference/errors.md § The third shape: a latch`).
 one type -- allowed, but a call could not say which it meant, since `failed` takes no arguments
 and a program that reads and writes a file has both traits in scope. Both requiring `Fallible`
 instead leaves this the single answer each of them reaches.
+
+### Iterate for Matching
+
+```sysl
+impl Iterate for Matching
+```
 
 ### Iterate for Walk
 

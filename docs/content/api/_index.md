@@ -23,8 +23,11 @@ These pages are generated from the library's own doc comments: every declaration
 | [`sysl.fs`](sysl-fs/) | What a filesystem call reports when it does not succeed, and the one number it comes from. |
 | [`sysl.harness`](sysl-harness/) | A test framework that runs on the target. |
 | [`sysl.io`](sysl-io/) |  |
+| [`sysl.log`](sysl-log/) |  |
 | [`sysl.math`](sysl-math/) | Choosing between two values, and holding one to a range. |
+| [`sysl.math.bigint`](sysl-math-bigint/) |  |
 | [`sysl.math.complex`](sysl-math-complex/) |  |
+| [`sysl.math.decimal`](sysl-math-decimal/) |  |
 | [`sysl.path`](sysl-path/) |  |
 | [`sysl.posix.net`](sysl-posix-net/) |  |
 | [`sysl.posix.rand`](sysl-posix-rand/) |  |

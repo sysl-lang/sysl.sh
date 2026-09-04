@@ -8,7 +8,7 @@ module: sysl.path
 
 ## Index
 
-[`components`](#components) [`extension`](#extension) [`file_name`](#file_name) [`is_absolute`](#is_absolute) [`is_relative`](#is_relative) [`join`](#join) [`join_all`](#join_all) [`normalize`](#normalize) [`parent`](#parent) [`relative_to`](#relative_to) [`separator`](#separator) [`stem`](#stem)
+[`components`](#components) [`extension`](#extension) [`file_name`](#file_name) [`is_absolute`](#is_absolute) [`is_relative`](#is_relative) [`is_valid_pattern`](#is_valid_pattern) [`join`](#join) [`join_all`](#join_all) [`matches`](#matches) [`normalize`](#normalize) [`parent`](#parent) [`relative_to`](#relative_to) [`separator`](#separator) [`stem`](#stem)
 
 ## Functions
 
@@ -64,6 +64,18 @@ Whether the path starts at the root.
 is_relative(p: string) -> bool
 ```
 
+### `is_valid_pattern`
+
+```sysl
+is_valid_pattern(pattern: string) -> bool
+```
+
+Whether `pattern` is one `matches` can act on: every `[` closed, and no `\` at the end.
+
+It says nothing about whether the pattern will match anything, which is a different question and
+has no answer without a path. What it is for is telling a person who typed a pattern that they
+left a bracket open, rather than letting them read an empty result as "nothing here".
+
 ### `join`
 
 ```sysl
@@ -89,6 +101,38 @@ join_all(parts: []const string) -> string
 Every piece joined in turn, which is what building a path out of parts actually looks like:
 `join_all([home, ".config", "thing"])`. An absolute piece discards everything before it, by
 `join`'s rule applied at each step.
+
+### `matches`
+
+```sysl
+matches(pattern: string, p: string) -> bool
+```
+
+Whether `p` matches `pattern`.
+
+```
+matches("*.sysl", "main.sysl")    // true
+matches("*.sysl", "src/x.sysl")   // false -- `*` does not cross a separator
+matches("**", "src/a/b.sysl")     // true -- `**` covers whole components
+matches("*.sysl", ".hidden.sysl") // false -- a leading dot is not matched by `*`
+```
+
+**The whole path is matched, not a prefix of it**, so a pattern has to account for every
+component. That is what makes `**` necessary rather than convenient: `*.sysl` against
+`src/x.sysl` is `false`, and the pattern that means *anywhere* is two stars, a separator and
+`*.sysl`.
+
+**That last pattern cannot be written inside this comment, which is a fact about the lexer rather
+than about globs.** A block comment in sysl **nests**, so a `/` followed by a `*` opens one and a
+`*` followed by a `/` closes one -- and a glob pattern is made of exactly those characters. The
+module's own comment is written with `//`, where neither means anything, and that is where the
+table spells every form out.
+
+**A malformed pattern matches nothing rather than reporting anything.** An unclosed `[` and a
+trailing `\` are the two, and both answer `false` for every path -- which is what a filter wants,
+since the alternative is a `Result` at a call site whose whole shape is a `bool`.
+`is_valid_pattern` is for the caller who took the pattern from a person and wants to say so
+before running a walk that will silently find nothing.
 
 ### `normalize`
 

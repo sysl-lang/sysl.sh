@@ -24,7 +24,7 @@ validates.
 
 ## Index
 
-[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`columns`](#columns) [`cstring`](#cstring) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`from_utf8_unchecked`](#from_utf8_unchecked) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
+[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`cluster_columns`](#cluster_columns) [`columns`](#columns) [`contains_fold`](#contains_fold) [`cstring`](#cstring) [`ends_with_fold`](#ends_with_fold) [`eq_fold`](#eq_fold) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`from_utf8_unchecked`](#from_utf8_unchecked) [`grapheme_columns`](#grapheme_columns) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`starts_with_fold`](#starts_with_fold) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
 
 ## Functions
 
@@ -67,6 +67,32 @@ char_indices(b: []const u8) -> CharIndices
 chars_of(b: []const u8) -> Chars
 ```
 
+### `cluster_columns`
+
+```sysl
+cluster_columns(cluster: []const u8) -> usize
+```
+
+How many terminal columns one **grapheme cluster** occupies -- the answer `grapheme_columns`
+sums, and the one that is right for an emoji sequence where a per-code-point sum is not.
+
+**A cluster is as wide as the character it starts with.** Everything after the first is there to
+modify it -- a combining accent, a variation selector, a skin tone, a second regional indicator,
+whatever a zero-width joiner attached -- and a terminal draws the whole cluster in the base
+character's cell or pair of cells. So a family emoji is two columns rather than the eight its
+four emoji and three joiners come to, and a thumb with a skin tone is two rather than four.
+
+**Two things widen a cluster past what its first character is worth, and both say *draw this as
+an emoji*.** `U+FE0F`, the variation selector, turns a text-presentation character into an emoji
+one: `❤` is one column and `❤️` is two, and the difference is a code point that measures zero.
+And a **regional indicator** is a letter that is never drawn alone -- a pair of them is one flag,
+two columns, where the database rates each as narrow because on its own it is a boxed letter.
+`U+FE0E` is the opposite request and needs no rule, since what it applies to is already narrow.
+
+**What this does NOT do is decide anything a terminal disagrees with.** Emoji width is the one
+corner of the question where terminals genuinely differ -- a keycap sequence is one column here
+and two in some -- and no table settles it. This is the rule the majority implement.
+
 ### `columns`
 
 ```sysl
@@ -79,11 +105,58 @@ It takes bytes rather than a `string` so that text being assembled -- what a sin
 what a slice of a larger buffer holds -- can be measured without being copied into one first.
 `s.bytes` is the view a caller holding a `string` passes.
 
+### `contains_fold`
+
+```sysl
+contains_fold(s: string, needle: string) -> bool
+```
+
+Whether `needle` occurs anywhere in `s`, ignoring case.
+
+This is the one a search box wants, and it is the one where folding rather than lowercasing shows
+up most often in practice: a user typing `strasse` expects to find `Straße`.
+
 ### `cstring`
 
 ```sysl
 cstring(s: string) -> CString
 ```
+
+### `ends_with_fold`
+
+```sysl
+ends_with_fold(s: string, suffix: string) -> bool
+```
+
+The other end, and it is `starts_with_fold`'s claim read backwards.
+
+### `eq_fold`
+
+```sysl
+eq_fold(a: string, b: string) -> bool
+```
+
+Whether two strings are the same text ignoring case, which is what a caller comparing a header
+name, a filename, a scheme or a keyword actually wants.
+
+**`to_lower(a) == to_lower(b)` is the obvious spelling and it is wrong**, because simple case
+mapping is one character in and one out and case *folding* is not. `"STRASSE"` and `"straße"` are
+the same word and lowercase to `"strasse"` and `"straße"`, which differ; folded, both are
+`"strasse"`. The ligature `"ﬁ"` and the letters `"fi"` go the same way. Folding is the operation
+Unicode defines for exactly this question and nothing else answers it.
+
+**It allocates two strings, and a caller in a loop should not use it.** Each call folds both
+sides; a caller comparing one needle against many haystacks folds the needle once with
+`sysl.unicode.fold` and compares against `fold(h)` itself. That is the same advice `to_upper`
+gives about building a string per call, and it is why this is a free function rather than an
+operator: `==` on two strings is a byte comparison and stays one.
+
+**The folded form is composed**, so two strings that fold alike compare alike with no separate
+normalization pass -- `sysl.unicode.fold` says why.
+
+**There is no locale in it.** The one common casualty is Turkish, where a dotless `ı` and an `i`
+are different letters and this reports them as the same; a program that has to make that
+distinction has a notion of locale that this library does not.
 
 ### `fields`
 
@@ -176,6 +249,28 @@ in the raw tier beside `ptr_cast`, which this is one line over.
 **The caller owes the guarantee the compiler would otherwise have.** A `string` holding bytes that
 are not UTF-8 breaks `char` downstream of it, which is why the name is long and greppable and why
 `from_utf8` is the one to reach for on anything that came from outside the program.
+
+### `grapheme_columns`
+
+```sysl
+grapheme_columns(text: []const u8) -> usize
+```
+
+How many terminal columns a run of UTF-8 occupies, counted a **grapheme cluster** at a time.
+
+**This and `columns` answer the same question and disagree about emoji.** `columns` sums what
+each code point is worth, which is right for text and for a combining accent -- a mark measures
+zero, so `e` and an acute come to one either way -- and wrong for a sequence a terminal draws as
+one glyph: a family emoji joined with zero-width joiners is four emoji at two columns each, and
+it occupies two. `cluster_columns` carries the rule and the cases.
+
+**`columns` is the one to reach for by default, and this is the one to reach for when the text
+might hold emoji.** The reason is a cost rather than a preference. Segmenting text into clusters
+needs the Unicode Character Database -- 330 KB of tables -- and `columns` needs 499 ranges of its
+own and nothing else. `columns` is what lays out a diagnostic's caret and a table of numbers, on
+a board as much as on a workstation; a program that measures user-supplied text with emoji in it
+has asked for the database and gets it. `library/unicode.md` is where that trade is stated in
+full, and `StdArtifactTests` pins that calling `columns` alone does not link the tables.
 
 ### `is_char_boundary`
 
@@ -399,6 +494,18 @@ nothing about the input is silently dropped. A caller wanting the other behaviou
 **An empty separator yields the whole string as one piece.** Splitting on nothing has no
 meaningful answer here: the byte-level reading would cut multi-byte characters in half and hand
 back pieces that are not text, and the character-level reading is what `s.chars` already is.
+
+### `starts_with_fold`
+
+```sysl
+starts_with_fold(s: string, prefix: string) -> bool
+```
+
+Whether `s` starts with `prefix`, ignoring case, and everything `eq_fold` says applies.
+
+**Both sides are folded before the comparison rather than either being folded alone**, which is
+what makes it right at the boundary: folding can change a string's length, so a prefix folded
+against an unfolded haystack would be looking for bytes that are not there.
 
 ### `str_builder`
 
@@ -724,7 +831,7 @@ observable changing, which is the reason to say so here rather than in each body
 | `contains` | `contains(self, needle: Self) -> bool` |  |
 | `has_byte` | `has_byte(self, b: u8) -> bool` | Whether one byte occurs anywhere. |
 | `count_of` | `count_of(self, needle: Self) -> usize` | How many non-overlapping occurrences there are, counted the way a `replace_all` would find them -- so `count_of` and the number of replacements `replace_all` makes always agree. |
-| `trim_start` | `trim_start(self) -> Self` | ASCII whitespace off the front, the back, or both. |
+| `trim_start` | `trim_start(self) -> Self` | ASCII whitespace off the front, the back, or both -- which is the answer for a receiver of BYTES, and is not what a `string` gives. |
 | `trim_end` | `trim_end(self) -> Self` |  |
 | `trim` | `trim(self) -> Self` |  |
 | `trim_start_matches` | `trim_start_matches(self, cutset: Self) -> Self` | The same three against a set of bytes the caller names, which is what strips quotes, slashes or padding rather than whitespace. |

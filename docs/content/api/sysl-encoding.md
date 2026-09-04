@@ -24,7 +24,7 @@ off the end of one is an expected condition there rather than a program's mistak
 
 ## Index
 
-[`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [Display for DecodeError](#display-for-decodeerror)
+[`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`of_bytes`](#of_bytes) [`parse`](#parse) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`to_string`](#to_string) [`v4`](#v4) [`v4_of`](#v4_of) [`v7`](#v7) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [`Uuid`](#uuid) [Display for DecodeError](#display-for-decodeerror) [Display for Uuid](#display-for-uuid) [Hash for Uuid](#hash-for-uuid) [Ord for Uuid](#ord-for-uuid)
 
 ## Functions
 
@@ -142,6 +142,36 @@ hex_string(bytes: []const u8) -> string
 The same, gathered into a string. Every byte emitted above is an ASCII digit, so the result is
 valid UTF-8 by construction and needs no validating pass.
 
+### `of_bytes`
+
+```sysl
+of_bytes(b: [16]u8) -> Uuid
+```
+
+A UUID over bytes the caller already has -- read off a wire, out of a row, out of a file.
+
+**It sets no bits and checks none.** What arrives is what the value holds, so a UUID from
+somewhere else survives a round trip through this module unchanged, including one whose variant
+is Microsoft's or whose version is a number this library does not generate. `version` and
+`variant` are how a caller asks what it got.
+
+### `parse`
+
+```sysl
+parse(s: string) -> Option[Uuid]
+```
+
+The 36-character form read back, or `None`.
+
+**Only that form.** Braces, a `urn:uuid:` prefix and the unhyphenated 32-character form are all
+refused, because accepting them makes `parse` a guess about which of several conventions the text
+follows -- and a caller that knows which one it is reading can strip a wrapper in a line. Either
+case of hex digit is accepted, which is what RFC 9562 asks for.
+
+A hyphen in the wrong place is refused as firmly as a bad digit: the positions are what tell this
+form from the others, so a text with them elsewhere is a different format rather than a sloppy
+spelling of this one.
+
 ### `put_u16_be`
 
 ```sysl
@@ -178,6 +208,90 @@ put_u64_be(b: []u8, v: u64) -> bool
 put_u64_le(b: []u8, v: u64) -> bool
 ```
 
+### `to_string`
+
+```sysl
+to_string(u: Uuid) -> string
+```
+
+The 36-character form, lowercase, hyphenated `8-4-4-4-12`.
+
+Lowercase because RFC 9562 says to emit lowercase and accept either, and `parse` accepts either.
+This is the only thing in the module that allocates, and it allocates one 36-byte string.
+
+### `v4`
+
+```sysl
+v4(rng: *Rng) -> Uuid
+```
+
+A version 4 UUID: 122 random bits, with the six that name the version and the variant written
+over them.
+
+**`Rng` IS NOT UNPREDICTABLE, AND THAT DECIDES WHAT THIS MAY BE USED FOR.** `sysl.rand` is PCG32
+-- fast, seedable, reproducible, and completely determined by its state, so anyone who sees a
+handful of ids can compute every id that follows. That is fine for a primary key, a request id, a
+correlation id in a log: things that must be *distinct*. It is not fine for a session token, a
+password-reset link, an object name that stands in for an access check, or anything else that must
+be *unguessable*.
+
+**For those, take the bytes from the kernel and use `v4_of`** --
+`sysl.posix.rand.entropy_from_os` is exactly that source, and the module comment there draws the
+same line for the same reason. Seeding a predictable generator unpredictably does not make it
+unpredictable.
+
+The generator is a parameter rather than something this module keeps, so nothing here is module
+storage and a program on a board can supply one it seeded itself.
+
+### `v4_of`
+
+```sysl
+v4_of(b: [16]u8) -> Uuid
+```
+
+A version 4 UUID over sixteen bytes the caller brings, with the version and variant bits written
+over them.
+
+**This is the one to use where the value must be unguessable**, since what it is worth is exactly
+what the bytes are worth. `entropy_from_os` fills a slice straight from the kernel's pool:
+
+```
+var raw: [16]u8
+
+if entropy_from_os(raw[0..<16]) then print(v4_of(raw))
+```
+
+Six of the 128 bits are overwritten, which is the version and the variant and is what makes it a
+v4 rather than sixteen anonymous bytes. A caller wanting all 128 to be its own wants `of_bytes`
+and does not want a version number.
+
+### `v7`
+
+```sysl
+v7(t: Instant, rng: *Rng) -> Uuid
+```
+
+A version 7 UUID: the instant in the high 48 bits as milliseconds since the Unix epoch, and 74
+random bits under it.
+
+**What it buys is that ids made in order sort in order**, as bytes and as text, which is what a
+database index wants from a primary key and what a v4 conspicuously does not give. Two ids made in
+the same millisecond are ordered by their random bits, which is to say arbitrarily -- v7 promises
+ordering *between* milliseconds and nothing finer.
+
+**The instant is a parameter, so this module reaches no clock.** A host passes
+`sysl.time.now()`; a board passes whatever its own counter says, and a board with no notion of the
+epoch should be making v4s instead, since a timestamp that is not one is a field that lies.
+
+The same warning `v4` carries applies to the random half: a v7 built from `sysl.rand` is not
+unguessable, and it is a good deal *more* predictable than a v4, since 48 of its bits are a
+timestamp anybody can compute.
+
+**48 bits of milliseconds runs out in the year 10889**, so the wrap is not a thing to plan for.
+An instant before the epoch has a negative millisecond count and is truncated to its low 48 bits,
+which is a value that does not order correctly -- v7 has no way to say "before 1970" and this does
+not invent one.
+
 ## Types
 
 ### `Alphabet`
@@ -213,6 +327,31 @@ the variants are separated by what a caller would **do** about each and not by t
 the length that *would* have been enough, so a caller can resize and retry in one step rather than
 discovering the requirement one byte at a time.
 
+### `Uuid`
+
+```sysl
+struct Uuid
+    raw: [16]u8
+```
+
+Sixteen bytes with a layout: what the version is, what the variant is, and -- for a v7 -- when it
+was made.
+
+**The bytes are held in the order they are written**, which is the order RFC 9562 numbers them and
+is big-endian throughout. That is what makes `to_bytes` directly comparable with a UUID from
+anywhere else, and what makes a v7 sort by time as a plain byte string.
+
+`Ord for Uuid` is therefore over those bytes in order, which for a v7 is over the timestamp
+first -- the whole point of that version. For a v4 it is an arbitrary total order, which is what
+a sorted container wants and means nothing else.
+
+| Member | Signature | Description |
+|---|---|---|
+| `to_bytes` | `to_bytes(self) -> [16]u8` | The sixteen bytes, in RFC order. |
+| `version` | `version(self) -> u8` | Which of RFC 9562's versions this claims to be: the high four bits of byte 6. |
+| `variant` | `variant(self) -> u8` | Which family of layouts byte 8 puts this in -- `1` for RFC 9562's, which is what everything generated here is, and what any UUID a reader is likely to meet is. |
+| `is_nil` | `is_nil(self) -> bool` | Whether every byte is zero -- the nil UUID, which RFC 9562 defines as the value that names nothing. |
+
 ## Implementations
 
 ### Display for DecodeError
@@ -222,3 +361,37 @@ impl Display for DecodeError
 ```
 
 The rendering, so that a refusal can be printed without matching on it.
+
+### Display for Uuid
+
+```sysl
+impl Display for Uuid
+```
+
+### Hash for Uuid
+
+```sysl
+impl Hash for Uuid
+```
+
+FNV-1a over the sixteen bytes, which is what `hash_str` does to a string's and is the mixer to
+reach for over a run of bytes with no structure to walk.
+
+A UUID's bytes are already well distributed -- 122 of them are random in a v4 -- so what a hash
+has to add is only that a table bucketing on the low bits sees all of them. It is written out for
+the same reason `Ord` is.
+
+### Ord for Uuid
+
+```sysl
+impl Ord for Uuid
+```
+
+Ordering is over the sixteen bytes in RFC order, first byte first -- which is what makes a v7
+sort by the time it was made, since that is where its timestamp is.
+
+**It is written out rather than derived because `[N]T` implements neither `Ord` nor `Hash`.**
+`derives Eq` works, since an array compares; `derives Ord` and `derives Hash` are refused with
+`'<' is not defined for [16]byte` and `type '[16]byte' has no method 'hash'`. The library gives
+a tuple both of them structurally and gives an array neither, which is a gap in the library
+rather than a decision about UUIDs.
