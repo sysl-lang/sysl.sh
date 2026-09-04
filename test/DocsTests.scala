@@ -199,7 +199,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/math.md"                      -> (24, 10, 3),
     "docs/content/library/complex.md"                   -> (9, 1, 1),
     "docs/content/library/bigint.md"                    -> (5, 0, 0),
-    "docs/content/library/decimal.md"                   -> (7, 0, 0),
+    "docs/content/library/decimal.md"                   -> (8, 0, 0),
     // One fragment, and deliberately: the opening example logs to standard error at `now()`, so
     // there is nothing a page could assert about it. Every other program on that page is run.
     "docs/content/library/log.md"                       -> (4, 0, 1),

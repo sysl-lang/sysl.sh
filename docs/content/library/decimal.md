@@ -8,22 +8,50 @@ weight: 64
 
 A general-purpose language without a decimal type makes every financial program wrong in the same
 way. `real` is binary floating point, and a tenth is no more representable in binary than a third is
-in decimal — so `0.1 + 0.2` is `0.30000000000000004`, a total of a million transactions is out by
-cents, and no amount of care at the call site fixes it.
+in decimal — so a total of a million transactions is out by cents, and no amount of care at the call
+site fixes it.
 
 ```sysl
-import sysl.math.decimal.{add, parse, to_string}
+import sysl.math.decimal.{add, from_int, parse, to_string}
 
 val a = parse("0.1").expect("a number")
 val b = parse("0.2").expect("a number")
 
-print(to_string(add(a, b)))
-print(0.1 + 0.2)
+print(to_string(add(a, b)), add(a, b) == parse("0.3").expect("a number"))
+print(0.1 + 0.2, 0.1 + 0.2 == 0.3)
 ```
 
 ```output
-0.3
-0.30000000000000004
+0.3 true
+0.3 false
+```
+
+**Look at the second line rather than the first.** The float sum *renders* as `0.3` — sysl's real
+rendering rounds for display — and is not equal to `0.3`, because it is
+`0.30000000000000004` and always was. So the error is invisible in the output and real in every
+comparison, which is the worst way round: a program can print a plausible total for a year before
+anybody sums a column and finds it short.
+
+It accumulates, too:
+
+```sysl
+import sysl.math.decimal.{add, from_int, parse, to_string}
+
+var real_total = 0.0
+var exact = parse("0.00").expect("a number")
+val dime = parse("0.10").expect("a number")
+
+for _ in 0..<100
+    real_total += 0.1
+    exact = add(exact, dime)
+
+print(real_total, real_total == 10.0)
+print(to_string(exact), exact == from_int(10))
+```
+
+```output
+10 false
+10.00 true
 ```
 
 PostgreSQL's `numeric`, Java's `BigDecimal` and Python's `decimal` are all this type. It is a
@@ -78,7 +106,7 @@ print(to_string(sub(price, parse("20").expect("a number"))))
 ```
 
 ```output
-1.648175
+1.649175
 20.00
 -0.01
 ```

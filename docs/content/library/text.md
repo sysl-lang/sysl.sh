@@ -473,7 +473,7 @@ print(s.bytes.trim().len, s.trim().len)
 
 ```output
 hi
-7 2
+11 2
 ```
 
 Those are a no-break space, an ideographic space and the next-line control. **A `string` is text**, so
