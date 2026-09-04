@@ -425,8 +425,8 @@ too large and the slack is freed with the rest when the builder goes.
 to_lower(s: string) -> string
 ```
 
-The other direction, and everything `to_upper` says applies to it unchanged -- including that its
-name promises more than ASCII: `to_lower("HÉLLO")` is `hÉllo`.
+The other direction, and everything `to_upper` says applies to it unchanged: `to_lower("HÉLLO")`
+is `héllo`, and `to_lower('ẞ')` is `ß`.
 
 ### `to_upper`
 
@@ -434,7 +434,7 @@ name promises more than ASCII: `to_lower("HÉLLO")` is `hÉllo`.
 to_upper(s: string) -> string
 ```
 
-ASCII case conversion.
+Unicode case conversion.
 
 **It walks characters rather than bytes, and that is what keeps it safe.** A byte map would be
 the faster loop and would need a way to put a raw byte into a builder -- which is the one thing
@@ -443,26 +443,27 @@ the builder deliberately does not offer, since a public `write` taking bytes is
 through `push_char` instead means every way in still carries the UTF-8 guarantee and no unchecked
 primitive is named here at all. The decode and re-encode that costs is the right price for that.
 
-It works because `Ascii for char` is **total**: a character outside the range comes back as
-itself, so a multi-byte character is re-encoded to exactly the bytes it arrived as. The buffer is
-sized to the input for the same reason -- no ASCII case change alters a character's width, and
-nothing else is changed at all.
+It works because `sysl.unicode.to_upper` is **total**: a character the database gives no mapping
+for comes back as itself, so text that has no case is re-encoded to exactly the bytes it arrived
+as. `to_upper("héllo")` is `HÉLLO`.
 
-**IT IS ASCII AND ITS NAME DOES NOT SAY SO, WHICH IS THE ONE THING TO KNOW BEFORE CALLING IT.**
-`Ascii` is named for the range it answers over; this is a fully general word over a per-character
-call into it, so `to_upper("héllo")` is `HéLLO` and the `é` is untouched. That is total rather
-than wrong -- text outside the range comes back as itself, never a wrong mapping and never a
-refusal -- but the caller who did nothing and got `HéLLO` is real, and this is where they are
-owed the sentence.
+**The mapping is the *simple* one, character for character**, which is what a walk over a
+`char -> char` function can promise. *Special* casing, where a character uppercases to more than
+one and the result is longer than its input, is `sysl.unicode.fold`'s -- and folding is the
+operation a caller comparing two strings wanted anyway. *Locale-sensitive* casing needs a notion
+of locale this library does not have.
 
-**A Unicode case table belongs in a package rather than here**, and the reason is a measurement:
-the *simple* mapping alone is about 1,357 range entries, roughly 16KB, against the 499 entries
-`sysl.text.width` already carries -- and `sysl.text` is not optional, being what places a
-diagnostic's caret, so every freestanding program would link it. Above the simple mapping sit
-*special* casing, where `ß` uppercases to `SS` and the result is longer than the input, and
-*locale-sensitive* casing, which needs a notion of locale this library does not have.
-`reference/strings.md § Granularity` already puts the table above this layer; card `0320` is
-where the size was measured rather than estimated.
+**`ß` is the one worth knowing before calling this.** Most languages uppercase it to `SS`, which
+is full casing and two characters; the simple mapping has one to give and gives `ẞ`, the capital
+sharp s, which lowercases back. `sysl.unicode.to_upper` carries the detail.
+
+**A program that never calls this links no table.** The database is 330 KB and `sysl.text` is not
+optional -- it is what places a diagnostic's caret -- so the two facts have to be stated together
+or the first reads as a cost every program pays. It is not: the library is one archive with an
+object per C file, a member is pulled in only to resolve a symbol something already referenced,
+and the link runs `-dead_strip` over `-ffunction-sections`. What a program links is decided by
+the functions it calls rather than by the modules it names, and `StdArtifactTests` pins both
+directions of that.
 
 ## Types
 
@@ -616,9 +617,15 @@ Asking a byte or a character what kind of thing it is, in the ASCII range.
 **It is named for the range it answers over**, which the module this replaces in the older sysl
 was not: that one was called `unicode` and classified nothing above 127, so every caller read a
 promise the code did not keep. Everything here is a comparison against the ASCII table, and a
-value outside it answers `false` to every question rather than being guessed at. Real Unicode
-classification needs property tables, and `reference/strings.md § Granularity` puts those in a
-library above this one rather than underneath it.
+value outside it answers `false` to every question rather than being guessed at.
+
+**The property tables are `sysl.unicode`'s**, and this trait answers a narrower question on
+purpose. What it is for is the cases genuinely about the ASCII range -- a byte in a wire format, a
+digit in a number being parsed, a header name -- where a table lookup would be a slower answer to
+a question a comparison already settles, and where the receiver is a `u8` that is not a character
+at all. It is also the right tool for a protocol identifier: Unicode case mapping carries
+characters *into* the ASCII range, the Kelvin sign lowercasing to a plain `k`, which is the shape
+a spoofing check exists to prevent. `reference/strings.md § Granularity` states the layering.
 
 **A trait rather than two sets of functions, for the reason `Float` is one** (`sysl.math`).
 Overloading would answer the naming half of it now (`reference/declarations.md § Overloading`) --

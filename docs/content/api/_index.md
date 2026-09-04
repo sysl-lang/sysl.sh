@@ -43,3 +43,4 @@ These pages are generated from the library's own doc comments: every declaration
 | [`sysl.text`](sysl-text/) | What a program says when it means text as bytes: the validator, the two conversions either side of C, the character cursor, and the builder in the file beside this one. |
 | [`sysl.time`](sysl-time/) | The calendar: a date and a time of day with no zone attached, and the arithmetic that turns one into the other. |
 | [`sysl.time.tzif`](sysl-time-tzif/) |  |
+| [`sysl.unicode`](sysl-unicode/) | Where one *user-perceived character* ends and the next begins, which is a third answer to *how long is this text* and the one a person would give. |
