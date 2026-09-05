@@ -28,7 +28,7 @@ between the two; only what it costs does.
 
 ## Index
 
-[`INSERTION_LIMIT`](#insertion_limit) [`align_up`](#align_up) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`copy`](#copy) [`copy`](#copy-1) [`copy_exact`](#copy_exact) [`copy_exact`](#copy_exact-1) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`is_aligned`](#is_aligned) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
+[`INSERTION_LIMIT`](#insertion_limit) [`align_up`](#align_up) [`as_mut_ptr`](#as_mut_ptr) [`as_ptr`](#as_ptr) [`binary_search`](#binary_search) [`binary_search_by`](#binary_search_by) [`contains`](#contains) [`copy`](#copy) [`copy`](#copy-1) [`copy_exact`](#copy_exact) [`copy_exact`](#copy_exact-1) [`ends_with`](#ends_with) [`equal`](#equal) [`fill`](#fill) [`index_of`](#index_of) [`index_of_from`](#index_of_from) [`is_aligned`](#is_aligned) [`is_sorted`](#is_sorted) [`is_sorted_by`](#is_sorted_by) [`last_index_of`](#last_index_of) [`last_index_of_from`](#last_index_of_from) [`max_index`](#max_index) [`min_index`](#min_index) [`reverse`](#reverse) [`sort`](#sort) [`sort_by`](#sort_by) [`sort_stable`](#sort_stable) [`sort_stable_by`](#sort_stable_by) [`starts_with`](#starts_with) [`swap`](#swap)
 
 ## Constants
 
@@ -264,6 +264,22 @@ Where a value first appears, or `None`.
 number that indexes when it should not, and `usize` has no negative to spare in any case. The
 absence is in the type, where a caller has to look at it.
 
+### `index_of_from`
+
+```sysl
+index_of_from[T: Eq](xs: []const T, x: T, from: usize) -> Option[usize]
+```
+
+The same search begun part-way along, which is what walks every occurrence without cutting the
+slice up: `index_of_from(xs, x, k + 1)` is the next one after `k`.
+
+**`from` names a place to START, and the answer is an index into the WHOLE slice** -- so it is
+`index_of(xs[from..], x)` with `from` added back on. `sysl.text`'s `Search` reads its own `_from`
+members the same way, and this is the pair that made the rule worth stating in both places.
+
+**A `from` past the end answers `None` rather than trapping**, which is what makes the `k + 1`
+above safe to write at the last element without a bound test of its own.
+
 ### `is_aligned`
 
 ```sysl
@@ -300,6 +316,17 @@ last_index_of[T: Eq](xs: []const T, x: T) -> Option[usize]
 
 Where a value last appears, or `None`. Walks down from the end, so it stops at the first match
 rather than scanning the whole slice to keep the latest one.
+
+### `last_index_of_from`
+
+```sysl
+last_index_of_from[T: Eq](xs: []const T, x: T, from: usize) -> Option[usize]
+```
+
+The last occurrence at or after `from` -- the backward search over the same suffix
+`index_of_from` takes, rather than a search running downwards from `from`. So the two agree on
+which elements are being looked at and disagree only on which end they answer from, and a `from`
+past the end answers `None` from either.
 
 ### `max_index`
 

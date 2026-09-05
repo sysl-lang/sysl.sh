@@ -775,9 +775,13 @@ trait Search
     starts_with(self, prefix: Self) -> bool
     ends_with(self, suffix: Self) -> bool
     index_of(self, needle: Self) -> Option[usize]
+    index_of_from(self, needle: Self, from: usize) -> Option[usize]
     last_index_of(self, needle: Self) -> Option[usize]
+    last_index_of_from(self, needle: Self, from: usize) -> Option[usize]
     index_of_byte(self, b: u8) -> Option[usize]
+    index_of_byte_from(self, b: u8, from: usize) -> Option[usize]
     last_index_of_byte(self, b: u8) -> Option[usize]
+    last_index_of_byte_from(self, b: u8, from: usize) -> Option[usize]
     contains(self, needle: Self) -> bool
     has_byte(self, b: u8) -> bool
     count_of(self, needle: Self) -> usize
@@ -809,8 +813,25 @@ starting anywhere but at a character boundary. That is why these can ignore enco
 and why an offset one of them returns is always safe to slice at -- which matters, since
 `s[a..b]` traps on a mid-codepoint bound.
 
-The searches are the naive O(n*m) scan. A sub-linear one may replace them without anything
-observable changing, which is the reason to say so here rather than in each body.
+**The subsequence searches are Boyer-Moore-Horspool, and the sentence this replaces said one day
+they might be.** A needle of two bytes or more is looked for by aligning its *last* byte and, on a
+mismatch, shifting the window by however far that byte's own last occurrence in the needle is from
+the end -- so the common case reads a fraction of the haystack rather than all of it. Over a
+megabyte in which the needle's first byte occurs four thousand times, `index_of` went from 478 to
+35 microseconds. Nothing observable changed: the offsets, the empty-needle conventions and the
+non-overlapping count are what they were, which is what the differential test in `tests.sysl`
+asserts against a scan written out longhand, over a few thousand random inputs.
+
+**The table is 256 bytes on the STACK, which is what keeps the file's allocation claim true.** A
+shift is capped at 255 rather than widened to a `usize`, because a shift smaller than the ideal
+one is still correct -- it only costs a needle longer than 255 bytes a few more windows -- and
+2 KB of frame is a real thing to ask of a target that reaches this module with no allocator at all.
+
+**Below a couple of words of haystack the naive scan is still the faster one and is still what
+runs**, because building the table costs something before the first byte is read. Where the two
+cross is `sublinear_floor`'s own comment, and it is a good deal lower than the arithmetic suggests.
+A one-byte needle never builds a table at all -- it is a single byte scan, which is what
+`index_of_byte` already was.
 
 | Member | Signature | Description |
 |---|---|---|
@@ -820,9 +841,13 @@ observable changing, which is the reason to say so here rather than in each body
 | `starts_with` | `starts_with(self, prefix: Self) -> bool` | The empty prefix is a prefix of everything, which falls out of the comparison rather than being said: two slices of no elements are equal. |
 | `ends_with` | `ends_with(self, suffix: Self) -> bool` |  |
 | `index_of` | `index_of(self, needle: Self) -> Option[usize]` | Where the first occurrence starts, or `None`. |
+| `index_of_from` | `index_of_from(self, needle: Self, from: usize) -> Option[usize]` | The same search begun part-way along, which is what walks every occurrence without cutting the haystack up: `index_of_from(n, k + 1)` is the next one after `k`. |
 | `last_index_of` | `last_index_of(self, needle: Self) -> Option[usize]` | The empty needle is found at the end here rather than at 0, which is the same convention read from the other side: the last place it occurs. |
+| `last_index_of_from` | `last_index_of_from(self, needle: Self, from: usize) -> Option[usize]` | The last occurrence at or after `from` -- the backward search over the same suffix the forward one takes, per the rule on `index_of_from`. |
 | `index_of_byte` | `index_of_byte(self, b: u8) -> Option[usize]` |  |
+| `index_of_byte_from` | `index_of_byte_from(self, b: u8, from: usize) -> Option[usize]` |  |
 | `last_index_of_byte` | `last_index_of_byte(self, b: u8) -> Option[usize]` |  |
+| `last_index_of_byte_from` | `last_index_of_byte_from(self, b: u8, from: usize) -> Option[usize]` |  |
 | `contains` | `contains(self, needle: Self) -> bool` |  |
 | `has_byte` | `has_byte(self, b: u8) -> bool` | Whether one byte occurs anywhere. |
 | `count_of` | `count_of(self, needle: Self) -> usize` | How many non-overlapping occurrences there are, counted the way a `replace_all` would find them -- so `count_of` and the number of replacements `replace_all` makes always agree. |
