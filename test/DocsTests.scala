@@ -89,7 +89,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // an ordinary property and is not.
     // One more runnable: a variant that carries nothing is constant data, so a module-level slot may
     // start out unset — which is what `Option[T] = None` is and what a board program needs it to be.
-    "docs/content/reference/declarations.md"          -> (41, 15, 1),
+    "docs/content/reference/declarations.md"          -> (43, 16, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.

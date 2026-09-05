@@ -537,8 +537,15 @@ run; the compiler asks a well-known tool a question, exactly as it already asks 
 **One declaration answers both halves.** A package binding an installed library needs its headers to
 compile *and* its library to link, and having one of those is not a build. `--cflags` feeds every C
 compilation in the tree and `--libs` feeds the link line — including the `-Wl,-rpath` that decides
-whether a dynamically-linked program finds its library at **run** time, which is the part a
-hand-written `--link-path` quietly leaves out.
+whether a dynamically-linked program finds its library at **run** time.
+
+**A hand-written `--link-path` used to leave that last part out, and no longer does.** Until 0.0.104
+it emitted `-L` and nothing else, so a library whose install name is `@rpath/…` — what CMake writes
+for any library given a `SOVERSION` — linked cleanly and then failed to start, naming a library
+sitting exactly where the flag had said it was. It now emits the run-time search path as well. What
+`pkg-config` still supplies that a typed path cannot is the rest of the answer: which library, what
+its headers need, and the exact rpath *that library* asked for rather than a guess made on its
+behalf.
 
 ### The name is the one pkg-config files it under
 

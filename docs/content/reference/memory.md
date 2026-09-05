@@ -1907,6 +1907,16 @@ zero for it. **The rule is the type at every level that owns a resource, not the
 `Buf[&Thing]` destructs each element when the buffer dies. The compiler's warning sees none of these
 — it reads declared return types — so a field and a container are the two places to check by hand.
 
+**A handle that hands out a second value does NOT need a second type, and reaching for one is the
+mistake this paragraph exists to head off.** A method taking `self` has a copy and cannot name the box
+it was called through, so building a value around the same resource there would hand out a second
+*owner* and the destructor would run twice. The obvious escape is to split the type — a private
+handle carrying the `Drop`, and a copyable value holding a `&` to it — and it works, and it is
+unnecessary: [a `&self` method](/reference/declarations/#a-self-method-may-keep-what-it-was-called-on)
+is handed the box itself, so the value it constructs takes a share rather than a second owner. One
+type, one destructor, and the resource outlives everything that kept a share of it. Two of the org's
+own bindings carried the split before anybody checked.
+
 **It is not called for a value in a reference cycle**, whose count never reaches zero. That is not a
 new consequence of this feature but the existing cost of counting rather than collecting — the
 *storage* already leaks there. A `weak T` is what breaks a cycle.

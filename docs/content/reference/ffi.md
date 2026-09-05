@@ -886,7 +886,16 @@ command line rather than three more directives:
 | `--include-path <dir>` | where to look for a header the C beside a module includes |
 | `--include-path <name>=<dir>` | the same, and it answers the header requirement a package declared under that name |
 | `-D NAME` or `-D NAME=value` | a macro that C is compiled with |
-| `--link-path <dir>` | where to look for the library `@link` named |
+| `--link-path <dir>` | where to look for the library `@link` named — at the link, **and at run time** |
+
+**`--link-path` answers two questions rather than one**, and it is worth saying because the second is
+invisible until a program has already linked. A directory named there is where the linker looks *now*
+— and, on a hosted target, where the **loader** looks when the program is run, since `-Wl,-rpath` is
+emitted beside the `-L`. Without that, a library whose install name is `@rpath/…` links cleanly and
+then dies at startup with `Library not loaded`, naming a library sitting exactly where the flag said
+it was. A directory a `pkg-config` probe answered with is left alone, because a `.pc` file supplies
+its own run-time path where the library wants one; and a freestanding target gets none, having no
+loader to read it.
 
 They fail in that order, and the first two fail *before* anything reaches a linker. A binding to a
 library a package manager put outside the toolchain's prefix needs the paths; a module joining an

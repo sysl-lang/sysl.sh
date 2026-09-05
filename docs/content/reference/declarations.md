@@ -1227,6 +1227,111 @@ print(p.x, p.y)
 0 0
 ```
 
+### A `&self` method may keep what it was called on
+
+**The three receivers differ in what a method may do with the value *after* it returns, and that is
+the whole of the distinction.** `self` hands the method a copy, so nothing it builds can refer back
+to the original; `*self` hands it an address, which is good for the length of the call and cannot be
+kept, because the caller's value may be gone by the time anything read it. **`&self` hands it a share
+of the box**, so a value the method constructs may hold on to the receiver and outlive the call.
+
+**That is what makes a resource handle writable as one type.** A method taking `self` cannot name the
+box it was called through — it has a copy, and constructing a fresh value around the same resource
+would hand out a *second owner*, so a destructor would run twice. `&self` gives it the box itself:
+
+```sysl
+struct Env
+    private n: int
+
+    read(&self) -> Txn = Txn(self.n + 1, self)
+
+impl Drop for Env
+    drop(self)
+        print("env closed")
+
+struct Txn
+    private t: int
+    private env: &Env
+
+    which(self) -> int = self.t
+    depth(self) -> int = self.env.n
+
+var e: &Env = Env(7)
+var first = e.read()
+var second = e.read()
+
+print(first.which(), second.depth())
+print("done")
+```
+
+```output
+8 7
+done
+env closed
+```
+
+**Two things in that output are the point.** `env closed` prints **once** although two transactions
+were made from one environment — they hold shares of one box rather than owners of two. And it prints
+**last**: the environment outlives every value that kept a share of it, which is exactly the
+guarantee a handle needs, since a transaction that outlived its environment would be reading freed
+memory.
+
+**A `&self` method needs a box to be called on, and a value on the stack is not one.** The receiver
+has to be something a share can be taken of, so this is refused rather than silently copied:
+
+```sysl
+struct Counter
+    n: int
+
+    keeper(&self) -> Keeper = Keeper(self)
+
+struct Keeper
+    private c: &Counter
+
+    reading(self) -> int = self.c.n
+
+var plain = Counter(5)
+
+print(plain.keeper().reading())
+```
+
+```error
+'&self' needs a counted reference, and this receiver is a Counter on the stack — a '&self' method may keep hold of what it is called on, so what it wants is a share of a box rather than an address. Bind the value into one and call it on that: 'var r: &Counter = …'
+```
+
+Binding it into a box is the whole of the fix, and the annotation is what makes the binding one:
+
+```sysl
+struct Counter
+    n: int
+
+    keeper(&self) -> Keeper = Keeper(self)
+
+struct Keeper
+    private c: &Counter
+
+    reading(self) -> int = self.c.n
+
+var boxed: &Counter = Counter(5)
+
+print(boxed.keeper().reading())
+```
+
+```output
+5
+```
+
+**Declaring one `&self` member costs the type nothing else.** A type may take all three receivers,
+and the other two behave on a boxed value exactly as they do on a stack one — `Counter` above could
+carry a `doubled(self)` and a `bump(*self)` beside `keeper(&self)`, and every one of them would be
+callable on `plain` and on `boxed` alike. The receiver is a property of the *member* rather than of
+the type, which is what lets a handle expose an ordinary read by value beside a method that hands its
+box on.
+
+**The one place a `&self` method cannot be reached is through a `*Trait`**, since a raw trait object
+holds no box for a share to be taken of. `reference/traits.md` says so where it lists what a `*Trait`
+may carry.
+
 ### A static property
 
 **A property has nowhere to say `self`.** A member's receiver is written in its parameter list, and
