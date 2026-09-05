@@ -59,6 +59,39 @@ The extremes answer an **index** rather than a value, because the index answers 
 element is one subscript away, and a caller that wanted to *modify* the extreme element could not have
 got there from a copy. Ties go to the first, which is the choice `min` makes and for the same reason.
 
+Both searches have a `_from` form, and it reads the same way `sysl.text`'s does: `from` names a place
+to **start**, so the search is over `xs[from..]` and the answer is an index into the whole slice.
+Walking every occurrence is therefore `index_of_from(xs, x, k + 1)` from the last one, with nothing to
+slice and nothing to add back on — and the **backward** form looks at that same suffix, answering with
+the last occurrence in it rather than running downwards from `from`.
+
+```sysl
+import sysl.slices.{index_of, index_of_from, last_index_of_from}
+
+var xs = [1, 2, 3, 2, 5, 2]
+var at = index_of(xs, 2)
+
+while at.is_some()
+    val k = at.unwrap()
+
+    print(k)
+    at = index_of_from(xs, 2, k + 1)
+
+print(last_index_of_from(xs, 2, 4).unwrap())
+print(index_of_from(xs, 2, 99).is_none())
+```
+
+```output
+1
+3
+5
+5
+true
+```
+
+**An offset past the end answers `None` rather than trapping**, which is what makes the loop above
+safe: at the last element `k + 1` is the length, and beyond it is anything at all.
+
 ## Comparing and rearranging
 
 ```sysl

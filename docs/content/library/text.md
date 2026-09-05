@@ -367,9 +367,13 @@ trait Search
     starts_with(self, prefix: Self) -> bool
     ends_with(self, suffix: Self) -> bool
     index_of(self, needle: Self) -> Option[usize]
+    index_of_from(self, needle: Self, from: usize) -> Option[usize]
     last_index_of(self, needle: Self) -> Option[usize]
+    last_index_of_from(self, needle: Self, from: usize) -> Option[usize]
     index_of_byte(self, b: u8) -> Option[usize]
+    index_of_byte_from(self, b: u8, from: usize) -> Option[usize]
     last_index_of_byte(self, b: u8) -> Option[usize]
+    last_index_of_byte_from(self, b: u8, from: usize) -> Option[usize]
     contains(self, needle: Self) -> bool
     has_byte(self, b: u8) -> bool
     count_of(self, needle: Self) -> usize
@@ -415,6 +419,67 @@ replacements made always agree.
 
 `index_of` answers with an `Option` rather than the older sysl's `-1`, because a sentinel is a value
 the type calls ordinary and every caller has to remember to check.
+
+### `from` names a place to start, and the answer is an offset in the whole receiver
+
+Every search has a `_from` form, and they read as one rule: the search is over `self[from..]`, and
+what comes back is an offset into the receiver rather than into the suffix. So walking every
+occurrence is `index_of_from(needle, k + 1)` from the last one, with no slicing and no arithmetic to
+add back on.
+
+**A backward search given a `from` looks at that same suffix**, and answers with the *last*
+occurrence in it — it does not run downwards from `from`. That is the half worth reading twice,
+because the other convention is the one some libraries pick.
+
+```sysl
+import sysl.text.Search
+
+val s = "abcabcabc"
+var at = s.index_of("abc")
+
+while at.is_some()
+    val k = at.unwrap()
+
+    print(k)
+    at = s.index_of_from("abc", k + 1)
+
+print(s.last_index_of_from("abc", 4).unwrap())
+print(s.index_of_byte_from(u8('c'), 3).unwrap(), s.last_index_of_byte_from(u8('c'), 3).unwrap())
+print(s.index_of_from("abc", 999).is_none())
+```
+
+```output
+0
+3
+6
+6
+5 8
+true
+```
+
+**A `from` past the end answers `None` rather than trapping**, which is what makes the loop above
+safe to write: at the last occurrence, `k + 1` may be the length itself and beyond, and neither is a
+position the search has to be protected from. The length *is* a position for the empty needle, which
+is found there as it is found anywhere.
+
+### The searches are sub-linear, and nothing about them is observable
+
+`index_of`, `last_index_of` and `count_of` are Boyer-Moore-Horspool for a needle of two bytes or
+more: the window is aligned by the needle's last byte, and a mismatch shifts it by however far that
+byte's own last occurrence in the needle is from the end — so the common case reads a fraction of the
+haystack rather than all of it. On a megabyte in which the needle's first byte occurs four thousand
+times, `index_of` went from 478 to 35 microseconds when this replaced the naive scan, and `count_of`
+from 491 to 34.
+
+**None of the answers moved**, which is the point: the offsets, the empty-needle conventions and the
+non-overlapping count are exactly what they were, and the library's own test compares the two
+searches against each other over a few thousand random inputs.
+
+**The shift table is 256 bytes on the stack**, so the module still allocates nothing and is still
+reachable under `@no_alloc` — a shift is capped at 255 rather than widened to a machine word, since a
+shift shorter than the ideal one is still correct. Below **32 bytes** of haystack the naive scan is
+the faster answer and is still what runs; that is where the two were measured to cross, which is a
+good deal lower than the table's fixed cost suggests. A one-byte needle never builds a table at all.
 
 ### A byte-level search over UTF-8 is correct, not a shortcut
 
