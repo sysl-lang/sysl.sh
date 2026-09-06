@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the eight annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the twelve annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -11,6 +11,7 @@ has a name and a spelling of its own:
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
 | `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
+| `@setup`, `@teardown`, `@setup_all`, `@teardown_all` | an **annotation** — a hook `sysl test` runs around a module's tests | the grammar |
 | `@borrows` | an **annotation** on a trait's method — see [`@borrows`](/reference/traits/#a-method-may-promise-to-borrow) | the grammar |
 | `@needs(...)` | an **annotation** — the capabilities reaching the declaration under it requires; the one an `extern` takes | the grammar |
 | `@packed`, `@align(n)`, `@section("...")` | an **annotation** — where the declaration under it is laid out, or where it lands | the grammar |
@@ -33,8 +34,10 @@ with. That is a rule about directives, not the thing that distinguishes them.
 Annotations come in groups, by what they attach to — and the last of them is the empty one, which is
 as much a rule as the others.
 
-**On a function** there are eight, each written on its own line above the declaration. More than one
-may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below; `@pure`,
+**On a function** there are twelve, each written on its own line above the declaration. More than one
+may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below, and so
+are the four hooks a module's tests may declare — `@setup`, `@teardown`, `@setup_all` and
+`@teardown_all`; `@pure`,
 `@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
 the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of; `@crossing(...)` says
@@ -691,6 +694,75 @@ it. The compile is the slow half, and there is only ever one of it.
 
 Exit status is 0 if and only if every test that ran passed. A tree with no tests, and a filter that
 matched none of the tests there are, both exit 0 and say which happened.
+
+### The hooks a module may write
+
+Four more annotations, and none of them names a test — each names a function `sysl test` calls
+*around* the ones it does. `@setup` runs before every `@test` in the module and `@teardown` after it;
+`@setup_all` runs once, before the module's first test, and `@teardown_all` once, after its last. A
+module may declare at most one of each. There is no way to nest them and no way for one test to opt
+out of a hook the rest of the module has.
+
+```sysl
+@setup
+opens_the_log()
+    print("setup")
+
+@setup
+also_opens_it()
+    print("setup, again")
+```
+
+A second `@setup` in one module is refused, and the message names both the function already declared
+and the one that repeats it — the same shape as two `@test`s sharing a name, except that here there
+is only ever room for one.
+
+**The process per test, which "The runner" above already made the mechanism rather than a cost, is
+what shapes everything about these four.** `sysl test` starts one process per test, so a hook that
+runs *inside* that process sees what the process saw, and a hook that runs in a process of its own
+sees nothing the test process held:
+
+- `@setup` runs in the **test's own process**, immediately before the test. A module-level `val` it
+  sets is filled by the time the test reads it, the same as any other statement that ran first would
+  leave it.
+- `@teardown` runs wherever the test left off: in the **test's own process** if the test returned, or
+  in a **process of its own** if the test trapped — a trapped process is gone, so nothing after it can
+  run inside it. What a `@teardown` can rely on releasing is therefore only what outlives a process —
+  a file, a pid, a socket path — never a variable, because half the time there is no process left
+  holding one.
+- `@setup_all` and `@teardown_all` are each **their own process invocation**, run once, and share
+  nothing with the tests they bracket except what outlives a process — the same kind of file, pid or
+  path a `@teardown` is left with.
+
+A `@setup` fault fails the tests it guards without running them, and names the setup function rather
+than an assertion a test never reached; a `@setup_all` fault reaches every test in the module, so none
+of them run. A `@teardown` or `@teardown_all` fault is a counted failure of its own, alongside
+whatever verdict the test it followed already reported.
+
+**Worked example: a module whose tests drive a virtual machine over its serial line.** `@setup_all`
+boots the machine once and writes its pid and the path of its serial socket to a file; each test opens
+that path and drives the machine through [`sysl.harness`](/library/harness/) over the line;
+`@teardown_all` reads the file back and stops the machine. The file is the whole of what crosses a
+process boundary — which is the reason a `@setup_all` exists at all, rather than a `@setup` repeating
+the boot once per test:
+
+```sysl
+@setup_all
+boots_the_vm()
+    val handle = qemu.boot("kernel.img")
+    write_file("vm.pid", string(handle.pid))
+    write_file("vm.sock", handle.serial_socket_path)
+
+@teardown_all
+stops_the_vm()
+    val pid = int(read_file("vm.pid"))
+    kill(pid)
+
+@test
+answers_a_probe()
+    val session = sysl.harness.connect(read_file("vm.sock"))
+    assert(session.send("probe"), "ok")
+```
 
 ### `assert` and `panic`
 
@@ -1655,7 +1727,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)` and `@crossing(...)` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)`, `@crossing(...)`, `@setup`, `@teardown`, `@setup_all` and `@teardown_all` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |

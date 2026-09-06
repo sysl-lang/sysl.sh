@@ -247,6 +247,9 @@ that would send the second pass of a looping self-test to a console the board do
 - **It does not discover tests.** `run` is a call, so the suite is a list you wrote. On a host `sysl
   test` collects `@test` functions for you; here there is no runner to do the collecting, and a list
   in source is the honest form.
-- **It has no fixtures, no setup and no teardown.** A test body is a function; what it needs, it
-  calls first.
+- **It has no fixtures of its own.** A test body is a function; what it needs, it calls first.
+  `@setup`, `@teardown`, `@setup_all` and `@teardown_all` are `sysl test`'s, and they work by giving
+  each test a process of its own — which is exactly what a board does not have. Here `run` is a call
+  inside a program that has already started, so there is no moment outside a test for a hook to be
+  scheduled at.
 - **It does not time anything.** A clock is the board's and there is no portable one to ask.

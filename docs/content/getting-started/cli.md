@@ -253,6 +253,15 @@ expected to trap`**; and **`trapped, but printed nothing holding "…"`**, for a
 `@test(should_trap: "…")` whose run trapped without saying it. Everything the run printed follows
 underneath, prefixed `>`.
 
+**[The hooks a module may write](/reference/attributes/#the-hooks-a-module-may-write) change what a
+`FAIL` line can be about, without adding a fourth verdict.** A `@setup` or
+`@setup_all` fault never runs the test it was guarding, so there is no assertion inside the test to
+report — the test's own `FAIL` line names the setup function instead, in place of the usual sentence.
+A `@setup_all` fault guards the whole module, so every test in it fails that way and the run reports
+none of them as having started. A `@teardown` or `@teardown_all` fault does not touch the test's own
+verdict, since the test has already returned or trapped by the time its teardown runs — it is reported
+as a failing entry of its own, named after the hook, alongside whatever the test it followed reported.
+
 `--filter` keeps the tests whose name **or module** holds the text, and the header says how many of
 how many are running. `--fail-fast` stops the loop rather than the report: what ran is still
 reported and what never ran is simply absent, because "skipped" would be a third verdict for

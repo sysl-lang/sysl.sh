@@ -165,7 +165,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable again: a bound asked through a type parameter answers the subtype the
     // parameter was solved to — the one answer a transparent subtype and its base differ on — and a
     // subtype that narrows nothing answers its base's, which is what a measured typedef is.
-    "docs/content/reference/attributes.md"             -> (26, 33, 6),
+    "docs/content/reference/attributes.md"             -> (26, 33, 8),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
