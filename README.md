@@ -1,6 +1,6 @@
 # sysl.sh
 
-The documentation site for [sysl](https://github.com/sysl-lang/sysl), and the tests that keep it
+The documentation site for [sysl](https://github.com/sysl-lang/sysl-bootstrap), and the tests that keep it
 honest.
 
 **A fenced block on a page is not a picture of a program — it is the program.** Every ```sysl block
@@ -55,7 +55,7 @@ They need a toolchain, because they build and run real programs:
 VERSION=$(sed -n 's/^val syslVersion = "\(.*\)"/\1/p' build.sbt)
 case "$VERSION" in *-*) REF="${VERSION#*-}" ;; *) REF="v$VERSION" ;; esac
 
-git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl.git sysl-src
+git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl-bootstrap.git sysl-src
 git -C sysl-src checkout "$REF"
 git -C sysl-src sparse-checkout set library lib
 mv sysl-src/library lib 2>/dev/null || mv sysl-src/lib lib

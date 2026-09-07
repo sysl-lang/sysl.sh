@@ -168,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl sysl-src
+          git clone --filter=blob:none --sparse https://github.com/sysl-lang/sysl-bootstrap sysl-src
           git -C sysl-src sparse-checkout set library lib grammars
           git -C sysl-src checkout --detach "${{ steps.sysl.outputs.ref }}"
 

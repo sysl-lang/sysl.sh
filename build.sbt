@@ -81,7 +81,7 @@ lazy val root = project
     ),
 
     // A second place to find the compiler, because Central can take hours to propagate and these
-    // pages cannot be written until one resolves. `~/dev/sysl-lang/sysl` publishes the same
+    // pages cannot be written until one resolves. `~/dev/sysl-lang/sysl-bootstrap` publishes the same
     // artifacts to GitHub Packages as well (`SYSL_PUBLISH_GITHUB=1 sbt publish`), which answers in
     // minutes.
     //
@@ -90,7 +90,7 @@ lazy val root = project
     // the resolver below is never reached. What it must never become is the reason a release looks
     // finished: a Central upload that silently failed would still build green here, so the check
     // against `maven-metadata.xml` stays a step of the release rather than something this implies.
-    resolvers += "GitHub Packages" at "https://maven.pkg.github.com/sysl-lang/sysl",
+    resolvers += "GitHub Packages" at "https://maven.pkg.github.com/sysl-lang/sysl-bootstrap",
 
     // GitHub Packages authenticates every request, a public package included, so a build here needs
     // a token with `read:packages`. Two places to find one, because the two machines that run this

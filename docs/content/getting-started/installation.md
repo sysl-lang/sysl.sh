@@ -93,8 +93,8 @@ its own format and silently drops the rest. On a Mac, Homebrew keeps its LLVM de
 `PATH`, so sysl looks in `/opt/homebrew/opt/llvm/bin` as well. `--ar` names one anywhere else.
 
 ```bash
-git clone https://github.com/sysl-lang/sysl.git
-cd sysl
+git clone https://github.com/sysl-lang/sysl-bootstrap.git
+cd sysl-bootstrap
 sbt syslJVM/compile
 ```
 
