@@ -713,6 +713,10 @@ also_opens_it()
     print("setup, again")
 ```
 
+```error
+a module writes at most one '@setup', and this one already has one — 'opens_the_log'
+```
+
 A second `@setup` in one module is refused, and the message names both the function already declared
 and the one that repeats it — the same shape as two `@test`s sharing a name, except that here there
 is only ever room for one.
@@ -739,29 +743,39 @@ than an assertion a test never reached; a `@setup_all` fault reaches every test 
 of them run. A `@teardown` or `@teardown_all` fault is a counted failure of its own, alongside
 whatever verdict the test it followed already reported.
 
-**Worked example: a module whose tests drive a virtual machine over its serial line.** `@setup_all`
-boots the machine once and writes its pid and the path of its serial socket to a file; each test opens
-that path and drives the machine through [`sysl.harness`](/library/harness/) over the line;
-`@teardown_all` reads the file back and stops the machine. The file is the whole of what crosses a
-process boundary — which is the reason a `@setup_all` exists at all, rather than a `@setup` repeating
-the boot once per test:
+**Worked example: a module whose tests share a fixture across the process boundary.** `@setup_all`
+writes the fixture once, to a file; each test reads it back; `@teardown_all` removes it. The file is
+the whole of what crosses a process boundary — which is the reason a `@setup_all` exists at all,
+rather than a `@setup` repeating the write once per test:
 
 ```sysl
+import sysl.fs.*
+
+writes_the_fixture()
+    write_text("fixture.txt", "ready").unwrap()
+
+removes_the_fixture()
+    remove_file("fixture.txt").unwrap()
+
 @setup_all
-boots_the_vm()
-    val handle = qemu.boot("kernel.img")
-    write_file("vm.pid", string(handle.pid))
-    write_file("vm.sock", handle.serial_socket_path)
+starts_the_fixture()
+    writes_the_fixture()
 
 @teardown_all
-stops_the_vm()
-    val pid = int(read_file("vm.pid"))
-    kill(pid)
+stops_the_fixture()
+    removes_the_fixture()
 
 @test
-answers_a_probe()
-    val session = sysl.harness.connect(read_file("vm.sock"))
-    assert(session.send("probe"), "ok")
+reads_the_fixture()
+    assert(read_text("fixture.txt").unwrap() == "ready", "fixture ready")
+
+writes_the_fixture()
+print(read_text("fixture.txt").unwrap())
+removes_the_fixture()
+```
+
+```output
+ready
 ```
 
 ### `assert` and `panic`
