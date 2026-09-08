@@ -20,6 +20,7 @@ the path is standing on.
 | `sysl build-c <path> -o <archive>` | compile to a static archive and a C header, for a C project |
 | `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
+| `sysl emit-ast <path>` | print one file's untyped parse tree, as deterministic text |
 | `sysl emit-header <path>` | print the C header for what a module exports |
 | `sysl weave <path>` | render a literate source as an HTML document |
 | `sysl tangle <path>` | print the program a literate source holds |
@@ -29,7 +30,7 @@ the path is standing on.
 | `sysl doc <path>` | generate an API reference from declarations and their doc comments |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is a fourteenth, and it has a page of its own — see
+`sysl prove` is a fifteenth, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -286,6 +287,19 @@ sysl emit-llvm hello.sysl
 
 The IR to stdout, the same text `run` and `build` hand to clang. Nothing is assembled and no
 toolchain is needed for it.
+
+### `emit-ast`
+
+```bash
+sysl emit-ast hello.sysl
+sysl emit-ast hello.sysl --no-spans
+```
+
+One file's **untyped** parse tree, as deterministic text — one node per line, indented for its
+children, with every field the tree carries. It is parse only: no analysis runs and no standard
+module is read, so it works on a file that would otherwise fail to compile, and it needs no target's
+toolchain. `--no-spans` leaves out each node's source position, for a diff that does not move when a
+line does. A parse error exits non-zero and prints the ordinary diagnostic instead.
 
 ### `weave`
 
