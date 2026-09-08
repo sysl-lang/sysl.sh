@@ -209,6 +209,29 @@ f(0, 1)
 if branches have different types: int and usize
 ```
 
+**A branch with nothing to go on is tried, not refused.** A nullary generic call has no argument to
+fix its type parameter from, so a branch like `empty()` cannot be read on its own — it is held over
+until its sibling has settled something, in either order and through an `elif` chain or a `match`'s
+arms:
+
+```sysl
+empty[T]() -> Option[T] = None
+
+pick(c: bool) -> Option[real]
+    val v = if c then Some(1.0) else empty()
+    v
+
+print(pick(true))
+print(pick(false))
+```
+
+```output
+Some(1)
+None
+```
+
+Where neither branch can be read alone, the refusal above is unchanged.
+
 ## Loops
 
 Five forms, and each is an expression.

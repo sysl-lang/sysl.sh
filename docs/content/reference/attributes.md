@@ -1615,7 +1615,7 @@ disturbs nothing.
 
 | kind | symbols |
 |---|---|
-| operating system | `macos`, `linux`, `windows`, `freestanding`, `android` |
+| operating system | `macos`, `linux`, `windows`, `freestanding`, `android`, `wasi` |
 | processor | `aarch64`, `x86_64`, `riscv64`, `riscv32`, `thumb`, `x86`, `wasm32`, `craft` |
 | derived | `hosted` (not `freestanding`), `posix` (`macos`, `linux` or `android`), `bsd` (`macos`) |
 
