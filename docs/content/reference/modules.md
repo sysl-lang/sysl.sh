@@ -1282,8 +1282,8 @@ resolves:
 ```sysl
 import bits.byte_width
 
-var packed: [byte_width]u8            -- imported
-var padded: [bits.byte_width]u8       -- the same declaration, named through its module
+var packed: [byte_width]u8            // imported
+var padded: [bits.byte_width]u8       // the same declaration, named through its module
 ```
 
 It is worth saying only because the two spellings are different enough to be implemented separately,
