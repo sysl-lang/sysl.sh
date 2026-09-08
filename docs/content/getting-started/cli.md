@@ -21,6 +21,7 @@ the path is standing on.
 | `sysl test <path>` | run the `@test` functions |
 | `sysl emit-llvm <path>` | print the generated LLVM IR |
 | `sysl emit-ast <path>` | print one file's untyped parse tree, as deterministic text |
+| `sysl emit-typed <path>` | print one module's typed tree, as deterministic text |
 | `sysl emit-header <path>` | print the C header for what a module exports |
 | `sysl weave <path>` | render a literate source as an HTML document |
 | `sysl tangle <path>` | print the program a literate source holds |
@@ -30,7 +31,7 @@ the path is standing on.
 | `sysl doc <path>` | generate an API reference from declarations and their doc comments |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is a fifteenth, and it has a page of its own — see
+`sysl prove` is a sixteenth, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -300,6 +301,25 @@ children, with every field the tree carries. It is parse only: no analysis runs 
 module is read, so it works on a file that would otherwise fail to compile, and it needs no target's
 toolchain. `--no-spans` leaves out each node's source position, for a diff that does not move when a
 line does. A parse error exits non-zero and prints the ordinary diagnostic instead.
+
+### `emit-typed`
+
+```bash
+sysl emit-typed hello.sysl
+sysl emit-typed hello.sysl --no-spans
+sysl emit-typed hello.sysl --tables
+```
+
+One module's **typed** tree, in the same text `emit-ast` writes — `emit-ast`'s analysed counterpart.
+It runs the whole front end: parsing, then analysis against the standard module exactly as
+`emit-llvm` reads it, with every name resolved and every type solved. Nothing is lowered and nothing
+is emitted — no pruning, no codegen, no clang — so it needs no target's toolchain, the same way
+`prove` does not. Every expression's resolved type is printed as the compiler's own diagnostic text
+(`int`, `a slice of u8`, `Point`) rather than as the type's internal structure. `--no-spans` leaves
+out each node's source position, exactly as it does for `emit-ast`. `--tables` prints the module's
+declaration tables instead of its tree — every struct, enum, trait implementation, extern, module
+`val` and function, sorted by name, with every signature resolved. An analysis error, or a parse
+error, exits non-zero and prints the ordinary diagnostic instead, with nothing on stdout.
 
 ### `weave`
 
