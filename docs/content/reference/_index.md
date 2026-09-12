@@ -31,6 +31,11 @@ what an expression is, then the declarations that bind them, then the systems bu
 memory, traits, generics, modules, errors, the foreign interface, and the forms that reach into the
 compilation itself.
 
+**One page is the opposite of thorough, on purpose.** [Compact reference](/reference/compact/) is the
+whole language on a single page — tables and one-line rules, plus the house idioms — for a reader who
+already programs and wants the rules without the argument, or for a tool with a budget to read them
+in. Everything on it is said in full somewhere above.
+
 **One page is about the project rather than the language.** [Packages](/reference/packages/) is
 what `package.hocon` says and what it means to depend on somebody else's code — a build-time
 concern rather than a rule the compiler enforces on an expression, but one that decides which

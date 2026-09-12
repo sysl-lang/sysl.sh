@@ -167,6 +167,11 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // subtype that narrows nothing answers its base's, which is what a measured typedef is.
     "docs/content/reference/attributes.md"             -> (27, 34, 6),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
+    // The whole language on one page, for a reader who already programs. Its blocks are dense on
+    // purpose — five programs covering the type distinctions, the function forms, the three
+    // receivers, the loop and pattern forms, and the contract block — plus two fragments that are
+    // menus of a spelling rather than programs: the import forms, and a file's C-interop header.
+    "docs/content/reference/compact.md"                -> (5, 0, 2),
     "docs/content/library/_index.md"                   -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
