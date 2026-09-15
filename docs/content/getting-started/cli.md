@@ -225,6 +225,9 @@ tree whose *tests* have to compile that C as much as its programs do. A package 
 library is the ordinary case rather than a corner of one, so a `test` that could not be given those
 directories would be a `test` most packages could not run.
 
+**It takes the [feature flags](#the-feature-flags) too**, and given none of them it enables every
+feature the manifest declares rather than only `default`.
+
 `--std` says the tree **is** the standard module, which is how sysl's own library is tested. The
 compiler supplies `sysl` to every compilation, so without it the library arrives twice — once as the
 tree being compiled and once as the copy handed over — and every declaration is already declared.
@@ -797,6 +800,32 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 
 The standard-module flags and `-O` are covered in
 [installation](/getting-started/installation/), including why the default is `-O1` and not off.
+
+### The feature flags
+
+`run`, `build`, `build-c`, `test`, `deps` and `vendor` take three more, which choose the root
+project's [features](/reference/packages/#features) — and so which optional dependencies are fetched
+at all:
+
+| | |
+|---|---|
+| `--features <a,b>` | a feature of the root project to turn on, beside `default`; comma-separated, and may be given more than once |
+| `--no-default-features` | leave the root's `default` feature off |
+| `--all-features` | turn on every feature the root's manifest declares |
+
+**`--all-features` may not be combined with either of the others**, and that is a third refusal of the
+same kind as the two below: it says everything the manifest declares is wanted where they each say
+something narrower about the same set, so no precedence could keep both answers.
+
+```
+sysl: error: --all-features says every feature the manifest declares is wanted, and
+--features/--no-default-features each say something narrower about the same set — a compilation
+cannot ask for both
+```
+
+`sysl test` given none of the three enables **every** feature the manifest declares, because gated
+code no build compiles is gated code nobody is testing. Naming one turns that off, so a suite may be
+run at exactly the configuration a consumer would get.
 
 ### `--link-path`, `--include-path` and `-D` are three steps of one thing
 

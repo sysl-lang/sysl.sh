@@ -735,6 +735,235 @@ so it is refused the way a `git` beside a `path` is.
 [`sysl deps`](/getting-started/cli/#deps) lists them with the rest, marked `(dev)`, since what a
 project takes is a property of its manifests rather than of any one build.
 
+## Features
+
+A package often has a part not every consumer wants — a server, a desktop window, a second codec —
+and the cost of that part is a dependency somebody has to install. **A feature is a name for one of
+those parts**, and what the name turns on is a list of optional dependencies and other features:
+
+```hocon
+features {
+  default = [server]
+  server  = [llhttp, nghttp2]
+  desktop = [webview]
+}
+
+dependencies {
+  llhttp  { git = "github.com/sysl-lang/llhttp",  version = "0.2.0", optional = true }
+  nghttp2 { git = "github.com/sysl-lang/nghttp2", version = "0.3.0", optional = true }
+  webview { git = "github.com/sysl-lang/webview", version = "0.1.0", optional = true }
+}
+```
+
+`default` is the feature a build gets when nobody asks for anything else. It is an ordinary entry
+rather than a key of its own — it names dependencies and other features exactly as `desktop` does —
+and a manifest that declares no `default` simply starts with nothing on.
+
+### An optional dependency nobody turns on is not in the build
+
+`optional = true` says an entry is taken only where some enabled feature names its label, and the
+pruning happens before anything is fetched. So a dependency nothing turned on is **not cloned, not
+asked for the libraries and headers its own manifest requires, and not on the link line**.
+[`sysl deps`](/getting-started/cli/#deps) prints the graph the build resolved, which is where that is
+visible:
+
+```text
+sysl deps .
+```
+
+```
+app 0.1.0
+
+helper  ../helper
+```
+
+Turning off the feature that named it leaves nothing behind:
+
+```text
+sysl deps . --no-default-features
+```
+
+```
+app 0.1.0
+
+this project depends on nothing
+```
+
+That is what the whole block is for. A binding whose `pkg_config` requirement would stop a build on a
+machine that has not installed the library costs nothing at all to a consumer who never asked for it,
+and the check that would have refused is never reached rather than being suppressed.
+
+### Gating source on a feature
+
+An enabled feature is a symbol the [`#if`](/reference/attributes/#if-gating-lines-before-the-lexer)
+directive reads, named by putting `feature_` in front of it:
+
+```text
+#if feature_server
+serve(port: int) -> Result[unit, Error] = listen(port)
+#endif
+```
+
+The prefix is what keeps the two vocabularies apart. What a target says about itself is the
+compiler's vocabulary and the set is closed; a feature's name is whatever a manifest chose, so a
+package declaring a feature called `linux` would otherwise gate on a word that already means
+something else. Writing the bare name says exactly that:
+
+```
+'server' is not something a target says about itself — sysl knows aarch64, android, bsd, craft,
+freestanding, hosted, linux, macos, posix, riscv32, riscv64, thumb, wasi, wasm32, windows, x86,
+x86_64. A feature this package's manifest declares is named 'feature_server'
+```
+
+**A file is gated against its own package's features and nobody else's.** The root project's
+`feature_server` is invisible in a dependency's source and a dependency's is invisible in the root's,
+because a feature exists only because a manifest said so, and the manifest that says so is the one
+beside the file.
+
+**And `feature_x` where no `x` is declared is false rather than refused**, which is the same answer a
+declared feature nobody turned on gives. This is the one place the closed-set rule the `#if` chapter
+states does not reach: a condition naming a feature is asking a question about a manifest, and *no* is
+an answer to it. A program stays readable while a feature is being added, and a file copied between
+packages gates rather than stops.
+
+### What a consumer asks for
+
+A dependency entry says which of that package's features this project wants:
+
+```hocon
+dependencies {
+  webview { git = "github.com/sysl-lang/webview", version = "0.1.0", features = [desktop] }
+  json    { git = "github.com/edadma/sysl-json",  version = "1.4.0", default_features = false }
+}
+```
+
+`features` names the ones it wants; `default_features = false` leaves that package's `default` off,
+which is how a consumer takes a package's core and none of what it ships enabled. An entry that says
+neither gets the package its author meant to ship, and that is why `default_features` is true where
+nothing writes it.
+
+Those two keys are claims about the package being *depended on*, where `optional` is a claim about the
+package being described. A feature the named package does not declare is refused, and the refusal
+names who asked for it:
+
+```
+this project asks 'helper' for the feature 'fancy', which 'helper' does not declare — a consumer
+may only ask for a feature that package's own manifest names, and it declares none
+```
+
+### Every request is added together, and a feature only ever adds
+
+A package reached by two consumers gets the features **both** of them asked for. Each is compiled
+against a surface it believes is there and neither can be told it was wrong, so unification is a
+**union** — and `default` survives unless *every* consumer turned it off, since one consumer saying
+what it does not need is not a decision about a sibling that took the package the ordinary way.
+
+**So a feature is additive by contract: enabling one may add declarations, and may never remove or
+change one.** Two projects in one build share a package, and the copy they share is the union of what
+they asked for — so a feature that removed a declaration, or gave one a different meaning, would break
+whichever of them did not ask for it. A feature that has to take something away is a second package.
+
+Enabling a feature can pull an optional dependency into the graph, that dependency is a consumer of
+its own with requests of its own, and those can enable a feature somewhere the first pass had already
+settled. The resolution therefore runs again against the answer the round before it produced, until a
+round changes nothing. Every round can only add, so it climbs to an answer rather than circling; a
+graph that somehow did not settle is refused rather than built against whichever round it stopped at.
+
+### Choosing them on the command line
+
+Three flags, and [`run`, `build`, `build-c`, `test`, `deps` and
+`vendor`](/getting-started/cli/#the-feature-flags) take them:
+
+| | |
+|---|---|
+| `--features <a,b>` | turn these on, beside `default`; comma-separated, and may be given more than once |
+| `--no-default-features` | leave `default` off |
+| `--all-features` | turn on every feature this manifest declares |
+
+They are about the **root project**. Which features a dependency gets is decided by the manifest that
+depends on it, because a package's author is the one who knows which parts of it their own code needs,
+so there is no spelling here that reaches past the project being built.
+
+A name the manifest does not declare is refused rather than quietly selecting nothing, and the refusal
+lists what is on offer:
+
+```
+this project has no feature 'quick' — a feature has to be declared in package.hocon's 'features'
+block before it can be asked for. It declares 'default', 'extra'
+```
+
+**`sysl test` on the project itself enables every feature the manifest declares**, because gated code
+that no build compiles is gated code nobody is testing:
+
+```text
+sysl test .
+```
+
+```
+running 2 tests
+
+/…/app/main.sysl
+  ok    the_helper_greets       4ms
+  ok    arithmetic_still_works  3ms
+
+2 passed, 0 failed — 7ms
+```
+
+**Naming anything explicitly turns that off**, since a command line that asks for a configuration is
+asking for that one rather than asking for the default to be widened:
+
+```text
+sysl test . --no-default-features
+```
+
+```
+running 1 test
+
+/…/app/main.sysl
+  ok    arithmetic_still_works  3ms
+
+1 passed, 0 failed — 3ms
+```
+
+### What the manifest refuses
+
+Four things, and each names what to write instead. **A feature naming a dependency that is not
+optional**, which reads as a feature that turns something on and is not one, the entry being taken
+whatever anybody asks for:
+
+```
+package.hocon: 'features.greeting' names the dependency 'helper', which is not optional — a
+feature turns an optional dependency on, and this one is taken whatever is asked for. Write
+'optional = true' in that dependency's entry, or drop it from the feature
+```
+
+**An optional dependency no feature names**, which nothing could ever reach:
+
+```
+package.hocon: 'helper' is an optional dependency no feature names — an optional dependency is
+reached only by the feature that turns it on, so nothing would ever build it. Name it in a
+'features' entry, or drop its 'optional = true'
+```
+
+**A member that is neither a dependency of this package nor a feature of it**, which is what a
+misspelling looks like from here:
+
+```
+package.hocon: 'features.server' names 'llhttp', which is neither a dependency of this package nor
+a feature of it — a feature turns on things this manifest declares, so 'llhttp' would select
+nothing
+```
+
+**Features that turn each other on**, since following the implications has to reach an end:
+
+```
+package.hocon: the features here turn each other on — 'server' turns on 'tls', which turns on
+'server'. A feature may imply another, but following the implications has to reach an end
+```
+
+All four are read when the manifest is, so they stop a build before anything is fetched — which is
+the same point as the pruning: what a feature decides is decided before the network is touched.
+
 ## What a dependency's modules are called
 
 A package is a tree of modules, and **its modules come in under their own names**. A module is a
