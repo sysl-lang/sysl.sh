@@ -760,10 +760,12 @@ rather than a key of its own — it names dependencies and other features exactl
 and a manifest that declares no `default` simply starts with nothing on.
 
 A feature may share its name with the dependency it turns on — `lmdb = [lmdb]` is the ordinary way
-to spell "the `lmdb` feature takes the `lmdb` package". **Inside a feature's list, a name that is
-both a dependency label and a feature means the dependency**, so that entry turns the package on and
-implies nothing else; a feature is named as a feature only from the command line and from a
-consumer's `features` list.
+to spell "the `lmdb` feature takes the `lmdb` package". **Inside a feature's list, a bare member
+names the feature it spells, whenever a feature of that name is declared** — Cargo's rule — so
+`default = [lmdb]` turns on the `lmdb` *feature*, not the dependency directly. The one exception is a
+self-reference: inside `lmdb`'s own list, the `lmdb` in `lmdb = [lmdb]` is the one spelling that
+means the dependency, since a feature cannot name itself. To name a dependency unambiguously anywhere
+else, quote it as `"dep:lmdb"` — HOCON reads a bare colon as a separator, so the quotes are required.
 
 ### An optional dependency nobody turns on is not in the build
 
