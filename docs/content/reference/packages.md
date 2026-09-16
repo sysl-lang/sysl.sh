@@ -759,6 +759,12 @@ dependencies {
 rather than a key of its own — it names dependencies and other features exactly as `desktop` does —
 and a manifest that declares no `default` simply starts with nothing on.
 
+A feature may share its name with the dependency it turns on — `lmdb = [lmdb]` is the ordinary way
+to spell "the `lmdb` feature takes the `lmdb` package". **Inside a feature's list, a name that is
+both a dependency label and a feature means the dependency**, so that entry turns the package on and
+implies nothing else; a feature is named as a feature only from the command line and from a
+consumer's `features` list.
+
 ### An optional dependency nobody turns on is not in the build
 
 `optional = true` says an entry is taken only where some enabled feature names its label, and the
