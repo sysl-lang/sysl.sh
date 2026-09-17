@@ -1524,6 +1524,100 @@ print(a, b)
 '@section("...")' places one object, and a binding that names several has no one object for it to be about
 ```
 
+## `@thread_local`
+
+`@thread_local` gives a module `var` one copy per thread rather than one for the whole program. Every
+thread reading the name reads its own storage, and `&name` answers the address of the copy belonging
+to the thread that took it.
+
+The initializer has to be a value the compiler can write down — a literal, `null`, a `const`, or an
+array or struct built from those — or left off, which starts every thread at the type's zero. That is
+the one rule the attribute adds, and it follows from what a per-thread copy is: the copies are made
+from a single image in the object file, because a thread started halfway through a run never passes
+through the prologue an ordinary module `var` is filled by. A call as an initializer would fill exactly
+one copy and leave every other thread reading zeroes, so it is refused where it is written.
+
+It marks a `var` and nothing else. A `val` and a `const` never change, so the one copy each already has
+is every thread's.
+
+```sysl
+import sysl.posix.threads.*
+
+@thread_local static var n: int = 0
+
+count_to_five(state: *int)
+    for i in 0..<5
+        n = n + 1
+    print(n)
+
+var a = spawn(&count_to_five, null).unwrap()
+a.join()
+
+var b = spawn(&count_to_five, null).unwrap()
+b.join()
+
+print(n)
+```
+
+```output
+5
+5
+0
+```
+
+Each worker's `n` starts at zero and counts up in storage no other thread can see; joining one before
+spawning the next is what makes the two `5`s print in a fixed order rather than racing. Main's own
+copy is never touched, so its `print(n)` reads the zero it started at — the third line is the proof
+that `@thread_local` gave three threads three different objects under one name.
+
+### It composes with `@align(n)` and `@section("...")`
+
+All three are facts about where one object's storage lives, so a thread-local can be aligned or placed
+exactly as an ordinary module `var` can:
+
+```sysl
+@align(16)
+@section(".tdata")
+@thread_local var scratch: [4]u64
+```
+
+### A `&T` into a thread-local needs no `&sync`
+
+A reference into a `@thread_local` belongs to one thread by construction, so there is no second thread
+for its count to be torn by, and reaching it is not crossing a concurrency domain.
+
+### What it may not take as an initializer
+
+```sysl
+next() -> int = 42
+
+@thread_local static var n: int = next()
+
+print(n)
+```
+
+```error
+'n' is '@thread_local', so its value has to be one the compiler can write down: every thread gets a copy of the initial value, and the copies are made from a single image in the object file rather than by code that runs per thread. A literal, 'null', a 'const' and the arrays and structs built from them are all values; a call is not. Leave the value off to start every thread at the type's zero, and do the work in each thread instead
+```
+
+### A target with no thread-local storage refuses it by name
+
+A freestanding target has no loader and no libc, so nothing lays a thread's storage down and nothing
+writes the thread pointer an offset would be read from:
+
+```sysl target=thumbv7em-freestanding
+@thread_local static var n: int = 0
+
+print(n)
+```
+
+```error
+'n' cannot be '@thread_local' on 'thumbv7em-freestanding': there is no loader and no libc on this target, so nothing lays a thread's storage down and nothing writes the thread pointer the offset would be read from. Declare it as a plain module 'var' and let the port's scheduler answer for which task is running, which is what the ownership runtime's reaper slot does
+```
+
+What a bare target uses instead is exactly this: a plain module `var` the port's scheduler answers
+for, the same shape the ownership runtime's reaper slot already takes.
+
 ## `#if` — gating lines before the lexer
 
 Everything a target decides is a fact the *compiler* reads about the machine. `#if` is the one place

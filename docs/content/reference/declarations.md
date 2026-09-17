@@ -257,6 +257,14 @@ promise this program makes about storage it laid down; an `extern` variable is s
 supplies — `stdout`, `environ`, `optind` — so there is no such promise to keep. It is a place, it may
 be written, and it holds whatever the other side put there.
 
+A module `var` is one object the whole program shares, which is what makes it the thing two threads
+can disagree about. `@thread_local` in front of one gives every thread a copy of its own instead, so a
+name that holds *this* thread's machine, arena or scratch buffer needs no lock and no handle passed
+down every call. The cost is that its initializer has to be a constant — every copy is made from one
+image in the object file — and that a target with no thread-local storage refuses it rather than
+emitting something silent. [`reference/attributes.md § @thread_local`](/reference/attributes/) has the
+rule and the refusals.
+
 ### Several at once
 
 `var` and `val` both take a comma list, binding several names to several values. Each part's type is

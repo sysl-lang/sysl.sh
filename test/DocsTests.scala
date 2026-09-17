@@ -165,7 +165,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable again: a bound asked through a type parameter answers the subtype the
     // parameter was solved to — the one answer a transparent subtype and its base differ on — and a
     // subtype that narrows nothing answers its base's, which is what a measured typedef is.
-    "docs/content/reference/attributes.md"             -> (27, 34, 6),
+    "docs/content/reference/attributes.md"             -> (28, 36, 7),
     "docs/content/reference/verification.md"           -> (15, 5, 1),
     // The whole language on one page, for a reader who already programs. Its blocks are dense on
     // purpose — five programs covering the type distinctions, the function forms, the three

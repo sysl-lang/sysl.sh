@@ -1960,6 +1960,9 @@ A conversion would put an ordinary retain beside an atomic one, so the count is 
 from the moment the object exists. **`&sync T` makes the *reference* safe to share, not the object
 safe to mutate** — that still wants a `Mutex`.
 
+A `&T` held in a `@thread_local` is *not* a domain crossing and needs no `&sync`, the storage
+belonging to one thread by construction.
+
 ### `@crossing` — where the rule is asked
 
 The rule above says *what* may cross. **`@crossing` says where**: it is the annotation a facility
