@@ -140,9 +140,19 @@ document wants is neither, and the answer has been the same since Steele and Whi
 shortest text that parses back to the value you started with**.
 
 Fifteen significant digits is where a `real` starts round-tripping and seventeen is where every
-one of them does, so trying the three in order and stopping at the first that reads back equal
-finds it. `%g` strips its own trailing zeros, so `0.5` is two characters here and not fifteen --
-the precision is a ceiling on the search, not a width.
+one of them does, so trying fifteen first and climbing to seventeen finds it for every ordinary
+magnitude: `%g` strips its own trailing zeros, so `0.5` is two characters here and not fifteen,
+and rounding a value that has a shorter exact reading to fifteen digits reproduces that same
+shorter reading with zeros on the end.
+
+**A subnormal breaks that last step, because its neighbours are not evenly spaced.** Near the
+bottom of the subnormal range one representable value can sit far enough from the next that many
+different short decimals all round to it, and rounding the value itself to fifteen digits lands on
+one of the longer ones instead of on the short one that would have worked too -- `5e-324` renders
+at fifteen digits as `4.94065645841247e-324`, which does read back correctly but is fourteen
+characters longer than it needs to be. So a value below the smallest normal `real` that already
+round-trips at fifteen digits is searched again, downward from one digit this time, and the first
+precision that still reads back equal is the one that is kept.
 
 The reader is `strtod`, the same conversion `sysl.text.parse_real` goes to, which is what makes
 the check mean anything: the two directions have to be the same pair of functions or the value
@@ -150,8 +160,8 @@ survives this test and not the one a consumer runs. It is reached directly rathe
 `parse_real` because that lives in `sysl.text`, which is compiled after this module.
 
 A value with no decimal reading -- an infinity, a NaN -- never compares equal, so it falls out of
-the loop at seventeen and renders as `%g` spells it. A caller that needs `null` or `inf` written
-some particular way is writing a format's syntax and owns that decision.
+both searches and renders as `%g` spells it at seventeen digits. A caller that needs `null` or
+`inf` written some particular way is writing a format's syntax and owns that decision.
 
 ### `display_str`
 

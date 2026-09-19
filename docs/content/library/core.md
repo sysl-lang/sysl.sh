@@ -746,6 +746,11 @@ display_str("\n", out, FormatSpec(0, -1, false))
 display_real(0.1, out, FormatSpec(0, 17, false))
 display_str(" ", out, FormatSpec(0, -1, false))
 display_real_shortest(0.1, out, FormatSpec(0, -1, false))
+display_str("\n", out, FormatSpec(0, -1, false))
+
+display_real(5e-324, out, FormatSpec(0, 17, false))
+display_str(" ", out, FormatSpec(0, -1, false))
+display_real_shortest(5e-324, out, FormatSpec(0, -1, false))
 
 putbytes(sink.text())
 prints("\n")
@@ -754,6 +759,7 @@ prints("\n")
 ```output
 3.14159 3.1415926535897931 3.141592653589793
 0.10000000000000001 0.1
+4.9406564584124654e-324 5e-324
 ```
 
 Six is a reasonable thing to show a person and a broken thing to serialize; seventeen keeps every
@@ -762,9 +768,14 @@ has been the same since Steele and White: the shortest text that parses back to 
 started with.
 
 Fifteen significant digits is where a `real` starts round-tripping and seventeen is where all of
-them do, so `display_real_shortest` tries the three in order and stops at the first that reads back
-equal. `%g` strips its own trailing zeros, so the precision is a ceiling on the search rather than a
-width — `0.5` comes out at two characters, not fifteen.
+them do, so `display_real_shortest` tries fifteen digits first and climbs toward seventeen only if
+that does not yet read back equal. `%g` strips its own trailing zeros, so the precision is a ceiling
+on the search rather than a width — `0.5` comes out at two characters, not fifteen.
+
+**A subnormal can still shorten past fifteen, because the subnormal range is not evenly spaced.**
+`5e-324`, the smallest positive `real`, already round-trips at fifteen digits — as
+`4.94065645841247e-324` — but a shorter reading survives too, so a value in that range is searched a
+second time, downward from one digit, for the shortest precision that still reads back equal.
 
 The reader it checks against is `strtod`, which is the same conversion
 [`sysl.text.parse_real`](/library/text/#reading-a-value-back-the-parsers) goes to. That is what makes the check mean anything: the
@@ -775,8 +786,8 @@ a consumer runs.
 plain decimal would be long, and `1.0` comes out as `1` with no point in it — writing a number a
 format's reader would take as an integer is that format's problem, which is why
 [`sysl-lang/json`](https://github.com/sysl-lang/json) adds the point and this does not. A value with
-no decimal reading never compares equal to anything, so an infinity or a NaN falls out of the search
-at seventeen digits and renders as `%g` spells it.
+no decimal reading never compares equal to anything, so an infinity or a NaN falls out of both
+searches and renders as `%g` spells it at seventeen digits.
 
 **`str` is unchanged and stays at six.** This is the other rendering being available at all, not a
 new default: changing `str` would alter the output of every program that prints a number.
