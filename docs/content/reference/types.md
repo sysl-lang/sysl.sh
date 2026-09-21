@@ -117,8 +117,9 @@ no value of the type is positive. If you want a bit, write `u1` or `bool`.
 
 ## Floating point is a closed set
 
-`fN` is **not** open — only the IEEE widths exist, because there is no meaningful `f37`. `f32` and
-`f64` are the two the back end supports today.
+`fN` is **not** open — only real formats exist, because there is no meaningful `f37`. The set is
+`f16`, `bf16`, `f32` and `f64`, and `f128` is reserved but not lowered: writing it is a diagnostic
+saying so rather than a type you get.
 
 Only the default width gets an alias, and it is deliberately named `real` rather than `float`, because
 `float` means 32-bit to every C, C++, Rust and Java programmer and `real` promises nothing it does not
@@ -137,6 +138,70 @@ print(a + 1.0, b / 2.0)
 
 A float renders in the shortest form that round-trips, so a value with no fractional part prints
 without one.
+
+### The two sixteen-bit formats
+
+`bf16` is the one name in the set that is not a width, and it has to be, because **width alone does
+not identify a format at sixteen bits**. Both spend one bit on the sign and divide the other fifteen
+differently:
+
+| | exponent | significand | largest finite | decimal digits |
+|---|---|---|---|---|
+| `f16` | 5 bits | 10 bits | 65504 | ~3 |
+| `bf16` | 8 bits | 7 bits | 3.4 × 10³⁸ | ~2 |
+
+So `bf16` is not a smaller `f16`, it is a **shorter `f32`** — its bits are a binary32's top sixteen,
+which is where the name comes from and why it has binary32's exact range. The trade is the whole
+reason both exist: `f16` is the more precise of the two and runs out of range early, while `bf16`
+reaches every exponent an `f32` does and pays for it three bits of significand at a time.
+
+Both are ordinary arithmetic types. A tenth shows the precision difference, and doubling the largest
+`f16` shows the range one:
+
+```sysl
+var h: f16 = 0.1
+var b: bf16 = 0.1
+
+print(h, b)
+
+var big: f16 = 65504.0
+var wide: bf16 = 65504.0
+
+print(big * 2.0, wide * 2.0)
+```
+
+```output
+0.0999756 0.100098
+inf 131072
+```
+
+Neither prints a tenth, because neither holds one — what prints is the value the format really has,
+since rendering widens to `real` and that is exact at every width.
+
+`f16` and `bf16` are also the one pair where **neither conversion is a widening or a narrowing**. It
+is still written as an ordinary conversion:
+
+```sysl
+var h: f16 = 0.1
+
+print(bf16(h))
+```
+
+```output
+0.0999756
+```
+
+That answer is `f16`'s tenth rather than `bf16`'s, which is the point: a conversion carries the value
+the source actually holds, and here `bf16` has room for it exactly. The other direction rounds, since
+seven bits of significand fit in ten and ten do not fit in seven.
+
+`sysl.math`'s [`Float`](/library/math/) trait covers both, so `sqrt`, `floor`, `pi` and the rest reach
+them by the same spelling they reach `real` by. libm has no entry point at sixteen bits, so those
+bodies widen to `f32`, compute, and narrow back — exact on the way in, leaving the only rounding to
+the destination.
+
+Neither format has an alias, and a literal reaches one through a suffix or through the type it is
+written into: `1.5f16`, `1.5bf16`, or `var x: bf16 = 1.5`.
 
 ## `usize` and `isize`
 
