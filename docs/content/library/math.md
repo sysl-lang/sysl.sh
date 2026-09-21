@@ -1,6 +1,6 @@
 ---
 title: The math module
-summary: "`sysl.math` — the `Float` trait over both widths, `Signed` and `Bits` over the open integer family, `Magnitude` and the size a type measures in, the constants, `min`/`max`/`clamp` over anything ordered, the float comparisons, and the integer arithmetic above the operators."
+summary: "`sysl.math` — the `Float` trait over every floating width, `Signed` and `Bits` over the open integer family, `Magnitude` and the size a type measures in, the constants, `min`/`max`/`clamp` over anything ordered, the float comparisons, and the integer arithmetic above the operators."
 weight: 60
 ---
 
@@ -109,7 +109,7 @@ trait Float: Zero + One + Eq + Ord + Neg + Add + Sub + Mul + Div
     to_radians(self) -> Self
     to_degrees(self) -> Self
 
-    // Answered by the trait, once, for both widths.
+    // Answered by the trait, once, for every width.
     signum(self) -> Self
     recip(self) -> Self
     square(self) -> Self
@@ -128,15 +128,51 @@ and `sqrtf` the way C does. Two free `sqrt`s would resolve correctly today.
 
 What the trait still buys is the half overloading does not: a member that is *arithmetic over the
 others* — the logarithm in an arbitrary base, the hypotenuse — is written **once** as a default and
-inherited by both widths, where two free functions would need it twice and could disagree. Dispatch
-on the receiver is worth having for its own sake too: `x.sqrt()` is the same three words whichever
-width `x` is, and changing a declaration from `f32` to `real` sends nobody editing call sites.
+inherited by every width, where free functions would need it four times over and could disagree.
+Dispatch on the receiver is worth having for its own sake too: `x.sqrt()` is the same three words
+whichever width `x` is, and changing a declaration from `f32` to `real` sends nobody editing call
+sites.
 
 **The split between what is required and what is answered is where the mathematics is.** A method
 whose result C computes — a range-reduced sine, a correctly rounded root — is required, and each width
-binds it to its own libm entry point. A method that is *arithmetic over the others* is a default,
-written once and inherited by both. So `log` in an arbitrary base exists in exactly one place, and
-adding a third floating-point width would be 38 bindings and no new mathematics.
+binds it to its own entry point. A method that is *arithmetic over the others* is a default, written
+once and inherited by all of them. So `log` in an arbitrary base exists in exactly one place, and
+that is what made adding the narrow widths 38 bindings each and no new mathematics.
+
+### The narrow widths compute at `f32`
+
+There are four blocks — `real`, `f32`, [`f16` and `bf16`](/reference/types/) — and the last two are
+not written the way the first two are. **libm stops at `float`**: there is no half-width `sqrt` to
+bind, at either sixteen-bit format, and nothing about the widths suggests one is coming. So every
+body at `f16` and `bf16` widens to `f32`, calls the entry point `f32` already binds, and narrows the
+answer back.
+
+**That is the correct answer rather than a compromise.** An `f32` holds every `f16` and every `bf16`
+exactly — more exponent range and more significand than either — so the widening loses nothing at
+all. The `f32` result is then within half an `f32` ulp of the true one, and narrowing rounds it to
+the nearest value of the destination. Two roundings rather than one, and the first is so much finer
+than the second that it can only change the answer where that answer already sits within an `f32` ulp
+of the midpoint between two neighbouring values — which is the accuracy libm itself promises, not
+something the widening introduced.
+
+```sysl
+import sysl.math.Float
+
+var h: f16 = 9.0
+var b: bf16 = 9.0
+
+print(h.sqrt(), b.sqrt())
+print(f16.max_value(), bf16.epsilon())
+```
+
+```output
+3 3
+65504 0.0078125
+```
+
+The constants are each width's own, and they are where the two sixteen-bit formats differ most: the
+largest finite `f16` is 65504, while `bf16` reaches as far as an `f32` and gives up significand to do
+it.
 
 ```sysl
 import sysl.math.{Float, tau, e}
@@ -469,7 +505,8 @@ trait Bits
 ```
 
 **Neither of these has an `impl` block anywhere, and neither could.** `Float` is a trait with an `impl`
-per width because there are exactly two widths. The integers are an [open family](/reference/types/):
+per width because the floating formats are a [closed set](/reference/types/) of four. The integers
+are an [open family](/reference/types/):
 `i5` and `u12` are types a program may name, so there is no finite list of scalars to write an `impl`
 for, and five blocks covering `i8` through `isize` would leave `i128` and every narrow width without
 one — a worse surface than none at all.

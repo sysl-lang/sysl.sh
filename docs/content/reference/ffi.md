@@ -1359,8 +1359,8 @@ away — so a callback registered at the wrong arity stopped being a compile err
 one option class where getting it wrong corrupts the stack at run time rather than failing to link.
 
 **A tail argument is passed already widened**, by C's default argument promotions: an integer
-narrower than 32 bits becomes `i32` or `u32` following its own signedness, and an `f16` or `f32`
-becomes `f64`. This is not something the ABI can be left to do — LLVM promotes nothing on its own,
+narrower than 32 bits becomes `i32` or `u32` following its own signedness, and any float narrower
+than 64 — `f16`, `bf16` or `f32` — becomes `f64`. This is not something the ABI can be left to do — LLVM promotes nothing on its own,
 and a narrow value handed over as written is read back out of the wrong number of bytes. The
 widening is part of the call.
 
@@ -1921,9 +1921,11 @@ c const
 which 'f32' cannot hold
 ```
 
-**The widths are `f32` and `f64`, and `f16` is refused by name.** C writes a constant expression as a
-`float`, a `double` or a `long double`, so those two are the widths a measurement reads back at
-without anyone having to guess which was meant.
+**The widths are `f32` and `f64`, and both sixteen-bit formats are refused by name.** C writes a
+constant expression as a `float`, a `double` or a `long double`, so those two are the widths a
+measurement reads back at without anyone having to guess which was meant. `f16` and `bf16` are
+narrower than any of the three, and narrow enough that rounding onto one is not something the value
+could survive being read back through.
 
 ```sysl
 c const
@@ -1932,6 +1934,17 @@ c const
 
 ```error
 'f16' is not a width a 'c const' is measured at
+```
+
+Each is refused under the name that was written, rather than both under one of them:
+
+```sysl
+c const
+    b: bf16 = "0.5"
+```
+
+```error
+'bf16' is not a width a 'c const' is measured at
 ```
 
 **`c type` below still refuses a float, and that is a different question.** A typedef is measured
