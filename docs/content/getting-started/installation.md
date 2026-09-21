@@ -169,6 +169,10 @@ instruction selector rather than merely a slower one, it is the mode a back end'
 covers least, and a real miscompile was found living there. If you drop to `-O0` to make something
 easier to debug and the behaviour changes, suspect that before your program.
 
+A project that wants a level of its own states it once, in its manifest, rather than on every command
+line — [`optimization`](/reference/packages/#the-optimization-level-a-project-is-built-at). The flag
+still wins where it is given, so a project built at `2` is profiled at `0` by typing it.
+
 ## If something goes wrong
 
 **`clang: command not found`** — sysl got as far as emitting IR and had nothing to hand it to.

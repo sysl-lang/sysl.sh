@@ -182,6 +182,78 @@ taught the resolver about it thirteen years later, behind an opt-in; and here th
 ask — a dependency is a git coordinate plus a tag, and "the newest tag whose floor I satisfy" means
 fetching and reading several tags' manifests, which is a different algorithm and a different fetch.
 
+## The optimization level a project is built at
+
+**`optimization` names the level handed to clang**, spelled as clang spells one after the `-O`, and
+it applies to every command that builds the project — `build`, `run`, `test`, `build-lib` and
+`build-c` alike:
+
+```hocon
+package {
+  name    = "mimic"
+  version = "0.3.0"
+}
+
+optimization = "2"
+```
+
+It is a top-level key rather than something inside `package`, because it is a decision about how this
+project is built rather than a statement of who it is — the same tier as `targets`, `capabilities`
+and `allocator`.
+
+**The default is `1`, and a project that says nothing gets it.** That is the interesting half of the
+default and it is written up in [the CLI's optimization
+section](/getting-started/installation/#optimization): `-O0` is a different instruction selector
+rather than merely a slower one, and a miscompile was found living there.
+
+### The flag beats the key, and the key beats the default
+
+`-O` on the command line is for **this invocation** and wins over a manifest that speaks for all of
+them:
+
+```
+sysl build .            the project's level, or 1 where it names none
+sysl build . -O0        0 — what was typed wins
+```
+
+Which is why naming the default and naming nothing are two different things: `sysl build . -O1`
+against a project that says `optimization = "2"` builds at `1`, because somebody typed it.
+
+**Nothing repeats itself as a consequence.** A project measured at `2` is built at `2` by every
+consumer, every CI job and every `sysl test` without a flag anywhere, and dropping to `0` for an
+afternoon's debugging is still one word on one command line.
+
+### Only the root project's key applies
+
+**A dependency's `optimization` is read and not used.** The level reaches every object a build
+produces, so a package that could set it would be deciding how its consumer's whole program is
+compiled — including the half it has nothing to do with, and against a judgement the consumer is the
+only one able to make.
+
+It is not an error and draws no warning, exactly as a dependency's `targets { default }` is not — a
+package says which machine *it* is built for, and the build is for the machine the project asked for.
+A package that states the level it is developed at has said nothing wrong either. It is simply not the
+project being built, and the key is the root's or nobody's.
+
+### A level clang does not have is refused when the file is read
+
+The levels a manifest may name are `0`, `1`, `2`, `3`, `s` and `z` — the six every clang has:
+
+```
+package.hocon: 'optimization = "9"' names no level clang has — it is one of 0, 1, 2, 3, s, z
+```
+
+**`--optimize` is deliberately laxer** and passes whatever it was given straight through, so `-Ofast`
+and `-Og` reach the clang that has them and are answered for by it. The asymmetry is about who is
+watching: a flag is typed at a build somebody is standing in front of, and clang's own message
+arrives in the same second, while a manifest is written once and read by every build afterwards —
+including a consumer's, who did not write the file and would be handed an error from inside clang
+that names neither it nor the key.
+
+**`sysl run` notices a change to the key.** What it keeps is keyed on the level the build resolved
+among everything else that reaches the bytes, so raising `optimization` rebuilds rather than replaying
+a binary compiled at the old level from a tree that did not move.
+
 ## Capabilities
 
 **Whether the machine has a heap, an operating system or POSIX is a project engineering
