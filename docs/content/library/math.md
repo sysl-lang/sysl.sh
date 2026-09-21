@@ -919,7 +919,8 @@ the literal -1 does not fit uint
 
 **An overflowing power wraps**, as every other integer operation in the language does. `pow(2, 64)`
 at `int` is `0` and `pow(2u8, 9)` is `0`, both arrived at honestly — the doubling that overflows is a
-`*` like any other. A program that needs to know writes the check it needs.
+`*` like any other. A program that needs to know uses
+[the checked operations](#checked-and-overflowing-arithmetic) below, one step at a time.
 
 The implementation is repeated squaring, so the exponent costs a logarithmic number of multiplies
 rather than a linear one.
@@ -939,6 +940,64 @@ cannot initialize 'acc': declared real but the value is int
 A float raises through [`Float`](#float)'s own member — `2.0.pow(10.0)` — which takes its exponent as
 a `Self` rather than a count, because a float exponent is a meaningful thing to have and an integer
 one is not the same operation.
+
+### Checked and overflowing arithmetic
+
+**Plain integer arithmetic wraps**, which is the right default: it is what the hardware does, it is
+one instruction, and a program that has proved its values fit pays nothing for the proof. What it is
+not is a default for a program that *cannot* prove it — a parser reading a number out of a document,
+a running total over untrusted input, an interpreter whose own integers promote to arbitrary
+precision when they stop fitting. Each of those needs the question *did that fit?* answered, and the
+answer is not recoverable afterwards: the wrapped result of `a + b` is indistinguishable from the
+honest sum of two other operands.
+
+**There are two surfaces, because two questions get asked.** `checked_add`, `checked_sub` and
+`checked_mul` answer with an `Option`, for the caller that abandons the operation. `overflowing_add`,
+`overflowing_sub` and `overflowing_mul` answer with the wrapped value *and* the flag, for the caller
+that has somewhere else to go — an interpreter reaching for a wider representation wants to know it
+overflowed and does not want the narrow answer at all, while a checksum wants both.
+
+```sysl
+import sysl.math.{checked_add, checked_mul, overflowing_add, overflowing_mul}
+
+val most: long = 9223372036854775807
+val least: long = -9223372036854775807 - 1
+val root: long = 3037000499
+
+print(checked_add(most, -1).expect("it fits"))
+print(checked_add(most, 1).is_none())
+print(checked_mul(root, root).expect("it fits"), checked_mul(root + 1, root + 1).is_none())
+
+val (wrapped, overflowed) = overflowing_add(most, 1)
+
+print(wrapped, overflowed)
+print(overflowing_mul(least, -1).1)
+```
+
+```output
+9223372036854775806
+true
+9223372030926249001 true
+-9223372036854775808 true
+true
+```
+
+**These are the signed integers', and the bound says so.** Every test in them is a fact about a
+two's-complement sign bit: an addition overflows exactly when the operands agree in sign and the
+result does not, a subtraction exactly when they disagree and the result disagrees with the minuend.
+The unsigned widths overflow by a different rule — a sum below either operand, a difference above the
+minuend — so they would need their own bodies, and nothing has needed them yet.
+
+**Multiplication takes whichever of three routes settles it.** Where the leading-zero counts of the
+two magnitudes already prove the product fits, nothing is divided at all. Where one operand is `-1`
+the answer is a negation, which overflows at exactly one value — and that case is answered *before*
+anything divides, because the most negative value over `-1` is the one pair a machine divide traps
+on. Otherwise the product is divided back by an operand and compared with the other. The last two
+lines above are the second route and the third: `3037000499` squared is the largest square a `long`
+holds, and the most negative value times `-1` wraps to itself and says so.
+
+The width is the type's, so the same body serves every signed width — `checked_add` at `i8` refuses
+`127 + 1` exactly as `checked_add` at `long` refuses `9223372036854775807 + 1`.
 
 ### `gcd` and `lcm`
 

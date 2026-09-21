@@ -201,9 +201,14 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/path.md"                      -> (9, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/library/math.md"                      -> (24, 10, 3),
+    // One more runnable: the checked and overflowing operators, which take all three of the
+    // multiplication's routes between them.
+    "docs/content/library/math.md"                      -> (25, 10, 3),
     "docs/content/library/complex.md"                   -> (9, 1, 1),
-    "docs/content/library/bigint.md"                    -> (5, 0, 0),
+    // Five more runnable: the floored division beside the truncating one, the bit operations on the
+    // infinite two's-complement reading, the number theory, the two `real` directions, and the
+    // machine-sized operand family.
+    "docs/content/library/bigint.md"                    -> (10, 0, 0),
     "docs/content/library/decimal.md"                   -> (8, 0, 0),
     // One fragment, and deliberately: the opening example logs to standard error at `now()`, so
     // there is nothing a page could assert about it. Every other program on that page is run.
