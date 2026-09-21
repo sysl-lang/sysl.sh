@@ -23,7 +23,7 @@ name, and each says in its own header why it is not part of this one.
 
 ## Index
 
-[`e`](#e) [`ln10`](#ln10) [`ln2`](#ln2) [`pi`](#pi) [`sqrt2`](#sqrt2) [`tau`](#tau) [`approx_eq`](#approx_eq) [`approx_eq_rel`](#approx_eq_rel) [`assert_approx_eq`](#assert_approx_eq) [`assert_approx_eq_rel`](#assert_approx_eq_rel) [`clamp`](#clamp) [`divmod`](#divmod) [`gcd`](#gcd) [`infinity`](#infinity) [`is_power_of_two`](#is_power_of_two) [`lcm`](#lcm) [`max`](#max) [`min`](#min) [`nan`](#nan) [`next_power_of_two`](#next_power_of_two) [`pow`](#pow) [`Bits`](#bits) [`Float`](#float) [`Magnitude`](#magnitude) [`Signed`](#signed) [Float for f32](#float-for-f32) [Float for real](#float-for-real) [Magnitude for f32](#magnitude-for-f32) [Magnitude for real](#magnitude-for-real) [Magnitude for T](#magnitude-for-t)
+[`e`](#e) [`ln10`](#ln10) [`ln2`](#ln2) [`pi`](#pi) [`sqrt2`](#sqrt2) [`tau`](#tau) [`approx_eq`](#approx_eq) [`approx_eq_rel`](#approx_eq_rel) [`assert_approx_eq`](#assert_approx_eq) [`assert_approx_eq_rel`](#assert_approx_eq_rel) [`checked_add`](#checked_add) [`checked_mul`](#checked_mul) [`checked_sub`](#checked_sub) [`clamp`](#clamp) [`divmod`](#divmod) [`gcd`](#gcd) [`infinity`](#infinity) [`is_power_of_two`](#is_power_of_two) [`lcm`](#lcm) [`max`](#max) [`min`](#min) [`nan`](#nan) [`next_power_of_two`](#next_power_of_two) [`overflowing_add`](#overflowing_add) [`overflowing_mul`](#overflowing_mul) [`overflowing_sub`](#overflowing_sub) [`pow`](#pow) [`Bits`](#bits) [`Float`](#float) [`Magnitude`](#magnitude) [`Signed`](#signed) [Float for bf16](#float-for-bf16) [Float for f16](#float-for-f16) [Float for f32](#float-for-f32) [Float for real](#float-for-real) [Magnitude for f32](#magnitude-for-f32) [Magnitude for real](#magnitude-for-real) [Magnitude for T](#magnitude-for-t)
 
 ## Constants
 
@@ -143,6 +143,34 @@ the report exist.
 ```sysl
 assert_approx_eq_rel[F: Float + Display](got: F, want: F, tol: F, msg: string = "", file: string = __FILE__, line: long = __LINE__)
 ```
+
+### `checked_add`
+
+```sysl
+checked_add[T: Signed + Add + BitXor + BitAnd + Ord](a: T, b: T) -> Option[T]
+```
+
+`a + b`, or `none` where the sum does not fit.
+
+**The absent answer is the whole point**: an addition that overflowed has no value worth passing
+on, so a caller that would otherwise have to remember to look at a flag is handed something it
+cannot use without looking.
+
+### `checked_mul`
+
+```sysl
+checked_mul[T: Signed + Bits + Mul + Div + Sub + Shl + Eq + Ord](a: T, b: T) -> Option[T]
+```
+
+`a * b`, or `none` where the product does not fit.
+
+### `checked_sub`
+
+```sysl
+checked_sub[T: Signed + Sub + BitXor + BitAnd + Ord](a: T, b: T) -> Option[T]
+```
+
+`a - b`, or `none` where the difference does not fit.
 
 ### `clamp`
 
@@ -286,6 +314,58 @@ it stops a bit earlier, because the top bit is the sign. Rather than ask which `
 question a generic body has no way to put -- the shift is performed and the result compared
 against zero: a signed shift that has reached the sign bit comes back negative, and an unsigned
 one never does.
+
+### `overflowing_add`
+
+```sysl
+overflowing_add[T: Signed + Add + BitXor + BitAnd + Ord](a: T, b: T) -> (T, bool)
+```
+
+`a + b`, and whether it overflowed. The value is the wrapped sum either way.
+
+**The test is the sign bits**, and it is the standard one: a sum overflows exactly when both
+operands have the same sign and the result has the other. `a ^ s` has its top bit set when `a` and
+the sum disagree in sign, `b ^ s` likewise, and the `&` of the two is negative only when both
+disagree -- which cannot happen unless `a` and `b` agreed with each other. Two operands of
+opposite signs can never overflow an addition, and the expression says so by construction rather
+than by a branch.
+
+### `overflowing_mul`
+
+```sysl
+overflowing_mul[T: Signed + Bits + Mul + Div + Sub + Shl + Eq + Ord](a: T, b: T) -> (T, bool)
+```
+
+`a * b`, and whether it overflowed. The value is the wrapped product either way.
+
+**Three cases, and the awkward one is why the first two exist.** The general test is to divide the
+product back by an operand and see whether the other comes out -- which is exact and needs no
+width, but divides, and traps for the one pair a machine divide cannot take: the most negative
+value over `-1`. So `-1` is answered before anything is divided, and the negation it becomes
+overflows at exactly that value and nowhere else.
+
+**The first case is the cheap one and it is the common one.** A product cannot overflow when the
+operands are small enough that it cannot: if the magnitudes occupy `p` and `q` bits then the
+product occupies at most `p + q`, so `p + q` below the width is enough, and the leading-zero
+counts say what `p` and `q` are without a division. The most negative value survives this test by
+failing it -- its magnitude is itself, which is negative, so its leading-zero count is zero and
+the sum can never clear the bar.
+
+### `overflowing_sub`
+
+```sysl
+overflowing_sub[T: Signed + Sub + BitXor + BitAnd + Ord](a: T, b: T) -> (T, bool)
+```
+
+`a - b`, and whether it overflowed. The value is the wrapped difference either way.
+
+**The mirror of the addition's test, with one operand's role changed**: a subtraction overflows
+exactly when the operands differ in sign and the result disagrees with the minuend. So the pair
+compared is `a ^ b` and `a ^ d` rather than `a ^ s` and `b ^ s`.
+
+It is written out rather than as `overflowing_add(a, zero - b)`, which is wrong at the most
+negative value of the width: negating that wraps to itself, so `a - min` would be computed as
+`a + min` and the flag would answer about the wrong operation.
 
 ### `pow`
 
@@ -553,6 +633,54 @@ reason stated where they begin.
 | `signum` | `signum(self) -> Self` | Which side of zero the value is on, as a value of its own type: `-1`, `0`, or `1`. |
 
 ## Implementations
+
+### Float for bf16
+
+```sysl
+impl Float for bf16
+```
+
+Bfloat16 -- binary32's range at a quarter of its precision, and the other way sixteen bits can be
+divided up.
+
+**It is not a smaller `f16`, it is a shorter `f32`**, and the difference is the whole reason both
+exist. `f16` spends five bits on the exponent and ten on the significand, so it is precise to
+about three decimal digits and runs out of range above 65504. `bf16` spends eight and seven: it is
+precise to about two digits and reaches 3.4e38, exactly as far as an `f32`, because its bits *are*
+an `f32`'s top sixteen. So a value that overflows an `f16` is ordinary here, and a value the two
+both hold is held more accurately there.
+
+Everything the width above says about widening applies unchanged and for the same reason: `f32`
+holds every `bf16` exactly, and libm has no entry point at this width either.
+
+### Float for f16
+
+```sysl
+impl Float for f16
+```
+
+Binary16, and the first width whose mathematics is not its own.
+
+**libm stops at `float`.** There is no half-width entry point to bind -- no `sqrth`, no `sinh` that
+means the square root of a half -- because no C library offers one, and nothing about the width
+suggests one is coming: sixteen bits of significand is a storage format, and the machines that
+compute in it compute a lane at a time rather than a value at a time. So every body below widens to
+`f32`, calls the `f`-suffixed entry point the width above already binds, and narrows the answer.
+
+**That is not a compromise, it is the correct answer, and the reason is worth stating once here
+rather than doubted at each of the thirty-odd methods that use it.** `f32` holds every `f16`
+exactly -- more exponent range and more than twice the significand -- so widening loses nothing.
+The `f32` result is then within half an `f32` ulp of the true answer, and narrowing rounds it to
+the nearest `f16`. Two roundings rather than one, and the first is so much finer than the second
+that it changes the result only for an answer sitting within an `f32` ulp of the midpoint between
+two `f16` values -- which is the accuracy libm itself promises, not a loss this widening
+introduced.
+
+**The constants are written as the mathematics rather than as this width's nearest value.** A
+literal is narrowed to the type it is written at, so `3.141592653589793f16` *is* the nearest `f16`
+to pi and says which number was meant, where the eight digits that spelling rounds to would only
+say what came out. The two that have to be exact are exact anyway: the largest finite `f16` is
+65504, and its epsilon is two to the minus tenth.
 
 ### Float for f32
 

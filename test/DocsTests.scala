@@ -63,8 +63,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/lexical.md"               -> (21, 6, 3),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
-    // so the page shows one taken on a value and through a bound.
-    "docs/content/reference/types.md"                 -> (21, 3, 0),
+    // so the page shows one taken on a value and through a bound. Two more runnable for the
+    // sixteen-bit floats: a program showing the precision and range difference between `f16` and
+    // `bf16`, and the conversion between them.
+    "docs/content/reference/types.md"                 -> (23, 3, 0),
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one
@@ -156,8 +158,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // fragments — the `extern` and the `@export` whose addresses a C library may now be handed.
     // A struct now names itself in the header: one more runnable, showing that the sysl side is
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
-    // typedef and a function, a generic struct, and a private one.
-    "docs/content/reference/ffi.md"                    -> (22, 31, 15),
+    // typedef and a function, a generic struct, and a private one. One more refusal for `bf16`,
+    // which a `c const` refuses by its own name rather than under `f16`'s.
+    "docs/content/reference/ffi.md"                    -> (22, 32, 15),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
@@ -202,8 +205,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     // One more runnable: the checked and overflowing operators, which take all three of the
-    // multiplication's routes between them.
-    "docs/content/library/math.md"                      -> (25, 10, 3),
+    // multiplication's routes between them. One more runnable again: `f16` and `bf16` computing
+    // through `f32` and narrowing back exactly.
+    "docs/content/library/math.md"                      -> (26, 10, 3),
     "docs/content/library/complex.md"                   -> (9, 1, 1),
     // Five more runnable: the floored division beside the truncating one, the bit operations on the
     // infinite two's-complement reading, the number theory, the two `real` directions, and the

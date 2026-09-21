@@ -182,18 +182,21 @@ since rendering widens to `real` and that is exact at every width.
 is still written as an ordinary conversion:
 
 ```sysl
-var h: f16 = 0.1
+var b: bf16 = 0.1
 
-print(bf16(h))
+print(f16(b))
 ```
 
 ```output
-0.0999756
+0.100098
 ```
 
-That answer is `f16`'s tenth rather than `bf16`'s, which is the point: a conversion carries the value
-the source actually holds, and here `bf16` has room for it exactly. The other direction rounds, since
-seven bits of significand fit in ten and ten do not fit in seven.
+That answer is `bf16`'s tenth rather than `f16`'s, which is the point: a conversion carries the value
+the source actually holds, and here `f16` has room for it exactly — its ten bits of significand hold
+`bf16`'s seven with nothing left to round. The other direction rounds, since seven bits do not hold
+what ten need: `bf16(h)`, with `h` still the `f16` tenth from above, prints `0.100098` too rather than
+`h`'s own `0.0999756`, because that value has no exact seven-bit reading and the nearest one is
+`bf16`'s own tenth.
 
 `sysl.math`'s [`Float`](/library/math/) trait covers both, so `sqrt`, `floor`, `pi` and the rest reach
 them by the same spelling they reach `real` by. libm has no entry point at sixteen bits, so those
