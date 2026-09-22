@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the fourteen annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the fifteen annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing`, `@noinline`, `@cold` | an **annotation** — a fact about the free function under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing`, `@noinline`, `@inline`, `@cold` | an **annotation** — a fact about the free function under it | the grammar |
 | `@setup`, `@teardown`, `@setup_all`, `@teardown_all` | an **annotation** — a hook `sysl test` runs around a module's tests | the grammar |
 | `@borrows` | an **annotation** on a trait's method — see [`@borrows`](/reference/traits/#a-method-may-promise-to-borrow) | the grammar |
 | `@needs(...)` | an **annotation** — the capabilities reaching the declaration under it requires; the one an `extern` takes | the grammar |
@@ -34,10 +34,11 @@ with. That is a rule about directives, not the thing that distinguishes them.
 Annotations come in groups, by what they attach to — and the last of them is the empty one, which is
 as much a rule as the others.
 
-**On a function** there are twelve, each written on its own line above the declaration. More than one
-may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below, and so
-are the four hooks a module's tests may declare — `@setup`, `@teardown`, `@setup_all` and
-`@teardown_all`; `@pure`,
+**On a function** there are fifteen, each written on its own line above the declaration. More than
+one may be stacked, and writing the same one twice is refused. `@test` and `@tailrec` are below, and
+so are the four hooks a module's tests may declare — `@setup`, `@teardown`, `@setup_all` and
+`@teardown_all` — and the three that tell the optimizer what a definition is for, `@noinline`,
+`@inline` and `@cold`; `@pure`,
 `@ghost`, `@reads` and `@writes` belong to the specification vocabulary and are on the
 [verification](/reference/verification/) page; `@export` makes the definition C-callable and is on
 the [FFI](/reference/ffi/) page, beside the `extern` it is the mirror image of; `@crossing(...)` says
@@ -1026,7 +1027,7 @@ calls itself nowhere the jump can replace
 It changes nothing about what is emitted. Write it where losing the jump silently would be a bug,
 and leave it off everywhere else.
 
-## `@noinline` and `@cold` — what the optimizer is told about a definition
+## `@noinline`, `@inline` and `@cold` — what the optimizer is told about a definition
 
 A `private` function is visible only inside the file that wrote it, so the optimizer knows every
 call it has. With one call site it folds the body back into the caller and deletes it — which is
@@ -1048,6 +1049,29 @@ print(grow(21))
 42
 ```
 
+`@inline` says the opposite, and it is the one a library reaches for more often. A member written to
+be absorbed by its caller — a sequence's append, an accessor that checks one thing — sits a few
+units either side of the budget the optimizer is willing to spend, and *which* side is decided by
+things the member has no say in: how wide the element type is, how many counted fields it carries.
+`@inline` raises that budget for this definition, so the decision stops moving when a struct one
+field along grows:
+
+```sysl
+@inline
+push(n: int) -> int = n + 21
+
+print(push(21))
+```
+
+```output
+42
+```
+
+**It is a hint, not an instruction.** The inliner is told to spend more and then decides as it
+decides; nothing here forces a call to disappear, and a definition that is enormous is still a
+definition. That is deliberate — an instruction would make a library's opinion about one member
+override a caller's whole code size.
+
 `@cold` says the definition is reached rarely. The optimizer spends nothing on it and keeps its
 blocks away from the hot ones — but it is a frequency, not a prohibition, and a cold function may
 still be inlined:
@@ -1063,8 +1087,10 @@ print(fail(43))
 42
 ```
 
-**They are two axes and they compose.** A rare slow path wants both: kept out of line, and known to
-be rare.
+**`@noinline` and `@inline` are one axis; `@cold` is another.** The first two contradict, and the
+compiler refuses them together. `@cold` composes with either: a rare slow path wants `@noinline` and
+`@cold` — kept out of line, and known to be rare — and a rarely reached helper written to be
+absorbed wants `@inline` and `@cold`.
 
 ```sysl
 @noinline
@@ -1078,9 +1104,21 @@ print(grow(21))
 42
 ```
 
+```sysl
+@inline
+@cold
+report(n: int) -> int = n + 21
+
+print(report(21))
+```
+
+```output
+42
+```
+
 ### They mark a member too
 
-A method lowers to an ordinary function, and these two are about that function — so a generic
+A method lowers to an ordinary function, and these three are about that function — so a generic
 container writes the word once and every element type it is used at gets it:
 
 ```sysl
@@ -1091,20 +1129,28 @@ struct Buf[T]
     @cold
     grow(self) -> int = self.cap * 2
 
+    @inline
+    room(self) -> int = self.cap + 21
+
 var a: Buf[int] = Buf(21)
 print(a.grow())
+print(a.room())
 ```
 
 ```output
 42
+42
 ```
 
-They are the only two annotations a member may carry that are not about a parameter.
+That is what `sysl.buf` does with its own `push`: the member is written so a caller can absorb the
+whole of it, and `@inline` is what keeps the element type from deciding whether it does.
 
-### Neither takes an argument
+They are the only three annotations a member may carry that are not about a parameter.
 
-Whether a call stays a call is the whole of what the first says, and how rare a rare path is is not
-a number a program has:
+### None of the three takes an argument
+
+Whether a call stays a call is the whole of what the first says, `@inline` raises a budget rather
+than naming one, and how rare a rare path is is not a number a program has:
 
 ```sysl
 @noinline(2)
@@ -1115,6 +1161,17 @@ print(grow(21))
 
 ```error
 '@noinline' takes no arguments
+```
+
+```sysl
+@inline(200)
+grow(n: int) -> int = n * 2
+
+print(grow(21))
+```
+
+```error
+'@inline' takes no arguments
 ```
 
 ### What they may not mark
@@ -1135,9 +1192,9 @@ print(1)
 an annotation marks a function
 ```
 
-`@ghost` is the one annotation they contradict rather than merely have nothing to do with. A ghost
-function is erased before anything is emitted, so there is no definition left for either to be
-about:
+`@ghost` is the one *other* annotation they contradict rather than merely have nothing to do with. A
+ghost function is erased before anything is emitted, so there is no definition left for any of them
+to be about:
 
 ```sysl
 @ghost
@@ -1150,6 +1207,26 @@ print(1)
 ```error
 '@ghost' means there is none
 ```
+
+### `@noinline` beside `@inline`
+
+One forbids inlining and the other asks for it, so a definition carrying both is held to neither.
+This is the one refusal in the group that is not about a missing definition:
+
+```sysl
+@noinline
+@inline
+grow(n: int) -> int = n * 2
+
+print(grow(21))
+```
+
+```error
+they contradict above one declaration
+```
+
+If what you meant was *keep it out of the hot path*, that is `@cold`, and it stands beside either of
+them.
 
 They stand beside everything else. `@tailrec` is about this function's call to *itself* becoming a
 jump and `@noinline` about the call into it from elsewhere staying a call — two different calls, so
@@ -1964,7 +2041,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)`, `@crossing(...)`, `@noinline`, `@cold`, `@setup`, `@teardown`, `@setup_all` and `@teardown_all` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)`, `@crossing(...)`, `@noinline`, `@inline`, `@cold`, `@setup`, `@teardown`, `@setup_all` and `@teardown_all` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
