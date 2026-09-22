@@ -1030,9 +1030,10 @@ and leave it off everywhere else.
 
 A `private` function is visible only inside the file that wrote it, so the optimizer knows every
 call it has. With one call site it folds the body back into the caller and deletes it — which is
-usually what you want, and is exactly wrong for a slow path. A buffer's `grow` is called once, from
-`push`, and is almost never reached; inlined into `push` it makes `push` large enough that `push`
-stops being inlined into *its* callers. Splitting the rare path out bought nothing.
+usually what you want, and is exactly wrong for a slow path. A buffer's `grow` is called from
+`push`'s cold arm and from `extend`, and is almost never reached; inlined into either caller it
+would make that caller large enough that it stops being inlined into *its own* callers. Splitting
+the rare path out bought nothing.
 
 `@noinline` says the call stays a call:
 

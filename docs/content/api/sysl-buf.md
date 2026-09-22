@@ -74,7 +74,7 @@ asks on purpose.
 | `is_empty` | `is_empty(self) -> bool` |  |
 | `at` | `at(self, i: usize) -> T` |  |
 | `set` | `set(*self, i: usize, v: T)` |  |
-| `push` | `push(*self, v: T)` |  |
+| `push` | `push(*self, v: T)` | One element appended, after growing the storage where there is no room left for it. |
 | `extend` | `extend(*self, xs: []const T)` | Every element of a slice appended at once, which is what `push` in a loop was costing more than it looked like. |
 | `pop` | `pop(*self) -> Option[T]` |  |
 | `truncate` | `truncate(*self, n: usize)` |  |
