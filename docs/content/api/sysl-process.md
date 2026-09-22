@@ -22,11 +22,19 @@ assert -- and neither exists outside POSIX. It said `os` until the WASI row arri
 difference visible: preview1 has no way to start a program at all, and Windows was already the
 same case with nobody building for it.
 
-**What is deliberately absent is process *management*.** There is no pid here, no signal, no
-process group and no way to hold a running child -- every call starts one program and waits for
-it. That covers what a build tool, an installer or a command-line front end does, and it is the
-whole of what the org needs; a program that wants to supervise children wants a different surface
-and can have one under `sysl.posix` when something actually needs it.
+**What is deliberately absent is process *management*.** There is no pid here, no process group
+and no way to hold a running child -- every call starts one program and waits for it. That covers
+what a build tool, an installer or a command-line front end does, and it is the whole of what the
+org needs; a program that wants to supervise children wants a different surface and can have one
+under `sysl.posix` when something actually needs it.
+
+**The one thing a call that waits cannot do without is a way to stop waiting.** "Runs a program
+and waits for it" says nothing about a program that never ends, and a caller with no bound has no
+move left: a child stuck on a socket nobody answers, or on a prompt nobody is there to type at,
+holds its parent for as long as the machine is up. So `run` and `capture` take a `timeout`, and a
+child that outstays it is stopped and reported as `TimedOut`. That is the whole of the signalling
+here -- the caller names a bound and this module keeps it; there is still no way to send a signal
+of one's own choosing.
 
 **Nothing here goes through a shell**, which is why the arguments are a list rather than one
 string. `system(3)` would hand the text to `/bin/sh`, and then a filename with a space in it is
@@ -43,7 +51,7 @@ the vector as it is given, so a path is a path whatever is in it.
 ### `capture`
 
 ```sysl
-capture(program: string, args: []const string = [], dir: string = "", env: []const Var = [], stderr: bool = false) -> Result[Output, IoError]
+capture(program: string, args: []const string = [], dir: string = "", env: []const Var = [], stderr: bool = false, timeout: int = 0) -> Result[Output, IoError]
 ```
 
 Run a program, wait for it, and collect what it wrote to its standard output.
@@ -63,12 +71,17 @@ looking. Asking for it puts the message in `Output.err` and takes it *off* the t
 the trade -- so a call whose output a person is watching should leave it alone, and one whose
 answer another program is reading should not.
 
+`timeout` is how many milliseconds the child may take, and zero -- the default -- means it may
+take as long as it likes. **What a child wrote before it ran out of time still comes back**: the
+files are read whatever the status is, so a program that printed half an answer and then hung
+hands over the half, which is usually what says where it stopped.
+
 The files are removed before this returns, whether the child succeeded or not.
 
 ### `run`
 
 ```sysl
-run(program: string, args: []const string = [], dir: string = "", env: []const Var = []) -> Result[Status, IoError]
+run(program: string, args: []const string = [], dir: string = "", env: []const Var = [], timeout: int = 0) -> Result[Status, IoError]
 ```
 
 Run a program, wait for it, and say how it ended.
@@ -80,10 +93,16 @@ install or anything else whose output a person is watching go by.
 `dir` is where the child starts, and an empty one means wherever this program is. The child's
 directory is its own -- this program does not move.
 
+`timeout` is how many milliseconds the child may take, and zero -- the default -- means it may
+take as long as it likes. A child that outstays it is asked to stop and then made to, and the
+answer is `TimedOut`.
+
 The error half is for a child that could not be *started*: a program that is not there reports
 `NotFound`, one that is not executable reports `PermissionDenied`. **A program that ran and
 failed is `Ok`**, carrying a non-zero `Status`, because it did start and its exit status is an
-answer rather than a failure of this call.
+answer rather than a failure of this call. **A child that ran out of time is `Ok` too**, for the
+same reason and with `TimedOut`: this call did what it was asked, and what happened is about the
+child.
 
 ## Types
 
@@ -116,14 +135,20 @@ which is the whole reason this field is an `Option`.
 enum Status
     Exited(code: int)
     Signalled(signal: int)
+    TimedOut
 ```
 
 How a child ended.
 
-Two cases rather than one number, because they are not the same kind of answer: an exit status is
-something the program chose and a signal is something that happened to it. Collapsing them --
-which is what a shell's `$?` does, reporting `128 + n` for a signal -- makes a program killed by
-`SIGKILL` indistinguishable from one that deliberately exited 137.
+Separate cases rather than one number, because they are not the same kind of answer: an exit
+status is something the program chose and a signal is something that happened to it. Collapsing
+them -- which is what a shell's `$?` does, reporting `128 + n` for a signal -- makes a program
+killed by `SIGKILL` indistinguishable from one that deliberately exited 137.
+
+**`TimedOut` is there for the same reason, one step further out.** A child stopped for running
+past its timeout *was* killed by a signal, and reporting that would say "something killed it"
+about the one case where the caller knows exactly what did and why. The distinction is what lets
+a tool say "it took too long" rather than "it crashed", and retry the one and not the other.
 
 | Member | Signature | Description |
 |---|---|---|
