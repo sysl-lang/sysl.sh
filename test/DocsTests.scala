@@ -231,9 +231,10 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // integer family that the left-hand side is written as.
     "docs/content/library/time.md"                       -> (28, 3, 5),
     "docs/content/library/env.md"                        -> (1, 0, 0),
-    // Two more for `capture`'s `stderr`: the reason a failed child gives, and the difference between
-    // a stream nobody collected and one that was collected and empty.
-    "docs/content/library/process.md"                    -> (7, 0, 0),
+    // Two of them for `capture`'s `stderr`: the reason a failed child gives, and the difference
+    // between a stream nobody collected and one that was collected and empty. One more for the
+    // bound a caller puts on how long a child may take.
+    "docs/content/library/process.md"                    -> (8, 0, 0),
     // Four runnable blocks and no refusals: `sysl.posix.net` is a surface rather than a set of
     // rules, so what a page about it can show is connections it actually makes.
     "docs/content/library/net.md"                        -> (4, 0, 0),

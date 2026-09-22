@@ -43,7 +43,7 @@ without asking; everything below it is [imported](/reference/modules/) by name.
 | [`sysl.time.tzif`](/library/time/#decoding-a-zone) | a zone decoded from the bytes of a TZif file — no copy, no allocator, and no filesystem | — |
 | [`sysl.posix.time`](/library/time/#reading-a-clock-sysl-posix-time) | the two clocks the host keeps — `now` for a wall reading, `monotonic` for measuring — the zone it is set to, and the zone database by name | `posix` |
 | [`sysl.env`](/library/env/) | the environment a program was started with — `get`, `get_or`, `is_set`. Reading only | `os` |
-| [`sysl.process`](/library/process/) | starting another program and waiting for it — `run`, `capture`, `Status`, and no shell anywhere in it | `os` |
+| [`sysl.process`](/library/process/) | starting another program and waiting for it — `run`, `capture`, `Status`, a timeout so a child that never ends cannot hold its caller, and no shell anywhere in it | `posix` |
 | [`sysl.posix.net`](/library/net/) | blocking TCP — `resolve`, `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv`, `shutdown`, `close`, and a timeout so a blocking call cannot wait forever | `posix` |
 | [`sysl.sync`](/library/sync/) | `Atomic[T]`, `SpinLock`, and the five memory orderings | — |
 | [`sysl.posix.threads`](/library/threads/) | `spawn`, `Thread.join`, `yield_now`, `Mutex[T]`, and `Channel[T]` — the bounded queue two threads hand values across | `posix` |
