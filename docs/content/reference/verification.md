@@ -507,6 +507,37 @@ is '@ghost', so it exists for the specification and is not there when the progra
 A ghost function's own body is ordinary code and may read real state freely — that is the whole point
 of an `is_sorted`.
 
+## What the optimizer is told
+
+A contract is a branch and a trap, and it used to be nothing else: what a function promised stopped
+at the frame that declared it. A caller saw a call and then its own code, with nothing joining the
+two — so a `Buf`'s `grow` could promise room for one more element and the store on the very next line
+still carried a bounds test of its own.
+
+**A postcondition is now repeated at each call site as a fact rather than as a check.** The clause is
+rewritten in the caller's terms — each parameter replaced by the argument that filled it, `result` by
+the value the call answered with — and handed to the optimizer, which emits no code for it and folds
+whatever the fact settles. The bounds test after a `grow` is the case it was built for, and it goes.
+
+**Only a clause that can be read twice is repeated**, and the compiler decides that by lowering the
+clause and looking at what came out: anything that calls, allocates, branches or traps is put back
+and the call site is left exactly as it was. `old(e)` is never repeated, since the snapshot it reads
+is a slot in the callee's frame. Nor is an argument the call can change under the caller — a value
+read out of a global, or a local whose address the same call was handed, is not the value the promise
+was made about.
+
+**Nothing is assumed at a function's own entry, because there is nothing to add.** A `require` traps
+before the body runs, so its branch dominates everything below it and the optimizer already reads it
+as a fact about the values it tested; a subscript that the precondition covers folds into it with
+nothing said twice.
+
+**It is wired to the same switch as the check.** The one clause that does not run is one naming a
+[ghost function](#ghost-what-costs-nothing-to-say), and such a clause is not told to the optimizer
+either — by that same test, rather than by a second one that could drift from it. There is no build
+mode, flag or optimization level that strips a check sysl emitted, and were one ever added it would
+have to take the assumption with it: an optimizer told something the program no longer establishes is
+a miscompile rather than a missing check.
+
 ## `sysl prove`
 
 `sysl prove <file>` translates a module to [WhyML](https://www.why3.org/), the input language of the
