@@ -467,14 +467,17 @@ print(b.len())
 ```
 
 ```error
-this reaches 'sysl.buf.Buf.push.int', which makes heap storage, and this module declared '@no_alloc'
+this reaches 'sysl.buf.Buf.grow.int', which makes heap storage, and this module declared '@no_alloc'
 ```
 
-**The `push` is named and `buf()` is not, and the difference is worth reading.** [`alloc` is checked
-on what a module *calls*](/reference/modules/), at the smallest expression that still reaches an
-allocator — and **an empty `Buf` reaches none**. `buf()` is `Buf([], 0)`, and an empty view is
-`{null, null, 0}`: the zero value of what a view is made of, with no elements, no length and nobody
-owning them. So building one costs nothing and the refusal falls where the storage is really made.
+**`grow` is named and `buf()` is not, and the difference is worth reading.** `push`'s own growth path
+— the allocation, the copy, and the release of the storage it replaced — is out of line in a `grow`
+it shares with `extend`, kept there so a hot `push` stays a compare, a store and a bump. [`alloc` is
+checked on what a module *calls*](/reference/modules/), at the smallest expression that still reaches
+an allocator, so the refusal names `grow` rather than `push` — and **an empty `Buf` reaches neither**.
+`buf()` is `Buf([], 0)`, and an empty view is `{null, null, 0}`: the zero value of what a view is made
+of, with no elements, no length and nobody owning them. So building one costs nothing and the refusal
+falls where the storage is really made.
 
 There is still no allocator-free `Buf` and there cannot be one: growing is the whole of what it does.
 What an allocator-free module may now do is *hold* an empty one — which is what a function answering

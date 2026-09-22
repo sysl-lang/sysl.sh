@@ -1,6 +1,6 @@
 ---
 title: Attributes, annotations, and compile time
-summary: `::` attributes a type answers, the twelve annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
+summary: `::` attributes a type answers, the fourteen annotations a function takes, the three that lay out or place what they mark, the five a file's header takes, `@assert` which stands on its own, and the `#if` directive that gates lines before the lexer sees them.
 weight: 130
 ---
 
@@ -10,7 +10,7 @@ has a name and a spelling of its own:
 | written | is | read by |
 |---|---|---|
 | `T::Attr` | an **attribute** — a question a type's own name answers | the analyzer, at the use |
-| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing` | an **annotation** — a fact about the free function under it | the grammar |
+| `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads`, `@writes`, `@crossing`, `@noinline`, `@cold` | an **annotation** — a fact about the free function under it | the grammar |
 | `@setup`, `@teardown`, `@setup_all`, `@teardown_all` | an **annotation** — a hook `sysl test` runs around a module's tests | the grammar |
 | `@borrows` | an **annotation** on a trait's method — see [`@borrows`](/reference/traits/#a-method-may-promise-to-borrow) | the grammar |
 | `@needs(...)` | an **annotation** — the capabilities reaching the declaration under it requires; the one an `extern` takes | the grammar |
@@ -1026,6 +1026,134 @@ calls itself nowhere the jump can replace
 It changes nothing about what is emitted. Write it where losing the jump silently would be a bug,
 and leave it off everywhere else.
 
+## `@noinline` and `@cold` — what the optimizer is told about a definition
+
+A `private` function is visible only inside the file that wrote it, so the optimizer knows every
+call it has. With one call site it folds the body back into the caller and deletes it — which is
+usually what you want, and is exactly wrong for a slow path. A buffer's `grow` is called once, from
+`push`, and is almost never reached; inlined into `push` it makes `push` large enough that `push`
+stops being inlined into *its* callers. Splitting the rare path out bought nothing.
+
+`@noinline` says the call stays a call:
+
+```sysl
+@noinline
+grow(n: int) -> int = n * 2
+
+print(grow(21))
+```
+
+```output
+42
+```
+
+`@cold` says the definition is reached rarely. The optimizer spends nothing on it and keeps its
+blocks away from the hot ones — but it is a frequency, not a prohibition, and a cold function may
+still be inlined:
+
+```sysl
+@cold
+fail(n: int) -> int = n - 1
+
+print(fail(43))
+```
+
+```output
+42
+```
+
+**They are two axes and they compose.** A rare slow path wants both: kept out of line, and known to
+be rare.
+
+```sysl
+@noinline
+@cold
+grow(n: int) -> int = n * 2
+
+print(grow(21))
+```
+
+```output
+42
+```
+
+### They mark a member too
+
+A method lowers to an ordinary function, and these two are about that function — so a generic
+container writes the word once and every element type it is used at gets it:
+
+```sysl
+struct Buf[T]
+    cap: int
+
+    @noinline
+    @cold
+    grow(self) -> int = self.cap * 2
+
+var a: Buf[int] = Buf(21)
+print(a.grow())
+```
+
+```output
+42
+```
+
+They are the only two annotations a member may carry that are not about a parameter.
+
+### Neither takes an argument
+
+Whether a call stays a call is the whole of what the first says, and how rare a rare path is is not
+a number a program has:
+
+```sysl
+@noinline(2)
+grow(n: int) -> int = n * 2
+
+print(grow(21))
+```
+
+```error
+'@noinline' takes no arguments
+```
+
+### What they may not mark
+
+They mark a function. A struct has no definition to keep out of line, a `const` is folded into every
+use, and an `extern` names something this program does not define — a `declare` line carries no
+function attributes at all.
+
+```sysl
+@noinline
+struct S
+    a: int
+
+print(1)
+```
+
+```error
+an annotation marks a function
+```
+
+`@ghost` is the one annotation they contradict rather than merely have nothing to do with. A ghost
+function is erased before anything is emitted, so there is no definition left for either to be
+about:
+
+```sysl
+@ghost
+@noinline
+sorted(n: int) -> bool = n > 0
+
+print(1)
+```
+
+```error
+'@ghost' means there is none
+```
+
+They stand beside everything else. `@tailrec` is about this function's call to *itself* becoming a
+jump and `@noinline` about the call into it from elsewhere staying a call — two different calls, so
+there is nothing for them to disagree about; and `@test` only says who calls the function.
+
 ## `@packed` and `@align(n)` — where a struct's fields sit
 
 By default a struct pads: each field begins on its own alignment, and the aggregate takes the widest
@@ -1835,7 +1963,7 @@ because the trees a library ships are now a per-target answer.
 
 | absent | why |
 |---|---|
-| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)`, `@crossing(...)`, `@setup`, `@teardown`, `@setup_all` and `@teardown_all` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
+| a general annotation mechanism | the set is closed: `@test`, `@tailrec`, `@pure`, `@ghost`, `@export`, `@reads(...)`, `@writes(...)`, `@crossing(...)`, `@noinline`, `@cold`, `@setup`, `@teardown`, `@setup_all` and `@teardown_all` on a free function, `@packed`, `@align(n)` and `@export("...")` on a struct, `@section("...")` on a binding or a function, `@no_<capability>`, `@requires`, `@link`, `@include` and `@tests` on a file, and `@assert` on nothing at all. Each was designed and added on its own evidence; there is no way to write one the compiler does not already know |
 | bitfield syntax | there is nothing to write: inside `@packed` an `iN` field already occupies exactly N bits, so a five-bit register field is `u5` and needs no `: 5` beside it. The open integer family does the work C's declarator syntax was invented for |
 | `#define`, or any project-supplied symbol | the `#if` vocabulary is derived from the target and closed, which is what makes an unknown symbol an error rather than a false |
 | a `#if` that asks about a capability | a condition asks what the *target* says; what a project permits is a different question, left with the config that would define it |
