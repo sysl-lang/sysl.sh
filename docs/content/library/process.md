@@ -1,6 +1,6 @@
 ---
 title: The process module
-summary: "`sysl.process` — starting another program and waiting for it: `run`, `capture`, `Status`, and why there is no shell anywhere in it."
+summary: "`sysl.process` — starting another program and waiting for it: `run`, `capture`, `Status`, how long a child may take, and why there is no shell anywhere in it."
 weight: 74
 ---
 
@@ -89,8 +89,9 @@ A filename with a space in it is one argument, and one with a `;` in it is not a
 
 ## How a child ended
 
-`Status` has two cases, because they are not the same kind of answer: an exit status is something the
-program chose, and a signal is something that happened to it.
+`Status` keeps its cases apart, because they are not the same kind of answer: an exit status is
+something the program chose, a signal is something that happened to it, and `TimedOut` is this
+program deciding it had waited long enough.
 
 ```sysl
 import sysl.process.Status
@@ -98,21 +99,30 @@ import sysl.process.Status
 print(Status.Exited(0))
 print(Status.Exited(2))
 print(Status.Signalled(9))
+print(Status.TimedOut)
 
 print(Status.Exited(0).ok())
 print(Status.Exited(137) == Status.Signalled(9))
+print(Status.TimedOut == Status.Signalled(9))
 ```
 
 ```output
 exited
 exited 2
 killed by signal 9
+timed out
 true
+false
 false
 ```
 
-**A shell folds the two together as `128 + n`**, which makes a program killed by `SIGKILL`
-indistinguishable from one that deliberately exited `137`. The last line is that distinction.
+**A shell folds the first two together as `128 + n`**, which makes a program killed by `SIGKILL`
+indistinguishable from one that deliberately exited `137`. The fifth line is that distinction.
+
+**And the last line is the same argument once more.** A child stopped for running past its deadline
+really was killed by a signal, so reporting `Signalled` would be true and useless: the caller set
+the bound and knows what stopped it, and what it wants to say is "it took too long" rather than "it
+crashed" — one of those is worth retrying and the other is not.
 
 ## Where it starts, and what it can see
 
@@ -198,10 +208,53 @@ true
 The second stream goes through a second file, on the same mechanism and for the same reason: two
 pipes is where the deadlock above gets *easier* to reach, and two files cannot deadlock at all.
 
+## A child that never ends
+
+"Runs a program and waits for it" says nothing about a program that does not finish, and a caller
+with no bound has no move left: a child stuck on a socket nobody answers, or on a prompt nobody is
+there to type at, holds its parent for as long as the machine is up. **Both calls take a `timeout`
+in milliseconds**, last, and zero — the default — means no bound at all.
+
+```sysl
+import sysl.process.{run, capture}
+import sysl.text.Search
+
+// A second of sleep, allowed a fifth of one.
+val s = run("sleep", ["1"], "", [], 200).unwrap()
+
+print(s, s.ok())
+
+// What a child wrote before it was stopped still comes back.
+val out = capture("sh", ["-c", "echo half; exec sleep 5"], "", [], false, 300).unwrap()
+
+print(out.status, out.text.trim())
+```
+
+```output
+timed out false
+timed out half
+```
+
+**A child that outstays its timeout is asked to stop and then made to**: `SIGTERM` first, so a
+program that tidies up on the way out gets to, then `SIGKILL` a fifth of a second later if it is
+still there. The grace is deliberately short — the child has already had the whole of its timeout,
+and one that ignores the first signal is not going to honour a longer wait for the second.
+
+**The signal goes to the child and to nothing else.** Putting it in a process group of its own
+would take it out of the terminal's foreground group, and then a person's own interrupt would stop
+reaching it — so a child that forked children of its own leaves them behind. That is one more
+reason to run the program rather than a shell that runs it, which is what this module does anyway;
+the example above says `exec` for exactly that reason.
+
+A timeout costs nothing to have and is worth setting wherever the child is something other than a
+program you wrote: `run` and `capture` with no bound are the right calls for a build you are
+watching, and the wrong ones for a tool that has hung on somebody's machine once already.
+
 ## What is not here
 
-**Process *management*.** There is no pid, no signal you can send, no process group, and no way to
-hold a running child: every call starts one program and waits for it. That covers what a build tool,
+**Process *management*.** There is no pid, no process group, no signal of your own choosing, and no
+way to hold a running child: every call starts one program and waits for it — for as long as it
+takes, or for as long as you said. That covers what a build tool,
 an installer or a command-line front end does. A program that wants to supervise children wants a
 different surface, and it would belong under `sysl.posix`, where a binding goes when it *is* POSIX
 rather than merely implemented with it.
