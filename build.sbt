@@ -13,7 +13,7 @@
 // that branch is what deploys. On `dev` it is an **interim** built from sysl's own dev, so a page can
 // be written and verified as a feature lands rather than held until a release. See `syslVersion`.
 
-ThisBuild / scalaVersion := "3.8.4"
+ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / organization := "io.github.edadma"
 
 // The compiler and two of its own dependencies were built against different patch releases of
@@ -58,7 +58,7 @@ ThisBuild / evictionErrorLevel := Level.Warn
 //
 // A release bumps this to the real version on `dev`, then merges dev into `stable` in both
 // repositories. That is the one moment the two branches say the same thing.
-val syslVersion = "0.0.125"
+val syslVersion = "0.0.126"
 
 lazy val root = project
   .in(file("."))
