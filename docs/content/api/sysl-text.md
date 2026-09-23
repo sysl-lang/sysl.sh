@@ -19,7 +19,7 @@ that `ß` upper-cases to `ẞ`, and it is the other module that does.
 
 ## Index
 
-[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`cluster_columns`](#cluster_columns) [`columns`](#columns) [`contains_fold`](#contains_fold) [`cstring`](#cstring) [`ends_with_fold`](#ends_with_fold) [`eq_fold`](#eq_fold) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`from_utf8_unchecked`](#from_utf8_unchecked) [`grapheme_columns`](#grapheme_columns) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`starts_with_fold`](#starts_with_fold) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
+[`char_columns`](#char_columns) [`char_from_u32`](#char_from_u32) [`char_indices`](#char_indices) [`chars_of`](#chars_of) [`cluster_columns`](#cluster_columns) [`columns`](#columns) [`contains_fold`](#contains_fold) [`cstring`](#cstring) [`ends_with_fold`](#ends_with_fold) [`eq_fold`](#eq_fold) [`fields`](#fields) [`from_cstring`](#from_cstring) [`from_utf8`](#from_utf8) [`from_utf8_lossy`](#from_utf8_lossy) [`from_utf8_unchecked`](#from_utf8_unchecked) [`grapheme_columns`](#grapheme_columns) [`is_char_boundary`](#is_char_boundary) [`join`](#join) [`parse_bool`](#parse_bool) [`parse_bool`](#parse_bool-1) [`parse_int`](#parse_int) [`parse_int`](#parse_int-1) [`parse_int_base`](#parse_int_base) [`parse_int_base`](#parse_int_base-1) [`parse_long`](#parse_long) [`parse_long`](#parse_long-1) [`parse_long_base`](#parse_long_base) [`parse_long_base`](#parse_long_base-1) [`parse_real`](#parse_real) [`parse_real`](#parse_real-1) [`parse_uint`](#parse_uint) [`parse_uint`](#parse_uint-1) [`parse_ulong`](#parse_ulong) [`parse_ulong`](#parse_ulong-1) [`parse_ulong_base`](#parse_ulong_base) [`parse_ulong_base`](#parse_ulong_base-1) [`repeat`](#repeat) [`replace_all`](#replace_all) [`split`](#split) [`starts_with_fold`](#starts_with_fold) [`str_builder`](#str_builder) [`str_builder_with_capacity`](#str_builder_with_capacity) [`str_view`](#str_view) [`to_lower`](#to_lower) [`to_upper`](#to_upper) [`CharIndices`](#charindices) [`Chars`](#chars) [`CString`](#cstring-1) [`ParseError`](#parseerror) [`StrBuilder`](#strbuilder) [`Utf8Error`](#utf8error) [`Ascii`](#ascii) [`Search`](#search) [Ascii for char](#ascii-for-char) [Ascii for u8](#ascii-for-u8) [Display for ParseError](#display-for-parseerror) [Iterate for CharIndices](#iterate-for-charindices) [Iterate for Chars](#iterate-for-chars) [Search for []const u8](#search-for-const-u8) [Search for string](#search-for-string)
 
 ## Functions
 
@@ -520,6 +520,29 @@ saves is the reallocate-and-copy at each doubling on the way up to `n`.
 
 It is a guess and nothing depends on it: too small and the buffer grows the way it always does,
 too large and the slack is freed with the rest when the builder goes.
+
+### `str_view`
+
+```sysl
+str_view(b: []u8) -> string
+```
+
+The bytes of a writable slice as a `string` **without copying them**: the string is a view that
+shares the slice's storage, exactly as `s[a..b]` shares a string's, so a later write through the
+slice is seen by the string.
+
+**It is here for a buffer that grows in place and is read as text at every step** -- an
+appending builder whose contents are handed out as a `string` each time, where
+`from_utf8_unchecked` would copy the whole of the text on every call. Go's `unsafe.String` is the
+same operation.
+
+**The caller owes two guarantees, not one.** The bytes are valid UTF-8, as for
+`from_utf8_unchecked`; and **nothing writes the bytes the string covers while the string is
+alive**, since a `string` is taken everywhere to be immutable and a change underneath one breaks
+whatever compared, hashed or measured it. Writing *past* the end of the view is fine: the string's
+length is the slice's, fixed where it is made. What the compiler still guarantees is the storage.
+The string holds a share of the slice's owner, so the bytes live as long as the string does, and a
+view of an array the frame owns moves that array to the heap.
 
 ### `to_lower`
 
