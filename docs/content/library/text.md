@@ -220,7 +220,7 @@ owner, so it costs no allocation and **sees every later write** through `b` — 
 grown in place and read back as text at every step wants, and why its caller owes a second promise
 beyond valid UTF-8: nothing writes the bytes the string covers while the string is alive. It is one
 line over the raw-tier `str_alias(b)`, the in-place counterpart of `str_cast`; the whole contract,
-with a program, is in [strings § A string that shares a buffer](/reference/strings/#a-string-that-shares-a-buffer--str_view).
+with a program, is in [strings § A string that shares a buffer](/reference/strings/#a-string-that-shares-a-buffer).
 
 The validator is Unicode's well-formedness table rather than a decode-then-range-check, and the
 difference shows in what it costs to be right: in the table the **lead** byte fixes the legal range

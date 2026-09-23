@@ -110,7 +110,7 @@ hi!
 What sits underneath it is a compiler primitive, deliberately in the same category as a raw pointer,
 because breaking the UTF-8 invariant breaks `char`'s invariant downstream.
 
-### A string that shares a buffer — `str_view`
+### A string that shares a buffer
 
 **`str_view(b: []u8) -> string` is the one conversion that does not copy.** The string is the slice's
 three words: it takes a share of the slice's owner, exactly as `s[a..b]` shares a string's, and

@@ -109,7 +109,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/reference/strings.md"               -> (23, 7, 1),
+    "docs/content/reference/strings.md"               -> (24, 7, 1),
     // One more of each: a member that declares type parameters of its own is left out of the table
     // rather than out of the object, so the page shows an object forming on such a trait and
     // dispatching everything else, and refuses the one member on it.
