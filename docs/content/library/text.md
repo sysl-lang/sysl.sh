@@ -214,6 +214,14 @@ line, because every *safe* route to a `string` already carries the guarantee.
 one line, `str_cast(b)` — so the pair a caller chooses between sits together here. It was a compiler
 form in scope everywhere until 0.0.82, which is why older code calls it with no import.
 
+**`str_view(b: []u8) -> string` is its sibling that does not copy**, and it is here for the same reason:
+a reader choosing among the three conversions finds them in one module. The string shares the slice's
+owner, so it costs no allocation and **sees every later write** through `b` — which is what a buffer
+grown in place and read back as text at every step wants, and why its caller owes a second promise
+beyond valid UTF-8: nothing writes the bytes the string covers while the string is alive. It is one
+line over the raw-tier `str_alias(b)`, the in-place counterpart of `str_cast`; the whole contract,
+with a program, is in [strings § A string that shares a buffer](/reference/strings/#a-string-that-shares-a-buffer--str_view).
+
 The validator is Unicode's well-formedness table rather than a decode-then-range-check, and the
 difference shows in what it costs to be right: in the table the **lead** byte fixes the legal range
 of the byte after it — `E0` demands `A0..BF`, `ED` only `80..9F`, `F0` demands `90..BF`, `F4` only

@@ -45,6 +45,7 @@ is no repair path, because there is nothing to repair.
 | a literal | `"héllo"` | validated while compiling |
 | bytes | `from_utf8(b: []const u8)` | validates; the error names the byte offset |
 | bytes, trusted | `from_utf8_unchecked(b)` | **unsafe** — the long name is the point: it stays greppable |
+| bytes, trusted and shared | `str_view(b: []u8)` | **unsafe** — no copy: the string sees later writes to `b` |
 | a `char` | `string(c)` | encodes one scalar value |
 
 ```sysl
@@ -106,8 +107,49 @@ print(from_utf8_unchecked(bytes))
 hi!
 ```
 
-It needs no import: it is a compiler primitive, deliberately in the same category as a raw pointer,
+What sits underneath it is a compiler primitive, deliberately in the same category as a raw pointer,
 because breaking the UTF-8 invariant breaks `char`'s invariant downstream.
+
+### A string that shares a buffer — `str_view`
+
+**`str_view(b: []u8) -> string` is the one conversion that does not copy.** The string is the slice's
+three words: it takes a share of the slice's owner, exactly as `s[a..b]` shares a string's, and
+allocates nothing. It exists for a buffer that grows in place and is read back as text at every step
+— an appending builder whose contents are handed out as a `string` each time — where
+`from_utf8_unchecked` would copy the whole of the text on every call. Go's `unsafe.String` is the same
+operation.
+
+**It is in the unsafe tier, and the caller owes two guarantees rather than one.** The bytes are valid
+UTF-8, as for `from_utf8_unchecked`; and **nothing writes the bytes the string covers while the
+string is alive**, because every other part of the language takes a `string` to be immutable. The
+program below breaks the second promise on purpose, to show what the promise is about:
+
+```sysl
+import sysl.text.{from_utf8_unchecked, str_view}
+
+var store: []u8 = [0; 16]
+store[0] = 104
+store[1] = 105
+
+val viewed = str_view(store[0..<2])
+val copied = from_utf8_unchecked(store[0..<2])
+
+store[1] = 97
+print(viewed, copied)
+```
+
+```output
+ha hi
+```
+
+**Writing *past* the end of the view keeps both promises**, since the string's length is the slice's,
+fixed where it is made — which is exactly how a buffer grows in place.
+
+**The storage stays the compiler's business.** The string holds its share of the owner for as long as
+it lives, so the bytes outlive the slice and every other holder. A string outlives every frame, so a
+view of an array the frame owns moves that array to the heap, the same promotion a returned slice gets
+([`--explain-escapes`](/reference/memory/#promotion-is-silent-not-hidden) names it: *"is made into a string"*). A slice of a `*T`
+region has no owner to share, and is the programmer's problem exactly as every `*T` is.
 
 ## Immortal bytes
 
