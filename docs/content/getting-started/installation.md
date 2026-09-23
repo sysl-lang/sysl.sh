@@ -149,6 +149,15 @@ It goes in your cache directory — `~/Library/Caches/sysl/` on macOS, `~/.cache
 wherever `XDG_CACHE_HOME` points — under a fingerprint of the library it was built from. So it is
 built once per machine rather than once per project, nothing is written into your source tree, and
 installing a compiler with a different library gets its own entry instead of a stale hit.
+
+**The fingerprint also carries the optimization level and, where they are asked for, LTO and a
+profile** — the archive is compiled the way the rest of the build is, so `-O3`, `--lto thin` and a
+`--profile-use` file each earn their own entry rather than sharing one built at the default level.
+The key reads the levers in order, for example `-O3-lto-thin`, so a build that changes only one of
+them gets an archive that matches it instead of linking a standard module compiled differently from
+everything beside it. A `--profile-use` archive is keyed by what the profile *says*, not by its
+path, since the ordinary way of training is to merge a new profile over the old file in place.
+
 Nothing there is ever evicted, and everything in it is derived: deleting the directory costs one
 rebuild.
 
