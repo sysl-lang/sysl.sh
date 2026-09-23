@@ -286,6 +286,76 @@ allocation that already cost a `malloc`, and it lands only where the feature is 
 arrays, and `*T` buffers have no header, so allocator-free code pays nothing for a mechanism it never
 touches.
 
+### Passing a reference to a call usually costs nothing
+
+The obvious way to count a by-value argument is for the function to take a share of it on the way in
+and give it back on the way out, so that a parameter is a thing the callee owns. sysl does not do
+that, because the caller is still standing there: **an argument is handed over under a guarantee that
+it stays alive for the length of the call**, and the callee reads it through the count the caller is
+already holding. That is Swift's `guaranteed` convention and Rust's `&self` borrow, arrived at the
+same way — it is the caller, not the callee, that knows where the value came from.
+
+What the caller has to look at is one question with three answers:
+
+- a **temporary** — a call's result, a newly built object, a value out of an `if` — is a count this
+  frame already took and does not give back until the statement ends, which is after the call
+  returns. Nothing to do.
+- a **local or a parameter** whose address the caller never let out keeps its count in a slot nothing
+  the callee can reach has a name for. Nothing to do.
+- **anything else** — a field, an element, a global, something behind a `ref` or a `&` the caller
+  handed out — keeps its count in memory the call itself may write. That one costs a retain before
+  the call and a release after it, and it is the only shape that does.
+
+The third case is not a technicality. `remember` below is handed a field of module storage and then
+assigns to that very field, so the count the argument was resting on is given back **while the callee
+is still running** — and the read on the next line would be a read of freed storage if nobody else
+were holding one:
+
+```sysl
+struct Node
+    v: int
+
+struct Holder
+    r: &Node
+
+var latest: Holder = Holder(Node(0))
+
+remember(h: Holder) -> int
+    latest = h
+    h.r.v
+
+var first: &Node = Node(1)
+var box = Holder(first)
+
+print(remember(box), latest.r.v)
+```
+
+```output
+1 1
+```
+
+`box` is a local nobody took the address of, so this particular call is free at both ends; written
+`remember(latest)` it would cost the pair, for the reason above.
+
+**Nothing about this is something to write down or reason about while programming.** It is not a
+mode, it is not spelled in a signature, and two implementations of one trait method may disagree
+about it without anything noticing — the obligation is the caller's and is the same whether the
+callee is a name, a vtable slot or a function pointer. What it is worth knowing is the shape it
+rewards: a hot loop that builds values and pushes them into a container passes temporaries and
+locals, and pays no reference traffic at all for the handover.
+
+Two things a callee still takes a count for, and both are the same reason — it is about to give one
+back:
+
+- **a parameter it assigns to.** `h = other` releases whatever was in the slot, and under a borrow
+  that would be the caller's count, so a body that rebinds a parameter owns it instead.
+- **a parameter of a function something outside the program may call** — `@export`, a `@section`, or
+  one whose address is taken for a `*fn`. There is no sysl caller on the other side of those to make
+  the guarantee, so the function makes it for itself.
+
+Storing a parameter is *not* one of them: an assignment takes a count for the value arriving, so
+`latest = h` above is where the new owner's share comes from, and the callee never held one.
+
 ## `weak T` — breaking cycles
 
 Reference counting has one honest weakness: a cycle of strong references keeps itself alive. A parent

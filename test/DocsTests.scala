@@ -96,7 +96,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.
     "docs/content/reference/patterns.md"              -> (14, 13, 0),
-    "docs/content/reference/memory.md"                -> (38, 23, 1),
+    // One more runnable: the section on what handing a reference to a call costs runs the shape it
+    // is about — a field of module storage passed to a body that then assigns to that very field.
+    "docs/content/reference/memory.md"                -> (39, 23, 1),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
     // One more running and one more refused: the two views of a slice meet at the read-only one
