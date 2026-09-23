@@ -296,12 +296,17 @@ alternating best-of-9:
 | `-O2` | — | 5,978,856 bytes |
 | `-O2`, `lto = "thin"` | **−21.5 %** | 6,013,000 bytes |
 | `-O2`, `lto = "full"` | −11.0 % | 5,767,024 bytes |
-| `-O3` | −2.0 % | 6,177,768 bytes |
+| `-O3` | −2.2 % | 6,177,768 bytes |
 
 Every one of the 64 programs checked answered byte-identically under all of them, and the build took
-the same time to within the noise. **`thin` beat `full`**, which is the result to take from the table
-rather than the exact percentages: `full` is not a stronger `thin`, it is a different set of inlining
-decisions, so a project that wants the most out of this measures both.
+the same time to within the noise (110–114 s). **`thin` beat `full`**, which is the result to take
+from the table rather than the exact percentages: `full` is not a stronger `thin`, it is a different
+set of inlining decisions, so a project that wants the most out of this measures both.
+
+**The `-O3` row is there to be argued with.** It is the lever reached for first, it is a tenth of
+what the row above it is worth on this program, three of the twenty-three benchmarks came out
+*slower* under it, and it costs 3 % of binary size. Raising the level is worth measuring; it is not
+worth assuming.
 
 ### A mode clang does not have is refused when the file is read
 
