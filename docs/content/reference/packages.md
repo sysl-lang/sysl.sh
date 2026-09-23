@@ -254,6 +254,67 @@ that names neither it nor the key.
 among everything else that reaches the bytes, so raising `optimization` rebuilds rather than replaying
 a binary compiled at the old level from a tree that did not move.
 
+## Link-time optimization
+
+**`lto` asks the linker to optimize across every object**, which is the second of the two things a
+project states about how it is compiled:
+
+```hocon
+package {
+  name    = "slate"
+  version = "0.1.2"
+}
+
+optimization = "2"
+lto          = "thin"
+```
+
+`thin` keeps a summary per module and links at close to an ordinary link's cost; `full` merges every
+module into one and is the thorough, slower one. `lto = true` means `thin`, which is the answer for a
+project that has not thought about it, and `lto = false` says the same as saying nothing. The
+command-line spelling is `--lto thin`, and it beats the key exactly as `-O` beats `optimization`.
+
+### Why a whole-program language has anything to gain from it
+
+A sysl program is lowered into **one** LLVM module, so the cross-translation-unit inlining that LTO
+exists to give a C project is already available to sysl's own code at `-O2`. What is not in that
+module is everything reached over the FFI: the C a package vendors, the shims beside the standard
+library, and whatever a `@link` names. Those are separate objects compiled by a separate clang, and
+LTO is the only thing that lets a call into one of them be inlined.
+
+So `lto` is not a second way of asking for what `-O` already does. It decides whether the seam
+between sysl and its C is an optimization barrier — and it decides it for the whole link, which is
+also why it is the root project's key and never a dependency's.
+
+**It is worth measuring rather than assuming, and on one real program it was worth a great deal.**
+The slate interpreter — a sysl program of some size, linking seven packages' vendored C — was built
+at `-O2` and then at `-O2` with `lto = "thin"`, and measured over its own benchmark suite by
+alternating best-of-9:
+
+| | geomean | binary |
+|---|---|---|
+| `-O2` | — | 5,978,856 bytes |
+| `-O2`, `lto = "thin"` | **−21.5 %** | 6,013,000 bytes |
+| `-O2`, `lto = "full"` | −11.0 % | 5,767,024 bytes |
+| `-O3` | −2.0 % | 6,177,768 bytes |
+
+Every one of the 64 programs checked answered byte-identically under all of them, and the build took
+the same time to within the noise. **`thin` beat `full`**, which is the result to take from the table
+rather than the exact percentages: `full` is not a stronger `thin`, it is a different set of inlining
+decisions, so a project that wants the most out of this measures both.
+
+### A mode clang does not have is refused when the file is read
+
+```
+package.hocon: 'lto = "thick"' names no kind of link-time optimization clang has — it is thin or
+full, or 'true' for thin
+```
+
+The reasoning is `optimization`'s: a manifest is read by builds nobody is watching, so a typo that
+clang would report arrives at a consumer with nothing naming the file or the key. `sysl run`'s cache
+carries the answer too, so adding `lto` to a tree that did not otherwise move rebuilds rather than
+replaying the ordinary link's output.
+
 ## Capabilities
 
 **Whether the machine has a heap, an operating system or POSIX is a project engineering

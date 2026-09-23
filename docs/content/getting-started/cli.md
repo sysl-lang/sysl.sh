@@ -795,11 +795,85 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `--include-path <name>=<dir>` | the same, and it answers the header requirement a package declared under that name |
 | `-D NAME` or `-D NAME=value` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
+| `--lto <mode>` | optimize across every object at the link: `thin` or `full` |
+| `--profile-generate <dir>` | build an instrumented program that writes its counters into this directory |
+| `--profile-use <file>` | build against a merged profile |
 | `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines, and where `build-lib` staged |
 | `--explain-escapes` | report every local array promoted to the heap |
 
 The standard-module flags and `-O` are covered in
 [installation](/getting-started/installation/), including why the default is `-O1` and not off.
+`--lto` is the flag form of the [`lto` manifest key](/reference/packages/#link-time-optimization),
+and the two profile flags are the ends of the workflow below.
+
+### Profile-guided builds
+
+**A profile-guided build is three steps and two of them are sysl's.** The optimizer is told what the
+program actually did — which branch is taken, which call is hot, which function is never reached —
+and lays it out around that, rather than around what a static reading of the code suggests.
+
+```
+sysl build . --lto thin --profile-generate prof -o myprog-instr
+./myprog-instr <each job in the training set>
+"$(clang -print-prog-name=llvm-profdata)" merge -output my.profdata prof/*.profraw
+sysl build . --lto thin --profile-use my.profdata -o myprog
+```
+
+1. **Instrument.** `--profile-generate` reaches every clang the build drives — the module, each C
+   file a package carries, and the link, which is where the counting runtime comes from. The
+   resulting program is larger and slower, which is what instrumentation is.
+2. **Train.** Run it over work that resembles the work it is for. Each run writes into the directory
+   named, under a name derived from the binary, and **the runtime merges into that one file rather
+   than overwriting it** — so twenty-three training runs leave one `.profraw` holding all of them.
+3. **Merge, then build against the result.** `--profile-use` wants the *indexed* profile
+   `llvm-profdata merge` writes, not the raw counters the program wrote.
+
+Asking for both flags at once is refused, since clang takes both and quietly instruments the build
+you asked it to optimize. Neither is a manifest key: a profile describes one measurement on one
+machine, and a path to it in a file a consumer reads is a path that is wrong for everybody but its
+author.
+
+#### Use the `llvm-profdata` the compiler names, not the one on the PATH
+
+A `.profraw` carries a format version, and `llvm-profdata` reads only the version its own LLVM
+writes — so the tool has to match the **compiler**, not the machine. On a Mac those are routinely
+different, and the failure reads as a corrupt profile rather than as the wrong tool:
+
+```
+warning: default_15853205779378358405_0.profraw: raw profile version mismatch: Profile uses raw
+profile format version = 10; expected version = 11
+error: no profile can be merged
+```
+
+`clang -print-prog-name=llvm-profdata` is the question that cannot get this wrong: it asks the driver
+where its own tools are. Apple's clang answers with the one inside Xcode's toolchain, which is
+nowhere on the `PATH`, while the `llvm-profdata` Homebrew's LLVM puts *on* the `PATH` is from a
+different LLVM entirely.
+
+#### Nothing leaks into an ordinary build
+
+A build that did not ask for instrumentation carries none of it: `nm` over a plain build finds no
+`__llvm_profile` symbol at all, and the binary built with `--profile-use` finds none either — a
+profile is read at compile time and leaves nothing behind.
+
+#### What it was worth
+
+Measured on the slate interpreter, trained over its own benchmark suite and measured on the same
+suite by alternating best-of-9, **on top of** `-O2` with thin LTO:
+
+| | geomean | binary |
+|---|---|---|
+| `-O2`, `--lto thin` | — | 6,013,000 bytes |
+| the same, instrumented | (not for use) | 10,162,936 bytes |
+| the same, `--profile-use` | **−12.5 %** | 5,880,888 bytes |
+
+Against the plain `-O2` build the two levers together are about **−31 %**, and the profile-guided
+binary is *smaller* than the one that never saw a profile — cold code is laid out where it does not
+crowd the hot path. Every one of the 64 programs checked answered byte-identically.
+
+**Training on the work you then measure flatters the result**, and the table above does exactly that.
+A profile is worth what it is worth for jobs the training set resembles; for a workload nothing in
+training looked like, expect less.
 
 ### The feature flags
 
