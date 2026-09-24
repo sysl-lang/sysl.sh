@@ -796,6 +796,7 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 | `-D NAME` or `-D NAME=value` | a macro the C beside a module is compiled with; may be given more than once |
 | `-O <level>` | the optimization level handed to clang |
 | `--lto <mode>` | optimize across every object at the link: `thin` or `full` |
+| `--link <how>` | link `pkg_config` libraries from their static archives: `static`, `dynamic`, or a comma-separated list of their names |
 | `--profile-generate <dir>` | build an instrumented program that writes its counters into this directory |
 | `--profile-use <file>` | build against a merged profile |
 | `-v`, `--verbose` | report what the build decided — the standard module, the files read, the command lines, and where `build-lib` staged |
@@ -804,7 +805,7 @@ __aeabi_ldivmod` at the link, which is the one place anybody will come looking f
 The standard-module flags and `-O` are covered in
 [installation](/getting-started/installation/), including why the default is `-O1` and not off.
 `--lto` is the flag form of the [`lto` manifest key](/reference/packages/#link-time-optimization),
-and the two profile flags are the ends of the workflow below.
+`--link` of the [`link` key](/reference/packages/#linking-a-library-statically), and the two profile flags are the ends of the workflow below.
 
 ### Profile-guided builds
 

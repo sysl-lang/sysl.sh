@@ -320,6 +320,109 @@ clang would report arrives at a consumer with nothing naming the file or the key
 carries the answer too, so adding `lto` to a tree that did not otherwise move rebuilds rather than
 replaying the ordinary link's output.
 
+## Linking a library statically
+
+**`link` says which of the libraries a build found through `pkg_config` are linked from their static
+archives** rather than as shared libraries — the third thing a project states about how it is built:
+
+```hocon
+package {
+  name    = "slate"
+  version = "0.1.6"
+}
+
+optimization = "2"
+link         = "static"
+```
+
+`"static"` means every library any `requires { pkg_config { … } }` names anywhere in the build — the
+project's own and every package's, however deep. A list names some of them and leaves the rest as
+they were:
+
+```hocon
+link = ["openssl", "libuv"]
+```
+
+The names are the ones the manifests write under `pkg_config` — `libuv`, not the `uv` its `@link`
+says — because that is the name a reader can see. `"dynamic"`, and an empty list, say the same as
+saying nothing. The command-line spelling is `--link static`, `--link openssl,libuv` or
+`--link dynamic`, on `build`, `run` and `test`, and it beats the key exactly as `-O` beats
+`optimization`. **Only the root project's key applies**, for `lto`'s reason: how a program is linked
+is decided once for the whole of it, and a package that could decide it would be deciding for code it
+never sees.
+
+### What it buys
+
+A program linking a dozen shared libraries pays for loading them every time it starts: the dynamic
+loader maps each one, binds its symbols and runs its initializers before `main` runs a line. For a
+program that runs for milliseconds, that is most of its run — the slate interpreter spends about
+2.7 ms of each short benchmark there. An archive is copied into the binary at the link instead, once.
+
+### What reaches the link line
+
+For each library marked static, sysl asks `pkg-config --static --libs`, which adds what the library
+links *privately* — a shared library carries those inside itself and an archive does not — and
+`--variable=libdir`. Every `-l<name>` of that answer with a `lib<name>.a` in its `-L` directories,
+its `libdir` or a `--link-path` directory is replaced by **the archive's path**:
+
+```
+-L/opt/homebrew/Cellar/libuv/1.52.1/lib … /opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.a -lpthread -lm
+```
+
+**The path, because `-l` cannot be made to mean the archive on macOS.** Apple's `ld` takes a `.dylib`
+over a `.a` it finds in the same directory, and Homebrew installs both side by side, so the file
+itself is the only spelling that reaches the archive. The same spelling works unchanged on Linux.
+
+`otool -L` is the check. The program above, built with `link = ["libuv"]`:
+
+```
+out:
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)
+```
+
+### What stays dynamic
+
+**The platform's own libraries are never taken from an archive**, whatever the key says: `libSystem`
+on macOS, and `libc`, `libm`, `libpthread`, `libdl` and the C++ runtime everywhere; a `-framework`
+is never touched either. Linking one of those statically is not a faster program but a different one: on macOS
+`libSystem` is the only supported way into the kernel, and on Linux a static `libc` beside the dynamic
+loader is two copies of `malloc`.
+
+A library only `--static` added — a private dependency of the one that was asked for — stays an `-l`
+where it has no archive, since nobody named it and it may well be a system library installed without
+one.
+
+### A library with no archive is refused
+
+A library the program links directly, marked static, with no archive anywhere it was looked for stops
+the build, naming the file and the directories:
+
+```
+'libuv' is to be linked statically, and there is no 'libuv.a' to link it from — looked in
+/opt/homebrew/Cellar/libuv/1.52.1/lib. Install its static archive there, or leave 'libuv' out of
+'link' to link it dynamically
+```
+
+A build that asked for an archive and quietly got the `.dylib` would be the very program the key
+exists to prevent, with nothing to say so. For the same reason a name no `pkg_config` requirement in
+the build answers to is refused rather than ignored, since a misspelling would otherwise link
+dynamically and say nothing:
+
+```
+'link' names 'libvu', and no pkg_config requirement in this build is called that — the names are the
+ones the manifests write under 'requires.pkg_config', which here are libuv
+```
+
+And a single name written as a string, which is the likeliest slip:
+
+```
+package.hocon: 'link = "libuv"' is neither "static" nor "dynamic" — to link one library statically,
+name it in a list: 'link = ["libuv"]'
+```
+
+`sysl run`'s cache carries the choice, so changing `link` over a tree that did not otherwise move
+relinks rather than replaying the other kind of binary.
+
 ## Capabilities
 
 **Whether the machine has a heap, an operating system or POSIX is a project engineering
