@@ -336,8 +336,9 @@ link         = "static"
 ```
 
 `"static"` means every library any `requires { pkg_config { … } }` names anywhere in the build — the
-project's own and every package's, however deep. A list names some of them and leaves the rest as
-they were:
+project's own and every package's, however deep — **taken from its archive wherever it has one**. A
+list names some of them, each of which *must* come from its archive, and leaves the rest as they
+were:
 
 ```hocon
 link = ["openssl", "libuv"]
@@ -392,10 +393,19 @@ A library only `--static` added — a private dependency of the one that was ask
 where it has no archive, since nobody named it and it may well be a system library installed without
 one.
 
-### A library with no archive is refused
+**Under `"static"`, so does a library the program links directly and nobody named.** The key is
+written once over a dozen libraries, and one of them is often the system's own — macOS's `sqlite3`
+lives in `/usr/lib` with no archive beside it — so "every library" can only mean *every library that
+can be*. Such a library is linked exactly as a dynamic build links it, and `--verbose` says so:
 
-A library the program links directly, marked static, with no archive anywhere it was looked for stops
-the build, naming the file and the directories:
+```
+static: 'sqlite3' has no 'libsqlite3.a', so -lsqlite3 is linked dynamically — looked in /usr/lib
+```
+
+### A library a list names with no archive is refused
+
+A library the program links directly, **named in the list**, with no archive anywhere it was looked
+for stops the build, naming the file and the directories:
 
 ```
 'libuv' is to be linked statically, and there is no 'libuv.a' to link it from — looked in
@@ -403,15 +413,28 @@ the build, naming the file and the directories:
 'link' to link it dynamically
 ```
 
-A build that asked for an archive and quietly got the `.dylib` would be the very program the key
-exists to prevent, with nothing to say so. For the same reason a name no `pkg_config` requirement in
-the build answers to is refused rather than ignored, since a misspelling would otherwise link
-dynamically and say nothing:
+A build that named a library and quietly got its `.dylib` would be the very program the key exists to
+prevent, with nothing to say so. For the same reason a name no `pkg_config` requirement answers to is
+refused rather than ignored, since a misspelling would otherwise link dynamically and say nothing:
 
 ```
 'link' names 'libvu', and no pkg_config requirement in this build is called that — the names are the
 ones the manifests write under 'requires.pkg_config', which here are libuv
 ```
+
+**A name that only a [feature](#features) this build leaves off requires is not a misspelling**, and is
+left out rather than refused. The list is written once for every build of the project, and a build
+with `--no-default-features` that does not link `lmdb` at all has nothing of it to link statically:
+
+```
+link: 'lmdb' is required only under a feature this build leaves off, so there is nothing of it to link
+```
+
+Telling the two apart takes the packages behind the features that are off, which this build never
+read — so where a name matches nothing, the build is resolved a second time as `--all-features`
+would resolve it, and the name is checked against every requirement found there. That is also the
+list the refusal offers, so a misspelt `lmbd` is shown `lmdb` among the names whether or not its
+feature is on.
 
 And a single name written as a string, which is the likeliest slip:
 
