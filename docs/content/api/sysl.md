@@ -352,9 +352,10 @@ point.
 printi(n: long)
 ```
 
-The integer and float renderings lean on `snprintf`, which is formatting rather than I/O. Doing
-them in sysl is a small job for the integers and a large one for the floats (correct shortest
-round-trip), so they wait until there is a reason -- a target without a C library.
+The integers render in sysl, through `digits_long` and `digits_ulong` beside `display_int`. The
+float still leans on `snprintf`, which is formatting rather than I/O: doing it in sysl is a large
+job (correct shortest round-trip), so it waits until there is a reason -- a target without a C
+library.
 
 ### `printr`
 

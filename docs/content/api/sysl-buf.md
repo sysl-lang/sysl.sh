@@ -67,6 +67,12 @@ The bounds-checked members panic rather than returning an `Option`, which is the
 handle -- while `pop` returns one, because taking from an empty sequence is a question a caller
 asks on purpose.
 
+**The count never passes the storage, and the type says so.** The clause is checked wherever
+either field is written, which in this module is at a handful of places the storage has just made
+room at -- and in return every member is told it on entry. That is what makes `at` one compare:
+the index is tested against `count` for the panic, and the slice's own test against `elems.len`
+is then implied by it and folds.
+
 | Member | Signature | Description |
 |---|---|---|
 | `len` | `len(self) -> usize` |  |
