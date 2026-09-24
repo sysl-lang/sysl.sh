@@ -105,7 +105,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // wherever two types have to agree, so the page shows the meeting, and refuses the write through
     // what it met at — since a meeting that produced a writable view would be the hole the bit exists
     // to stop.
-    "docs/content/reference/arrays.md"                -> (24, 10, 1),
+    "docs/content/reference/arrays.md"                -> (25, 11, 1),
     "docs/content/reference/vectors.md"               -> (14, 8, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.

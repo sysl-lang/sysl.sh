@@ -522,7 +522,7 @@ reads like sysl from sysl that reads like C with different punctuation.
   integer literal alone infers `int`. Better still, reach for `for i in 0..<xs.len`, which needs
   neither.
 - **A suffix is load-bearing in six places**, and stays: an array literal's element type
-  (`[104u8, …]` — or annotate the binding instead), a range with **both** bounds literal, an `if` or
+  where **every** element is literal (`[104u8, 105, …]` — one suffix settles the rest, or annotate the binding instead), a range with **both** bounds literal, an `if` or
   `match` where **both** sides are literals, a page whose subject is the type, a float width, and an
   integer outside `int`'s range.
 - For a byte constant write `u8(';')`, never `59u8` — a `char` will not compare to a byte, and there

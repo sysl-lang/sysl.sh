@@ -77,6 +77,38 @@ print(primes.len, primes[2], row[0])
 4 5 1
 ```
 
+**The elements share one type, and a bare literal takes it from an element that has one** — the rule
+the two sides of `n + 1` follow. One suffix, or one typed name, anywhere in the list is enough, and a
+nested literal settles row by row:
+
+```sysl
+const k: usize = 5
+
+var sizes = [1, 2usize, 7]
+var mixed = [1, k, 3]
+var table = [[1usize, 2], [3, 4]]
+
+var total: usize = sizes[0] + mixed[1] + table[1][1]
+
+print(total)
+```
+
+```output
+10
+```
+
+The bare literals are read at that type, not as an `int` first, so one that does not fit it is refused
+where it stands. Two elements that each have a type still have to agree, and an integer literal
+beside a real is not made a real:
+
+```sysl
+var bytes = [1u8, 300]
+```
+
+```error
+the literal 300 does not fit byte
+```
+
 **A declaration with no initializer** starts at the type's zero value. **A repeat** `[value; count]`
 fills every element with one value, and is the form for an element type whose zero is not the wanted
 starting point — or which has no zero at all:
