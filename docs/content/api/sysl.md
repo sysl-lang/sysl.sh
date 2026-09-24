@@ -130,7 +130,7 @@ display_real(x: real, out: *Writer, fmt: FormatSpec)
 display_real_shortest(x: real, out: *Writer, fmt: FormatSpec)
 ```
 
-A `real` written at the shortest precision that reads back as the same number, which is what a
+A `real` written in the fewest digits that read back as the same number, which is what a
 serializer needs and what `display_real` cannot give it.
 
 A precision is a count of significant digits, so any fixed one is a choice between losing the
@@ -139,29 +139,11 @@ value and printing digits nobody asked for: six -- the default, and the one `str
 document wants is neither, and the answer has been the same since Steele and White: **the
 shortest text that parses back to the value you started with**.
 
-Fifteen significant digits is where a `real` starts round-tripping and seventeen is where every
-one of them does, so trying fifteen first and climbing to seventeen finds it for every ordinary
-magnitude: `%g` strips its own trailing zeros, so `0.5` is two characters here and not fifteen,
-and rounding a value that has a shorter exact reading to fifteen digits reproduces that same
-shorter reading with zeros on the end.
-
-**A subnormal breaks that last step, because its neighbours are not evenly spaced.** Near the
-bottom of the subnormal range one representable value can sit far enough from the next that many
-different short decimals all round to it, and rounding the value itself to fifteen digits lands on
-one of the longer ones instead of on the short one that would have worked too -- `5e-324` renders
-at fifteen digits as `4.94065645841247e-324`, which does read back correctly but is fourteen
-characters longer than it needs to be. So a value below the smallest normal `real` that already
-round-trips at fifteen digits is searched again, downward from one digit this time, and the first
-precision that still reads back equal is the one that is kept.
-
-The reader is `strtod`, the same conversion `sysl.text.parse_real` goes to, which is what makes
-the check mean anything: the two directions have to be the same pair of functions or the value
-survives this test and not the one a consumer runs. It is reached directly rather than through
-`parse_real` because that lives in `sysl.text`, which is compiled after this module.
-
-A value with no decimal reading -- an infinity, a NaN -- never compares equal, so it falls out of
-both searches and renders as `%g` spells it at seventeen digits. A caller that needs `null` or
-`inf` written some particular way is writing a format's syntax and owns that decision.
+The digits are JavaScript's and Python's: the fewest that read back; among those, the closest to
+the value; and a tie to the even digit. `shortest_real` finds them exactly, with no round trip
+through a reader, and `shortest.sysl` says how. The spelling around them is `%g`'s, so `1e+23`,
+`0.5`, `-0`, `inf` and `nan` read as they always have. A caller that needs `null` or `Infinity`
+written for a non-finite value is writing a format's syntax and owns that decision.
 
 ### `display_str`
 
@@ -353,9 +335,11 @@ printi(n: long)
 ```
 
 The integers render in sysl, through `digits_long` and `digits_ulong` beside `display_int`. The
-float still leans on `snprintf`, which is formatting rather than I/O: doing it in sysl is a large
-job (correct shortest round-trip), so it waits until there is a reason -- a target without a C
-library.
+float still leans on `snprintf`, which is formatting rather than I/O. What it prints is `%g`'s six
+significant digits, correctly rounded, and rounding to a precision the caller chose needs exact
+arithmetic over the whole value -- a different job from `shortest_real`'s, which finds the fewest
+digits and never rounds to a count it was given -- so it waits until there is a reason, such as a
+target without a C library.
 
 ### `printr`
 

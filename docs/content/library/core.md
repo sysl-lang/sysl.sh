@@ -767,20 +767,21 @@ value and spells `0.1` with noise on the end. **What a document wants is neither
 has been the same since Steele and White: the shortest text that parses back to the number you
 started with.
 
-Fifteen significant digits is where a `real` starts round-tripping and seventeen is where all of
-them do, so `display_real_shortest` tries fifteen digits first and climbs toward seventeen only if
-that does not yet read back equal. `%g` strips its own trailing zeros, so the precision is a ceiling
-on the search rather than a width — `0.5` comes out at two characters, not fifteen.
+The digits are found by Ryu, directly from the value's bit pattern rather than by asking a formatter
+for one precision after another. It decomposes `x` into its significand and exponent, works out the
+interval of decimal values that round back to `x`, and returns the shortest string inside that
+interval — the one closest to `x` when more than one string is equally short, and the one ending in
+an even digit on an exact tie. No reader is called and no precision is climbed: the same arithmetic
+settles every value in one pass, so a subnormal like `5e-324`, the smallest positive `real`, needs no
+different treatment from `0.5` or `3.141592653589793` — it comes out of the same interval
+construction, at whatever length is actually shortest rather than a length a fixed search happened to
+try first.
 
-**A subnormal can still shorten past fifteen, because the subnormal range is not evenly spaced.**
-`5e-324`, the smallest positive `real`, already round-trips at fifteen digits — as
-`4.94065645841247e-324` — but a shorter reading survives too, so a value in that range is searched a
-second time, downward from one digit, for the shortest precision that still reads back equal.
-
-The reader it checks against is `strtod`, which is the same conversion
-[`sysl.text.parse_real`](/library/text/#reading-a-value-back-the-parsers) goes to. That is what makes the check mean anything: the
-two directions have to be the same pair of functions, or a value survives this test and not the one
-a consumer runs.
+The round trip is guaranteed by the arithmetic rather than checked against a reader: the interval is
+derived from `x`'s own bits, so every digit string inside it parses back to exactly `x` by
+construction. [`sysl.text.parse_real`](/library/text/#reading-a-value-back-the-parsers) is still the
+other half of the pair for anyone reading the digits back, but `display_real_shortest` no longer
+depends on it to decide when to stop.
 
 **It decides the precision and nothing else.** `%g` chooses the exponent form for a value whose
 plain decimal would be long, and `1.0` comes out as `1` with no point in it — writing a number a
