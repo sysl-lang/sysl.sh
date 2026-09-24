@@ -526,10 +526,46 @@ is a slot in the callee's frame. Nor is an argument the call can change under th
 read out of a global, or a local whose address the same call was handed, is not the value the promise
 was made about.
 
-**Nothing is assumed at a function's own entry, because there is nothing to add.** A `require` traps
-before the body runs, so its branch dominates everything below it and the optimizer already reads it
-as a fact about the values it tested; a subscript that the precondition covers folds into it with
-nothing said twice.
+**A precondition is not assumed at a function's own entry, because there is nothing to add.** A
+`require` traps before the body runs, so its branch dominates everything below it and the optimizer
+already reads it as a fact about the values it tested; a subscript that the precondition covers folds
+into it with nothing said twice.
+
+**A struct's [invariant](/reference/errors/#struct-invariants) is, at every member's entry, because
+there the fact is otherwise nowhere in sight.** Every value of the type got past a check — at its
+construction, its zero, and every write since — so a member is handed a receiver the clause holds of,
+and says so to the optimizer. `Buf[T]` declares `invariant count <= elems.len`, and `at` is the case
+it pays for:
+
+```sysl
+struct Seq[T]
+    elems: []T
+    count: usize
+    invariant count <= elems.len
+
+    at(self, i: usize) -> T
+        if i >= self.count then exit(3)
+
+        self.elems[i]
+
+var s = Seq([1, 2, 3], 2)
+
+print(s.at(1))
+```
+
+```output
+2
+```
+
+The member compares `i` with `count` to refuse an index past the end, and the subscript would compare
+it again with `elems.len`. Told `count <= elems.len`, the second compare is implied by the first and
+goes: one compare per element read, where there were two.
+
+The clause is repeated by the same rule a postcondition is — lowered, and kept only if what came out
+is arithmetic and comparisons over the receiver's fields. **What it rests on is the checking**, so the
+one thing outside it is what the checking cannot see: bytes written into the struct through a pointer
+of some other type, or by C, which are the writer's promise to keep exactly as every other guarantee
+about raw memory is ([the memory model](/reference/memory/)).
 
 **It is wired to the same switch as the check.** The one clause that does not run is one naming a
 [ghost function](#ghost-what-costs-nothing-to-say), and such a clause is not told to the optimizer

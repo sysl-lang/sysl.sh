@@ -1190,13 +1190,21 @@ done. The obligation covers:
 - a field written through a pointer
 - a field written into an array element
 - a field written **inside** one of these — `o.a.n = 9`, or `g.items[0].n = 9`
+- **the zero** a declaration with no initializer starts at — `var w: Window`, a `[4]Window`, a struct
+  with a `Window` field, and module storage declared the same way
 
-That last one is owed for a reason a narrow reading misses. A clause may read *through* a field:
-`invariant a.n <= b` is legal, and `a.n` is then not a field of the struct at all, so the write that
-breaks it is a write the struct never sees. The obligation is therefore on **every struct a place is
-written inside**, not only on the one whose field is named last, and the checks nest
-innermost-first — so the smallest struct the write broke is the one that stops it. An index locates a
-place rather than owning one, so it contributes no check and is walked through.
+That penultimate one is owed for a reason a narrow reading misses. A clause may read *through* a
+field: `invariant a.n <= b` is legal, and `a.n` is then not a field of the struct at all, so the write
+that breaks it is a write the struct never sees. The obligation is therefore on **every struct a place
+is written inside**, not only on the one whose field is named last, and the checks nest
+innermost-first — so the smallest struct the write broke is the one that stops it. An index into an
+array locates a place rather than owning one, so it contributes no check and is walked through. An
+index into a **view** reaches its far side, which no clause may read (see below), so writing a view's
+element owes the struct holding the view nothing at all.
+
+The zero is a construction nobody spelled. `Window`'s zero has `lo` and `hi` both `0`, which breaks
+`lo <= hi` nowhere and `lo < hi` at once — and a struct that began its life broken is a value no write
+ever checked. The check is of a constant, so where the zero satisfies the clause it costs nothing.
 
 The consequence is the intended one: **a sequence of writes that ends in a valid state but passes
 through an invalid one traps at the step that broke it.** There is no "I am mid-update" mode.
@@ -1415,6 +1423,31 @@ an invariant may only read storage the struct owns, and 'n' is read through *Inn
 ```
 
 A view's `len` is on the near side — the three words are stored in the struct — and may be read.
+Its elements are on the far side, and that cuts the other way too: since no clause can read one,
+**an alias of a view's element carries no promise to sever**. A pointer to one, and a writable view
+sliced out of one, are ordinary — and writing through either changes nothing a clause over the
+length can see:
+
+```sysl
+struct Seq
+    elems: []int
+    count: usize
+    invariant count <= elems.len
+
+var s = Seq([1, 2, 3], 2)
+var p = &s.elems[0]
+var v = s.elems[..<s.count]
+
+*p = 4
+v[1] = 5
+s.elems[2] = 9
+
+print(s.elems[0], s.elems[1], s.elems[2])
+```
+
+```output
+4 5 9
+```
 
 What none of this does is make a `*T` safe, and it does not try to. A pointer handed to a *third*
 function that stores it is out of reach of a local check, exactly as the
@@ -1424,21 +1457,38 @@ ordinary code, and leaves a clause quietly false — is refused.
 
 ### Generic structs
 
-Invariants on a generic struct are not supported, and say so:
+A generic struct carries clauses exactly as any other does, and they are checked at every place the
+list above names. A clause is a generic body over the struct's own parameters, so what it may do with
+a `T` is what the struct's bounds say — a comparison needs `Ord`, and is checked once, where the struct
+is declared, rather than once for every type it is made at:
 
 ```sysl
-struct Gen[T]
-    v: T
-    invariant true
+struct Span[T: Ord]
+    lo: T
+    hi: T
+    invariant lo <= hi
+
+var a = Span(1, 5)
+var b = Span(0.5, 2.5)
+
+a.hi = 9
+
+print(a.lo, a.hi, b.hi)
 ```
 
-```error
-invariants on generic structs are not supported yet — 'Gen'
+```output
+1 9 2.5
 ```
 
-The open question is what a clause over a field of type `T` could even mean when nothing about `T` is
-known. Most useful invariants compare, which needs a bound — and a bound the *struct* carries is
-inherited by every member, so the machinery is there.
+Each instantiation checks with the clause made real at its own type, so `Span[float]` compares floats.
+Whether a clause reads storage the struct owns is asked of each instantiation too, since it depends on
+what the parameters turn out to be — a `T` that is `int` is the struct's own bytes, and one that is a
+pointer is not.
+
+The standard library's `Buf[T]` is the reason this exists. It says `invariant count <= elems.len`,
+and every member is then [told so on entry](/reference/verification/#what-the-optimizer-is-told) —
+which is what lets `at` compare the index with `count` once and have the slice's own test fold into
+that compare.
 
 ## Contracts on a function
 

@@ -150,7 +150,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/reference/packages.md"               -> (0, 0, 0),
     // One more runnable: an `error` block's diagnostic names a spelling to write, and the page now
     // runs that spelling instead of leaving it as prose nothing compiles.
-    "docs/content/reference/errors.md"                 -> (26, 27, 2),
+    "docs/content/reference/errors.md"                 -> (28, 26, 2),
     // One more of each: `c type` measures a typedef, so the page gained a program that uses one, a
     // refusal for the pointer it will not resolve, and the FreeRTOS extern it exists for. One more
     // again for a `c const` declared *at* a measured type, which is the pair the two blocks are, and
@@ -173,7 +173,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Four more runnable, three more refused: `@noinline` and `@cold`, the two function/member
     // attributes about a definition rather than a parameter.
     "docs/content/reference/attributes.md"             -> (34, 41, 7),
-    "docs/content/reference/verification.md"           -> (15, 5, 1),
+    "docs/content/reference/verification.md"           -> (16, 5, 1),
     // The whole language on one page, for a reader who already programs. Its blocks are dense on
     // purpose — five programs covering the type distinctions, the function forms, the three
     // receivers, the loop and pattern forms, and the contract block — plus two fragments that are
