@@ -144,7 +144,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // section shows one in range and refuses one outside it.
     // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no
     // single block can be — a page block is one file, and the rule is about two.
-    "docs/content/reference/modules.md"                -> (18, 16, 16),
+    "docs/content/reference/modules.md"                -> (19, 17, 16),
     // Every block on this page is `hocon` or `text` — what a manifest says and what a resolution
     // comes to are not sysl, and the one sysl-shaped line on it is a fragment of a call.
     "docs/content/reference/packages.md"               -> (0, 0, 0),

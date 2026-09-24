@@ -1010,6 +1010,54 @@ print(first())
 Both moves the message names work, and neither is preferred: put the call after `table`, or put
 `table` above the functions.
 
+#### Beside a `main`, a `var` is the module's
+
+**A file whose only running lines are `var`s is a body only when nothing else is the beginning.** A
+`var` could be read either way — a local of the statements a script runs, or storage its module
+owns — and the rest of the program chooses. With no `main` anywhere, a lone `var n = 1` is a script's
+first line, as it always was. With a `main`, the program has written where it starts, so there is no
+body for the `var` to be a local of, and it is the module's: exactly what a `val` beside the `main`
+is, and what a `var` in a file with a `module` line always is. A program shaped like most programs —
+a counter, the functions that bump it, and a `main` calling them — is therefore just that:
+
+```sysl
+var counter: int = 0
+
+bump() =
+    counter += 1
+
+main()
+    bump()
+    bump()
+    print(counter)
+```
+
+```output
+2
+```
+
+Being the module's, it is held to what module storage is held to, and the first of those is a
+stated type. That is the one line reported, on the `var` itself — every use of the name below it
+still resolves:
+
+```sysl
+var counter = 0
+
+bump() =
+    counter += 1
+
+main()
+    bump()
+    print(counter)
+```
+
+```error
+'counter' is module storage, and module storage states its type — write 'counter: T'
+```
+
+A file that also runs a statement is a body however a `main` is written, so there the `var` is a
+local and the `main` is the second beginning refused [above](#where-a-program-starts).
+
 ### `static` — asking for the module instead
 
 A `val` or `var` in the entry file that should be the **module's** says so:
