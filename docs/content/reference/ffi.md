@@ -677,7 +677,9 @@ $ clang main.c libmylib.a -o app
 into it, because a `.syslib` is not something a C link line can be handed — an archive referring to
 one would fail at that link naming a `sysl$` symbol its author has no way to place. So `--std-lib` is
 refused here and `--no-std-lib` asks for what already happens. The cost, which is accepted: two
-`build-c` archives linked into one program each carry the part of the library they reach.
+`build-c` archives linked into one program each carry the part of the library they reach. Its members
+are native objects whatever the manifest's `lto` key says — bitcode would link only under
+`clang -fuse-ld=lld`, never under GNU ld or gcc — while `-O` applies as it does anywhere.
 
 **What the archive does not hold is what the sysl side's own libraries supply** — `libm`, whatever
 `@link` named, and whatever the packages in the build require under `pkg_config` — and `build-c`

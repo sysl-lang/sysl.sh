@@ -184,7 +184,9 @@ sysl build-c mylib -o libmylib.a --header include/mylib.h
 and a **C header** declaring whatever the module marked `@export`. The compilation is the ordinary
 one rather than a library build — what is wanted is a module lowered for this target with its calls
 resolved — and what differs from `build` is that no entry point is emitted, since the C side supplies
-its own `main`.
+its own `main`. The archive holds **native objects**, always: a manifest's `lto` key does not apply
+to `build-c`, since LLVM bitcode links only under a linker with LLVM's plugin and optimizing across
+the archive is the C project's own link's business.
 
 The header goes beside the archive with `.h` appended unless `--header` names somewhere else. Both
 paths are announced on stderr, along with the libraries the C project's own link line will still need
