@@ -187,9 +187,11 @@ resolved — and what differs from `build` is that no entry point is emitted, si
 its own `main`.
 
 The header goes beside the archive with `.h` appended unless `--header` names somewhere else. Both
-paths are announced on stderr, along with the archives the C project's own link line will still need
-— an unresolved sysl symbol over there reads as a missing definition rather than as a missing
-archive, so it is worth being told before you meet it. `--no-std-lib` folds the standard library into
+paths are announced on stderr, along with the libraries the C project's own link line will still need
+— what `@link` named, and the `pkg_config` modules the packages in the build require, given as the
+`pkg-config --libs …` to ask for their flags. An unresolved sysl symbol over there reads as a missing
+definition rather than as a missing archive, so it is worth being told before you meet it.
+`--no-std-lib` folds the standard library into
 the object and the archive then stands alone.
 
 Like `build-lib`, this needs an `llvm-ar` as well as a `clang`. [FFI](/reference/ffi/) has `@export`

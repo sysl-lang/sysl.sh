@@ -679,10 +679,14 @@ one would fail at that link naming a `sysl$` symbol its author has no way to pla
 refused here and `--no-std-lib` asks for what already happens. The cost, which is accepted: two
 `build-c` archives linked into one program each carry the part of the library they reach.
 
-**What the archive does not hold is what the sysl side's own libraries supply** — `libm`, and
-whatever `@link` named — and `build-c` says which those are rather than leaving them to be found at
-that link. Those are libraries the author chose and can hand to a linker, which is exactly the
-distinction the standard module fails.
+**What the archive does not hold is what the sysl side's own libraries supply** — `libm`, whatever
+`@link` named, and whatever the packages in the build require under `pkg_config` — and `build-c`
+says which those are rather than leaving them to be found at that link. Those are libraries the
+author chose and can hand to a linker, which is exactly the distinction the standard module fails.
+The two lists are said separately because they are answered differently: a `@link` name goes on the
+line as `-l<name>`, while a `pkg_config` module is named so the C project can ask *its* `pkg-config`
+for the flags — `pkg-config --libs libbrotlienc` — since a package binds an installed library through
+its manifest and may say `@link` nowhere.
 
 `sysl emit-header` prints the same declarations without building anything, for a project that
 generates its headers as a build step.
