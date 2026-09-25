@@ -679,7 +679,9 @@ one would fail at that link naming a `sysl$` symbol its author has no way to pla
 refused here and `--no-std-lib` asks for what already happens. The cost, which is accepted: two
 `build-c` archives linked into one program each carry the part of the library they reach. Its members
 are native objects whatever the manifest's `lto` key says — bitcode would link only under
-`clang -fuse-ld=lld`, never under GNU ld or gcc — while `-O` applies as it does anywhere.
+`clang -fuse-ld=lld`, never under GNU ld or gcc — unless `--lto thin` or `full` on the `build-c`
+command line asks for a bitcode archive, for a host that links with clang and lld and wants its link
+to optimize across the boundary; `-O` applies as it does anywhere.
 
 **What the archive does not hold is what the sysl side's own libraries supply** — `libm`, whatever
 `@link` named, and whatever the packages in the build require under `pkg_config` — and `build-c`
