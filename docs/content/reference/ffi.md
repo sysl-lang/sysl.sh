@@ -1601,6 +1601,11 @@ print(c_closedir(d))
 Nothing in sysl lays a `Dir` out; the storage is libc's. An *ordinary* struct with no body stays an
 error, and says which word to add.
 
+**A C caller is outside every module, so a generated header keeps the same promise.** An `@export`ed
+opaque struct is declared there as a tag with no body — `typedef struct mylib_handle mylib_handle;` —
+and none of its fields is written, so C can hold a `mylib_handle *` and pass it back, and nothing
+more.
+
 **What is refused outside the declaring module is one list**: a binding, a field of another type, an
 element, an array, a slice, a `&`, a type argument, a by-value parameter or result, construction,
 reading or writing a field, a pattern naming the fields, a dereference, `sizeof`, `alignof`,
