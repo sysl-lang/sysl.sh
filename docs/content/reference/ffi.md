@@ -667,6 +667,66 @@ private struct Id
 name, and C links nothing on a type name — which is what makes this a spelling an author may decide
 rather than a fact anything else depends on.
 
+### Naming a type in the header
+
+A [`type`](/reference/declarations/#type-declarations) is a second name for something that already
+exists, and left alone the header writes what it stands for — a `Handle` over `u64` is `uint64_t`
+there, and the C author sees a number where the sysl author wrote a handle. `@export` above the `type`
+declares it as a `typedef` and spells it by that name wherever the type appears — a parameter, a
+result, a struct's field, a function pointer's own signature:
+
+```sysl build=c
+module slate
+
+@export("slate_value")
+type Handle = u64
+
+@export("slate_vm")
+opaque struct Vm
+    base: u64
+
+@export("slate_int")
+int_of(vm: *Vm, n: i64) -> Handle = vm.base + u64(n)
+```
+
+```c
+typedef struct slate_vm slate_vm;
+
+typedef uint64_t slate_value;
+
+slate_value slate_int(slate_vm * vm, int64_t n);
+```
+
+Written bare, `@export` gives the `typedef` the declared name, as it does a struct's, and the name is
+checked by the same rules — a C identifier, public, and one claimant per name in the header. A `type`
+that is not exported keeps the old spelling, and so does a position written with the base itself: a
+`u64` beside a `Handle` is still `uint64_t`, and two exported names over one base are two `typedef`s.
+A `type` narrowed with `new`, `within` or `where` is exported the same way, as its base — C has no way
+to state the bound, and the header says what the value is made of.
+
+**A sysl caller is unaffected**, exactly as it is by a struct's C name: the exported `Handle` flows to
+and from `u64` with no conversion, as it did before it was exported.
+
+**What it may stand for is a scalar or a pointer**, which is what C writes a `typedef` of without a
+layout — an integer, a float, `bool`, `char`, a pointer, or a function pointer, whose declarator goes
+inside the `typedef` (`typedef int32_t (*on_event)(int32_t);`). A struct has a name of its own in the
+header already, and a slice or a counted reference has no C spelling at all, so each is refused with
+what to write instead:
+
+```sysl
+module mylib
+
+struct Point
+    x: i32
+
+@export("point_t")
+type P = Point
+```
+
+```error
+'mylib.P' is exported to a C header as mylib.Point, which C has no way to spell as a typedef — a header names an integer, a float, 'bool', 'char' or a pointer this way
+```
+
 From there it is an ordinary C build:
 
 ```text

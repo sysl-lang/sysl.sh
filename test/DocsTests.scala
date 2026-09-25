@@ -162,7 +162,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // unaffected by the name it chose, and three more refusals — the namespace C shares between a
     // typedef and a function, a generic struct, and a private one. One more refusal for `bf16`,
     // which a `c const` refuses by its own name rather than under `f16`'s.
-    "docs/content/reference/ffi.md"                    -> (22, 32, 15),
+    // A `type` names itself in the header too: one more fragment, the `build=c` module declaring a
+    // `typedef`, and one more refusal, for a `type` over a struct.
+    "docs/content/reference/ffi.md"                    -> (22, 33, 16),
     "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
