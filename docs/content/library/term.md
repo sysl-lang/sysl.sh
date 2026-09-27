@@ -303,7 +303,7 @@ needs to know how far along the row the line starts, and a caller goes on printi
 which is what makes a REPL's continuation prompt the caller's business rather than a field here.
 
 What it does do is hand its sink a **zero-length write** before waiting for a keystroke. A hosted sink
-buffers — `putbytes` goes through C's `putchar`, which line-buffers a terminal — so a prompt with no
+buffers — `putbytes` goes through C's buffered `stdout`, which line-buffers a terminal — so a prompt with no
 newline after it would sit in the buffer until something wrote one, which is one keystroke too late.
 The poke gives a buffering sink its chance, and keeps the obligation off every caller that prints a
 prompt. A board pays nothing for it: a sink with no buffer writes no bytes.

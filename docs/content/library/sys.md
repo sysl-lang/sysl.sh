@@ -110,7 +110,8 @@ nothing, and programs had already declared their own `sqrt` before there was a m
 
 | symbol | what the library uses it for |
 |---|---|
-| `putchar` | every byte `print` and `prints` emit |
+| `sysl_stdout_write` | every buffer `print` and `prints` emit on a hosted target — one `fwrite` to `stdout`, in a line of the library's own C, since `stdout` is a macro on Darwin that no `extern` reaches |
+| `putchar` | every byte `print` and `prints` emit on a freestanding target, where the board supplies it |
 | `snprintf` | formatting a number into text |
 | `read` | `sysl.io`'s `FdReader`, and `stdin()` under it |
 | `memchr` | `find_byte`, and the line splitting built on it |

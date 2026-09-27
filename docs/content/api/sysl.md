@@ -221,7 +221,7 @@ rather than waiting for the buffer to fill or the process to exit.
 **C fully buffers a stream that is not a terminal.** A live report -- rows streamed to a log as
 they complete, output piped into another program, a test runner reading a child's output while it
 still runs -- can otherwise sit on everything already printed until the process ends, because
-`putbytes` writes through C's buffered `putchar`. This is the call that pushes it out early.
+`putbytes` writes through C's buffered `stdout`. This is the call that pushes it out early.
 
 `fflush(NULL)` runs underneath, which flushes every open output stream rather than naming one --
 `stdout` is a `#define` on Darwin (`reference/ffi.md § An extern also declares a variable`), so an
@@ -370,11 +370,19 @@ a desugaring onto these one-value functions, chosen by each argument's static ty
 compiler knows a handful of *names* and implements no printing of its own.
 
 Everything goes out through the single sink `putbytes`, and that is not incidental: two mechanisms
-means two buffers, and output emerging in the wrong order. It writes a byte at a time because a
-`string` may hold an interior NUL and every shortcut through C -- `puts`, `%s`, even `%.*s` --
-stops at one. It is also one of the two functions a freestanding target has to replace: swap its
-body for a `write` syscall, and `FdReader.read`'s for a `read` one, and the whole surface above
-both is unchanged.
+means two buffers, and output emerging in the wrong order. Where there is a C library it hands the
+whole buffer to stdio's `fwrite` in one call -- counted rather than terminated, so an interior NUL
+goes out like any other byte, which `puts`, `%s` and even `%.*s` would all stop at. It stays on
+stdio rather than a raw `write(1, ...)` because C in the same program writing through `printf`
+shares that buffer, and one queue is what keeps the two in order.
+
+A freestanding target has no stdio, so there it writes a byte at a time through the `putchar` the
+board supplies. That is also one of the two functions such a target has to replace: swap its body
+for a `write` syscall, and `FdReader.read`'s for a `read` one, and the whole surface above both is
+unchanged.
+
+A short `fwrite` is looped over, and one that wrote nothing ends the loop -- the stream has failed,
+and there is nowhere left to report that to.
 
 ### `stderr`
 
@@ -579,8 +587,8 @@ its own `Display` rather than through one of the `print*` functions above.
 It is an ordinary sink written in ordinary sysl, and it is worth saying why that is possible at
 all: a destination fixed at compile time keeps no state, so the type has no fields -- and a struct
 may have none. Everything the compiler used to supply here by hand is now three declarations a
-reader can check, and the byte loop they end in is still `putbytes`, so a freestanding target
-replaces the same one function it always did.
+reader can check, and the sink they end in is still `putbytes`, so a freestanding target replaces
+the same one function it always did.
 
 ## Traits
 

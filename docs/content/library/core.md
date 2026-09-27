@@ -403,18 +403,34 @@ bytes here.
 Two mechanisms would mean two buffers, and output emerging in an order the program did not write.
 That is the entire reason for the shape.
 
-It also writes **a byte at a time**, which looks like a mistake and is not. A sysl `string` may hold
-an interior NUL, and every shortcut through C stops at one: `puts`, `%s`, even `%.*s`. A string that
-printed correctly right up until it contained a zero byte is a worse bug than a loop that costs a
-call per byte, and the loop is what a target with a real `write` replaces anyway.
+Where there is a C library it hands the **whole buffer** to stdio's `fwrite` in one call. The call is
+*counted* rather than terminated, and that is the point of choosing it: a sysl `string` may hold an
+interior NUL, and every other shortcut through C stops at one — `puts`, `%s`, even `%.*s`. It stays on
+stdio rather than a raw `write(1, …)` because C in the same program printing with `printf` or
+`putchar` shares stdio's buffer, and one queue is what keeps the two in the order they were written.
+
+A freestanding target has no stdio, so there it writes a byte at a time through the `putchar` the
+board supplies:
 
 ```sysl
 putbytes(b: []const u8)
-    var i = 0
-    while i < b.len
+#if hosted
+    var at: usize = 0
+
+    while at < b.len
+        val k = sysl_stdout_write(&b[at], b.len - at)
+
+        if k == 0 then return
+
+        at += k
+#else
+    for i in 0..<b.len
         sysl_putchar(int(b[i]))
-        i += 1
+#endif
 ```
+
+A short `fwrite` is looped over, and one that wrote nothing ends the loop — the stream has failed, and
+there is nowhere left to report that to.
 
 **`putbytes` is one of exactly two functions a freestanding target has to replace.** Swap its body
 for a `write` syscall and [`FdReader.read`](/library/io/)'s for a `read` one, and the entire surface

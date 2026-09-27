@@ -115,8 +115,8 @@ is a relaxed atomic load. What a program gives up is knowing whether a call alre
 `set_level` ran used the old value or the new one, which nothing can usefully depend on.
 
 **The sink is taken under a lock held across the write**, because two threads whose lines interleave
-produce output that is worse than either line missing, and a sink is not required to be atomic — most
-write a byte at a time into a descriptor. What that costs is that a slow sink serializes the threads
+produce output that is worse than either line missing, and a sink is not required to be atomic — a
+line may reach its descriptor in several writes. What that costs is that a slow sink serializes the threads
 logging to it, which is the trade every logger makes and is why an asynchronous sink is a thing
 somebody writes.
 
