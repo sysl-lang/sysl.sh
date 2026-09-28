@@ -65,10 +65,25 @@ share a list and a position:
 |---|---|
 | `id[int](7)` | a function, qualified or not |
 | `chunk[8]()` | a value parameter — `[const N: usize]` |
-| `Pair[int, real](1, 2.5)` | a constructor |
+| `Pair[int, real](1, 2.5)` | a constructor, qualified or not |
 | `x.pick[int](3)` | a method — its **own** parameters, not the receiver's |
-| `Maybe[int].Just(1)` | a variant, which is a construction of its type |
+| `Maybe[int].Just(1)` | a variant, which is a construction of its type — qualified or not |
 | `va_arg[int](ap)` | a special form: `va_arg` and `ptr_cast` |
+
+**A head reached through its module takes the list exactly where the bare name would**, so a type
+from another module is instantiated without importing its name:
+
+```sysl
+import sysl.math.complex
+
+val z = complex.Complex[f32](1.5, 2.0)
+
+print(z.re, z.im)
+```
+
+```output
+1.5 2
+```
 
 **Inference is still what supplies them nearly everywhere**, and a list inference would have found is
 noise. What earns the syntax is a signature neither direction of inference reaches — a kernel whose
