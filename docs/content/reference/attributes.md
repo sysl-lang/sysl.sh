@@ -453,7 +453,7 @@ print(add(2, 3))
 That program prints `5` and runs neither test, which is the whole of the arrangement: `sysl run`
 builds the program, and the tests are for `sysl test`.
 
-Four forms of the annotation:
+Five forms of the annotation:
 
 | written | means |
 |---|---|
@@ -461,8 +461,12 @@ Four forms of the annotation:
 | `@test("a sentence")` | named by the sentence instead |
 | `@test(should_trap)` | the test **passes** by stopping the program |
 | `@test(should_trap: "past the end")` | …and the run must have printed that text |
+| `@test(ignore: "why")` | the test is compiled and checked, and **not run** |
 
-**Four, and `@test()` is not a fifth.** An empty argument list would mean what bare `@test` means, and
+They compose, in the order the table gives them — `@test("a sentence", should_trap: "past the end",
+ignore: "why")` is one annotation.
+
+**Five, and `@test()` is not a sixth.** An empty argument list would mean what bare `@test` means, and
 it is refused rather than accepted as a synonym: it is not a shorter way of saying nothing, it reads
 as a description that was going to be there and got lost, and a reader who saw it accepted could not
 tell which.
@@ -526,6 +530,48 @@ ends the process, and none of them had to know it was running under a test.
 additionally requires that the run printed it, which is what tells a trap from the **right** trap. A
 silent trap satisfies `should_trap` and can satisfy no string, because a compiler-inserted check
 raises a signal and says nothing — see [what stopping looks like](/reference/errors/).
+
+### A test may be written and not run
+
+A test for a defect that is not fixed yet is still worth writing — with the assertion that *should*
+hold, rather than one bent to match what the code does today. `ignore` is how it lands: the function
+is compiled and checked exactly like every other test, and `sysl test` reports it without starting it.
+
+```sysl
+parse_arms(n: int) -> int = n - 1
+
+@test(ignore: "the parser drops the second arm")
+keeps_both_arms()
+    assert(parse_arms(2) == 2, "both arms")
+
+print(parse_arms(2))
+```
+
+```output
+1
+```
+
+**Checked, not run, is the whole point of the form.** An ignored test is held to everything a test
+is — no parameters, no result, a body that compiles — so it cannot quietly stop being valid code while
+it waits, which is what a test that was commented out or deleted does. It composes with the rest of
+the annotation: `@test("both arms are kept", should_trap: "past the end", ignore: "…")` is a trap test
+that is waiting, and it is reported as waiting rather than as a run that returned.
+
+**The reason is required.** An ignored test that does not say what it is waiting for is the one nobody
+comes back to, so bare `ignore` — or a reason that is empty — is refused:
+
+```sysl
+@test(ignore)
+keeps_both_arms()
+    assert(true, "both arms")
+```
+
+```error
+'ignore' needs the reason the test is not run, written as a string — '@test(ignore: "the parser drops the second arm")'
+```
+
+Ignoring is something a *test* is, so there is no `@ignore` of its own; written above a function it
+is answered with the spelling above.
 
 ### A test has one caller, and the program is not it
 
@@ -695,6 +741,24 @@ it. The compile is the slow half, and there is only ever one of it.
 
 Exit status is 0 if and only if every test that ran passed. A tree with no tests, and a filter that
 matched none of the tests there are, both exit 0 and say which happened.
+
+**An ignored test is reported, never left out.** It starts no process — not its own, and not its
+module's `@setup` or `@teardown` — and its row says why in place of a time. The summary counts it,
+so a run that ignored something says so on the line a reader looks at last:
+
+```
+running 2 tests
+
+parser.sysl
+  ok    holds            1ms
+  skip  keeps_both_arms  ignored: the parser drops the second arm
+
+1 passed, 0 failed, 1 ignored — 1ms
+```
+
+Where nothing was ignored the summary is `N passed, M failed` exactly as it always was. A filter
+selects an ignored test like any other and reports it as ignored, and an ignored test fails nothing:
+it does not change the exit status, and `--fail-fast` does not stop at it.
 
 ### The hooks a module may write
 
