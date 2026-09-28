@@ -375,6 +375,24 @@ A block import lasts as long as the block's local bindings do and shadows whatev
 under the same name. It **takes effect where it is written**: the statements above it have imported
 nothing.
 
+**Everything written in the block below the import reads names through it — a closure's body
+included**, wherever that closure is later called from. A closure is part of the block it is written
+in, so its `max` is the block's:
+
+```sysl
+clamped(xs: []int, floor: int) -> []int
+    import sysl.math.max
+    import sysl.seq.Sequence
+
+    xs.map((x) -> max(x, floor))
+
+print(clamped([3, -2, 7, 0], 1))
+```
+
+```output
+[3, 1, 7, 1]
+```
+
 **An import is not an executable statement**, whatever it looks like — it binds a name and runs
 nothing, so a file may import freely without becoming the one file of the program that carries its
 statements.
