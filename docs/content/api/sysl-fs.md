@@ -11,7 +11,8 @@ requires: "requires { os }"
 What is at the end of a path: reading and writing whole files, metadata, directories, links, and
 the errors any of it can answer with.
 
-`read_text`, `write_bytes`, `metadata`, `make_dir_all`, `copy_file`, `canonicalize`, the walk, and
+`read_text`, `write_bytes`, `write_text_atomic` and the other publishing calls, `metadata`,
+`make_dir_all`, `copy_file`, `canonicalize`, the walk, and
 `IoError` — which carries the platform's own number so that a caller can act on *which* failure it
 was rather than only on there having been one.
 
@@ -22,7 +23,7 @@ handling away from every program with no operating system to ask. Deciding what 
 
 ## Index
 
-[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_dir_all`](#copy_dir_all) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`walk`](#walk) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_text`](#write_text) [`Entry`](#entry) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Matching`](#matching) [`Meta`](#meta) [`Walk`](#walk-1) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Iterate for Matching](#iterate-for-matching) [Iterate for Walk](#iterate-for-walk) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
+[`append`](#append) [`append_bytes`](#append_bytes) [`append_text`](#append_text) [`cache_dir`](#cache_dir) [`canonicalize`](#canonicalize) [`config_dir`](#config_dir) [`copy_dir_all`](#copy_dir_all) [`copy_file`](#copy_file) [`create`](#create) [`create_update`](#create_update) [`current_dir`](#current_dir) [`data_dir`](#data_dir) [`entries`](#entries) [`exists`](#exists) [`hard_link`](#hard_link) [`home_dir`](#home_dir) [`is_dir`](#is_dir) [`is_file`](#is_file) [`is_link`](#is_link) [`link_metadata`](#link_metadata) [`make_dir`](#make_dir) [`make_dir_all`](#make_dir_all) [`make_temp_dir`](#make_temp_dir) [`metadata`](#metadata) [`open`](#open) [`open_update`](#open_update) [`pending_name`](#pending_name) [`publish_dir`](#publish_dir) [`publish_file`](#publish_file) [`read_bytes`](#read_bytes) [`read_link`](#read_link) [`read_text`](#read_text) [`readable`](#readable) [`remove_dir`](#remove_dir) [`remove_dir_all`](#remove_dir_all) [`remove_file`](#remove_file) [`rename`](#rename) [`set_current_dir`](#set_current_dir) [`set_permissions`](#set_permissions) [`size_of`](#size_of) [`symlink`](#symlink) [`truncate`](#truncate) [`walk`](#walk) [`writable`](#writable) [`write_bytes`](#write_bytes) [`write_bytes_atomic`](#write_bytes_atomic) [`write_text`](#write_text) [`write_text_atomic`](#write_text_atomic) [`Entry`](#entry) [`File`](#file) [`FileState`](#filestate) [`IoError`](#ioerror) [`Kind`](#kind) [`Matching`](#matching) [`Meta`](#meta) [`Walk`](#walk-1) [Display for IoError](#display-for-ioerror) [Display for Kind](#display-for-kind) [Eq for IoError](#eq-for-ioerror) [Eq for Kind](#eq-for-kind) [Fallible for File](#fallible-for-file) [Iterate for Matching](#iterate-for-matching) [Iterate for Walk](#iterate-for-walk) [Reader for File](#reader-for-file) [Writer for File](#writer-for-file)
 
 ## Functions
 
@@ -105,8 +106,9 @@ with that one stops being executable, and this org copies build inputs. A symbol
 **A failure part way through leaves what it has already written.** Nothing here removes a tree on
 the way out, because it cannot know whether the destination existed before it started, and
 deleting one the caller owned would be far worse than the failure being reported. A caller that
-needs the destination to appear whole or not at all copies into `make_temp_dir` and `rename`s the
-result into place, which is one call each and is the only way to get atomicity from a filesystem.
+needs the destination to appear whole or not at all copies to `pending_name(to)` and hands that to
+`publish_dir` -- a copy built beside its destination rather than in `make_temp_dir`, since a rename
+only moves a directory within one filesystem, and that rename is the only atomicity a filesystem has.
 
 The source may be a plain file, in which case this is `copy_file` with the mode carried.
 
@@ -338,6 +340,37 @@ of C's update modes is a different answer to "and what about what is already the
 them apart is what keeps a caller from having to know that `"r+"` fails on a missing file while
 `"w+"` empties one that exists.
 
+### `pending_name`
+
+```sysl
+pending_name(target: string) -> string
+```
+
+A name beside `target` that no other call -- in this process or in any other -- will answer.
+
+Write there, then hand both names to `publish_file` or `publish_dir`. It is the target with a
+suffix, so it is in the target's directory and on the target's filesystem, and a directory listing
+says which entry it was going to become.
+
+### `publish_dir`
+
+```sysl
+publish_dir(pending: string, target: string) -> Result[unit, IoError]
+```
+
+### `publish_file`
+
+```sysl
+publish_file(pending: string, target: string) -> Result[unit, IoError]
+```
+
+Moves a finished file from `pending` onto `target`, replacing whatever was there.
+
+**A failure leaves nothing behind**: the pending file is removed, so a full disk or a read-only
+directory leaves the previous entry and no debris beside it. The error is the rename's, read before
+the removal could overwrite it. The permission bits travel with the rename, so a binary linked under
+the pending name is still one when it arrives.
+
 ### `read_bytes`
 
 ```sysl
@@ -524,11 +557,32 @@ write_bytes(path: string, bytes: []const u8) -> Result[unit, IoError]
 
 Writes the bytes, replacing whatever was there and making the file if it was not.
 
+### `write_bytes_atomic`
+
+```sysl
+write_bytes_atomic(path: string, bytes: []const u8) -> Result[unit, IoError]
+```
+
+Writes the bytes to `path` by way of a pending name, so a reader of `path` sees the whole of the
+previous file or the whole of this one and never a prefix of either.
+
+On any failure -- the write, the close or the rename -- the pending file is removed and the first
+error is the answer, so `path` is exactly what it was before the call. A directory that is not
+there answers `NotFound` and leaves nothing anywhere.
+
 ### `write_text`
 
 ```sysl
 write_text(path: string, text: string) -> Result[unit, IoError]
 ```
+
+### `write_text_atomic`
+
+```sysl
+write_text_atomic(path: string, text: string) -> Result[unit, IoError]
+```
+
+`write_bytes_atomic` for text.
 
 ## Types
 
