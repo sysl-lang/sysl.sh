@@ -39,9 +39,9 @@ decides which modules exist at all — there is no half of `sysl.fs` that works 
 
 | tier | names | what it costs |
 |---|---|---|
-| whole file | `read_text`, `read_bytes`, `write_text`, `write_bytes`, `append_text`, `append_bytes` | storage the size of the file — allocates by nature |
+| whole file | `read_text`, `read_bytes`, `write_text`, `write_bytes`, `append_text`, `append_bytes`, `write_text_atomic`, `write_bytes_atomic` | storage the size of the file — allocates by nature |
 | open file | `open`, `create`, `append`, `open_update`, `create_update`, and `File`'s members | a buffer the caller already has |
-| path | `exists`, `readable`, `writable`, `is_file`, `is_dir`, `is_link`, `size_of`, `metadata`, `link_metadata`, `set_permissions`, `symlink`, `read_link`, `hard_link`, `canonicalize`, `make_dir`, `make_dir_all`, `remove_file`, `remove_dir`, `remove_dir_all`, `rename`, `copy_file`, `truncate`, `current_dir`, `set_current_dir`, `make_temp_dir` | one C call each, or a loop over them |
+| path | `exists`, `readable`, `writable`, `is_file`, `is_dir`, `is_link`, `size_of`, `metadata`, `link_metadata`, `set_permissions`, `symlink`, `read_link`, `hard_link`, `canonicalize`, `make_dir`, `make_dir_all`, `remove_file`, `remove_dir`, `remove_dir_all`, `rename`, `pending_name`, `publish_file`, `publish_dir`, `copy_file`, `truncate`, `current_dir`, `set_current_dir`, `make_temp_dir` | one C call each, or a loop over them |
 
 **Reading a whole file *is* asking for storage the size of the file**, so the top tier could not have
 been written any other way. Keeping it apart from `File` is what lets the middle tier stay honest:
@@ -95,6 +95,67 @@ would make every program reading its own configuration handle a failure that mea
 broken. The severity is affordable because the layer underneath is public — a caller who would rather
 inspect than trap reads `read_bytes` and validates it with
 [`from_utf8`](/library/text/).
+
+### Writing where somebody else is reading
+
+`write_text` truncates and then writes, so for as long as the write takes, a reader of the path finds
+**half a file** under the name it trusts. Where the path is shared — a cache entry, a configuration
+file another process reloads, a binary about to be run — write to a **pending name** beside it and
+`rename` that into place. A rename within one directory is one step: a reader sees the whole of the
+old file or the whole of the new one, never a mixture and never a moment with nothing there.
+
+```sysl
+import sysl.fs.{entries, make_dir, make_temp_dir, pending_name, publish_dir, read_text, remove_dir_all, write_text, write_text_atomic}
+import sysl.path.join
+
+val dir = make_temp_dir("sysl-fs-doc-publish").unwrap()
+val config = join(dir, "config.toml")
+
+write_text_atomic(config, "retries = 3\n").unwrap()
+write_text_atomic(config, "retries = 5\n").unwrap()
+
+prints(read_text(config).unwrap())
+print(entries(dir).unwrap().len())
+
+val cache = join(dir, "cache")
+
+for who in ["first", "second"]
+    val staged = pending_name(cache)
+
+    make_dir(staged).unwrap()
+    write_text(join(staged, "built-by"), who).unwrap()
+    publish_dir(staged, cache).unwrap()
+
+print(read_text(join(cache, "built-by")).unwrap())
+print(entries(dir).unwrap().len())
+
+remove_dir_all(dir).unwrap()
+```
+
+```output
+retries = 5
+1
+first
+2
+```
+
+**`write_text_atomic` and `write_bytes_atomic` are the whole pattern in one call**, and a failure
+anywhere — the write, the close, the rename — removes the pending file and answers the first error, so
+the directory holds exactly what it held before. That is why the listing above says `1`: the pending
+names never outlive the call.
+
+**The pending name is beside the target, not in the temporary directory.** A rename only moves a file
+within one filesystem, and nothing says the destination shares one with `/tmp`. `pending_name(target)`
+is the target plus a suffix carrying a token drawn once per process — sixty-four bits of kernel
+entropy, not a process id — and a count taken once per call, so two processes never agree on one and
+neither do two calls of one process. Use it directly for whatever is built in several steps, and hand
+the result to `publish_file` or `publish_dir`.
+
+**`publish_dir` treats losing a race as success.** Two writers of one entry are building the same
+thing; a rename refuses to replace a directory that holds anything, so the first one to finish is
+never disturbed, and the second removes its own copy and answers `Ok` — which is why the cache above
+still says `first`. Only a rename that fails with no directory at the target afterwards is reported.
+`publish_dir` is POSIX-only, since clearing away the losing copy walks a tree.
 
 ## `IoError`
 

@@ -204,7 +204,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable blocks for where a directory belongs: the four answers, and the leaf a
     // program appends for itself.
     // One more runnable: a walk filtered by a glob, over a tree with a hidden directory in it.
-    "docs/content/library/fs.md"                        -> (15, 5, 3),
+    "docs/content/library/fs.md"                        -> (16, 5, 3),
     // Three more runnable: what a glob matches, what a leading dot hides from it, and what a
     // malformed pattern answers.
     "docs/content/library/path.md"                      -> (9, 0, 0),
