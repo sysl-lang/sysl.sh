@@ -243,12 +243,25 @@ The levels a manifest may name are `0`, `1`, `2`, `3`, `s` and `z` — the six e
 package.hocon: 'optimization = "9"' names no level clang has — it is one of 0, 1, 2, 3, s, z
 ```
 
-**`--optimize` is deliberately laxer** and passes whatever it was given straight through, so `-Ofast`
-and `-Og` reach the clang that has them and are answered for by it. The asymmetry is about who is
-watching: a flag is typed at a build somebody is standing in front of, and clang's own message
-arrives in the same second, while a manifest is written once and read by every build afterwards —
-including a consumer's, who did not write the file and would be handed an error from inside clang
-that names neither it nor the key.
+**`--optimize` is checked the same way, before anything is built, against a list two longer**: the
+six, plus `fast` and `g`, which a build somebody is standing in front of may reasonably ask for and a
+manifest every consumer inherits may not. Anything else is refused with the whole list:
+
+```
+sysl build . -O2        built at 2
+sysl build . -Og        built at g — a command-line level a manifest may not name
+sysl build . -O7        '-O7' names no level clang has — it is one of 0, 1, 2, 3, s, z, fast, g
+sysl build . -O4        '-O4' names no level clang has — it is one of 0, 1, 2, 3, s, z, fast, g
+```
+
+**It is refused before the compiler touches its cache**, because the level names the directory the
+standard module is compiled into. Clang answers `-O7` with a warning that it is using `-O3` instead,
+not with a refusal, so a flag passed straight through would build a whole standard module under a
+key naming a level that does not exist — and report success.
+
+The two lists differ because of who is watching: a flag is typed at one build, while a manifest is
+written once and read by every build afterwards — including a consumer's, who did not write the file
+and should not inherit a level chosen for one afternoon's debugging.
 
 **`sysl run` notices a change to the key.** What it keeps is keyed on the level the build resolved
 among everything else that reaches the bytes, so raising `optimization` rebuilds rather than replaying

@@ -300,7 +300,7 @@ the library's
 | situation | result |
 |---|---|
 | a wildcard offers a name that is also defined locally or imported selectively | the more specific one wins |
-| two wildcards both offer one name | an *unqualified* use is a compile error naming both |
+| two wildcards both offer one name | an *unqualified* use is a compile error naming both — unless it is a variant and the expected type says whose |
 | two selectors bind one name, or two statements do | reported at the second import |
 
 **A wildcard offers a name; a selector binds one.** That is the whole of the difference: a wildcard
@@ -339,6 +339,47 @@ unqualified `Option` in that file is a compile error naming both — it does not
 That is deliberate: the alternative is a precedence tier that makes the library quietly lose to
 whatever a program imported, which is the same silent-capture problem an explicit conflict is being
 reported to avoid.
+
+**A variant two wildcards both offer is settled by the expected type**, exactly as two enums of one
+module are ([A variant belongs to its enum](/reference/types/#a-variant-belongs-to-its-enum)).
+`sysl.args` and `sysl.encoding` both have a variant called `Short`, and an annotated binding, an
+argument or a declared return type says which one a bare `Short` means:
+
+```sysl
+import sysl.args.*
+import sysl.encoding.*
+
+needed(e: DecodeError) -> usize = e match
+    DecodeError.Short(n) -> n
+    _ -> 0
+
+flag(a: Arg) -> char = a match
+    Arg.Short(c) -> c
+    _ -> '?'
+
+val e: DecodeError = Short(4)
+
+print(needed(e), flag(Short('v')))
+```
+
+```output
+4 v
+```
+
+With nothing expected, the two offers are still the compile error the table names:
+
+```sysl
+import sysl.args.*
+import sysl.encoding.*
+
+var s = Short(4)
+
+print(1)
+```
+
+```error
+'Short' is offered by 'sysl.args.*' and 'sysl.encoding.*' — import it selectively, or write the module it comes from
+```
 
 **Every step is filtered by visibility, the library's included.** A member the library keeps to itself
 is not an answer to a program's bare name, exactly as a sibling file's private helper is not.
@@ -617,6 +658,11 @@ reach, and refusing at that module's own
 `@requires` would refuse your build over a file you did not write and cannot change. So the refusal
 lands at the reference, which is a line somebody chose to write, and a program that never names the
 module hears nothing.
+
+**Exempt from being refused over its own clause is not exempt from being reached.** A reference into
+a module of a path or git dependency is asked the same question as one into the standard module: a
+program on a `posix = false` target, or one that wrote `@no_posix`, is refused at the line that
+reaches a dependency's `@requires(posix)` module, naming that module by its package-qualified name.
 
 ### A generic answers for what it wrote, not for what its caller chose
 
