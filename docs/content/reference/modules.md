@@ -173,6 +173,13 @@ constant 'Limit' is already declared
 
 — and two public declarations of one spelling anywhere in the module, which every file may write.
 
+**An enum's variant is not a declaration of its spelling here, so a private struct does not shadow
+one.** A struct and a variant of one name never contended — they coexist in one file, and at each use
+the expected type decides which answers — so a private `struct Circle` beside a sibling file's public
+`enum Shape` with a `Circle` variant leaves both as candidates in the struct's own file: `Circle(7)`
+with nothing expected builds the struct, and `area(Circle(5))`, where `area` takes a `Shape`, builds
+the variant. Every other file sees only the variant.
+
 **A scoped `private[M]` spends its name across the subtree it reaches**, since that is exactly the
 set of files that can write it. The five declaration forms take a modifier; an `impl` takes none,
 having no name for one to restrict; and an **enum's variants carry the enum's own**, since a type

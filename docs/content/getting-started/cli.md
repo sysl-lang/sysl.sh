@@ -975,7 +975,7 @@ build was for:
 ```
 sysl: 1 source file(s) under hello
 sysl:   read hello/hello.sysl
-sysl: standard module linked from ~/Library/Caches/sysl/<version>-…/std.syslib
+sysl: standard module linked from ~/Library/Caches/sysl/<version>+<build>-…/std.syslib
 sysl: link: clang --target=arm64-apple-macosx -Wno-override-module -O1 …
 ```
 

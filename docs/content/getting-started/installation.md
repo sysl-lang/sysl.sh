@@ -150,6 +150,11 @@ wherever `XDG_CACHE_HOME` points — under a fingerprint of the library it was b
 built once per machine rather than once per project, nothing is written into your source tree, and
 installing a compiler with a different library gets its own entry instead of a stale hit.
 
+**The entry also names the compiler that built it — its version and a digest of its own sources — so
+a different build of the same version never reads back another build's archive.** The same key
+names the binaries `sysl run` and `sysl test` keep, so neither replays what an earlier compiler made
+for an unchanged program. A compiler before 0.0.151 keyed both on the version alone.
+
 **The fingerprint also carries the optimization level and, where they are asked for, LTO and a
 profile** — the archive is compiled the way the rest of the build is, so `-O3`, `--lto thin` and a
 `--profile-use` file each earn their own entry rather than sharing one built at the default level.
