@@ -605,10 +605,10 @@ b.push("x")
 ```
 
 ```error
-'v' of 'sysl.buf$Buf.push.int' is int, but string was given
+'v' of 'Buf.push.int' is int, but string was given
 ```
 
-`sysl.buf$Buf.push.int` is the `push` of a `Buf[int]` — one function, emitted for that instantiation.
+`Buf.push.int` is the `push` of a `Buf[int]` — one function, emitted for that instantiation.
 [Generics](/reference/generics/) has the rest of that story.
 
 ---
