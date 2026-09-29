@@ -124,10 +124,54 @@ print(Limit)
 constant 'Limit' is already declared
 ```
 
-**And a private name against a sibling file's PUBLIC one of that spelling is a duplicate too.** Only
-the all-private case separates: a public declaration is one the sibling file may write, so the two
-would be two answers to that file's own references with nothing to tell them apart — which is the
-ambiguity the refusal exists for, and it does not arise when neither file can see the other's.
+**And a private name SHADOWS a sibling file's public one of that spelling.** Inside the file that
+declares it, its own declaration answers; every other file of the module, and every importer, sees
+only the public one — a private declaration is never exported. It is C's `static` in one translation
+unit beside an `extern` of the same name in another:
+
+```sysl
+// m/pub.sysl
+module m
+helper() -> string = "public"
+from_pub() -> string = helper()
+```
+
+```sysl
+// m/priv.sysl
+module m
+private helper() -> string = "private"
+from_priv() -> string = s"${helper()} ${m.helper()}"
+```
+
+A program calling `m.from_pub()`, `m.from_priv()` and `m.helper()` prints `public`, `private
+public` and `public`: the second file's bare `helper` is its own, and **the module's path reaches the
+public one from there** when that is what the file means. Both functions are compiled, each under a
+symbol of its own.
+
+**Between two functions, a private one shadows only what a call could not tell from it.** The pairs
+[Overloading](/reference/declarations/#overloading) refuses inside one file — the same parameters, or
+a difference hidden behind a default — are a shadowing across two, and every other public overload
+stays a candidate in the private file beside its own: a private `helper(s: string)` next to a public
+`helper(n: int)` makes an overload set there, exactly as two declarations in one file would. **Any
+other pairing hides the whole spelling** — a private constant beside a public function of its name
+leaves nothing for a use to tell apart. A generic declared in another file is resolved in *its*
+file, so a private `helper` never reaches the body of a public generic that calls `helper()`.
+
+**What stays a duplicate is one spelling declared twice where one file sees both**: twice in one
+file, whatever the two visibilities —
+
+```sysl
+private const Limit: usize = 1
+const Limit: usize = 2
+
+print(Limit)
+```
+
+```error
+constant 'Limit' is already declared
+```
+
+— and two public declarations of one spelling anywhere in the module, which every file may write.
 
 **A scoped `private[M]` spends its name across the subtree it reaches**, since that is exactly the
 set of files that can write it. The five declaration forms take a modifier; an `impl` takes none,
