@@ -226,6 +226,11 @@ The tree is compiled once, into a binary that runs one named test per process, a
 it once per test. [Attributes](/reference/attributes/) has `@test` itself — what a test may be, what
 every other build does with one, and why the process per test is the mechanism rather than a cost.
 
+**It runs the tests of the tree you name, and no other.** A [dependency](/reference/packages/) is
+compiled into the binary because the tree's code calls it, but its own `@test` functions are left
+out: they are its author's to run, in its own repository, and a consumer's run reporting them would
+blame the consumer for code it cannot change.
+
 **It takes the search-path flags too** — `--link-path`, `--include-path` and `-D`, exactly as `build`
 does, and it needs them for the same reasons. A tree whose C includes a header the toolchain does not
 already know about, or whose constants come from a [`c const`](/reference/ffi/) block over one, is a

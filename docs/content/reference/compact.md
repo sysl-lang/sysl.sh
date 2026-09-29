@@ -575,8 +575,8 @@ ceremony the language charges. A struct with no fields is the exception and **mu
   the ones pointing into the dependency's own file are the wreckage of the refused `impl`.
 - **An associated type does *not* shadow a module type of the same name**, so `type Token =
   Spanned[Token]` is legal and means what it looks like.
-- `private[m]` takes a **simple name**; a dotted path is refused with `']' expected` pointing at the
-  first dot.
+- `private[m]` takes a **simple name**; a dotted path is refused at the first dot, with the rule and
+  the simple name to write instead.
 - `ref` is reserved, so a binding of `uv_ref` needs another name.
 - A `val`-bound slice read out of a field is `[]const T`; `var` gives `[]T`.
 
@@ -599,7 +599,7 @@ do all along. One program and one `sysl build` settle it.
 | `'require'/'ensure' clauses must come before any other statement` | move the whole contract block to the top of the body |
 | `a program starts in one place, and this 'main' is a second` | put the top-level statements inside `main` |
 | `is exported and reaches … module storage an initializer fills` | the bare-metal `val` above: make it a local or a field |
-| `']' expected`, pointing at a dot in `private[a.b]` | `private[b]` — the bracket takes a simple name |
+| `'private[…]' names one enclosing module by its simple name rather than by a path` | `private[b]` — the bracket takes a simple name |
 | `Undefined symbols … _stdout` | a macro, not a symbol; put a line of C beside the module |
 
 ---

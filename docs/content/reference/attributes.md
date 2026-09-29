@@ -735,6 +735,10 @@ a test's name and runs that test alone — the program's own statements and its 
 though its module-level `val`s are still filled, since a test reads a module's storage like any other
 function. The runner then starts that binary once per test.
 
+**The tests are the named tree's own.** A dependency's modules are compiled in, since the tree calls
+them, and its `@test` functions are not — a package's tests are run in the package's repository, by
+`sysl test` there.
+
 The process per test is not a cost being tolerated; **it is the mechanism.** A test that fails does
 so by ending its process, so a run that shared one would report the first failure and nothing after
 it. The compile is the slow half, and there is only ever one of it.

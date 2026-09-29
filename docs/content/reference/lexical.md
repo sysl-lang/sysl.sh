@@ -361,8 +361,8 @@ sentence. Where the body ends no sentence at all, the whole of it is the summary
 
 ## Identifiers
 
-An identifier starts with a letter or `_` and continues with letters, digits, or `_`. **A letter is
-whatever Unicode calls one**, so a name may be written in any script:
+An identifier starts with a letter or `_` and continues with letters, digits, combining marks, or
+`_`. **A letter is whatever Unicode calls one**, so a name may be written in any script:
 
 ```sysl
 val año = 2026
@@ -386,9 +386,15 @@ A **digit** is whatever Unicode calls one too, but only *inside* a name: `caf٣`
 `٣` is not, because a name may not begin with a digit in any script. The number *literal* grammar is
 deliberately unmoved — a literal is a value the arithmetic has to read, and `٣` is not one.
 
+A **combining mark** — an accent, a vowel sign, anything Unicode files under category M — continues
+a name the way a letter does, so a name typed on a keyboard that composes `é` as an `e` and a
+combining acute is one identifier rather than an illegal character. It cannot *begin* a name, having
+nothing to combine with, and one written there is refused as exactly that.
+
 **Two spellings that look identical are two names**, and this is the one edge worth stating outright:
 `café` written with a precomposed `é` and `café` written with an `e` and a combining acute are
-different identifiers. sysl applies no normalization, which is a deliberate refusal of UAX #31's
+different identifiers — both legal, and a program may declare the two side by side without a
+collision. sysl applies no normalization, which is a deliberate refusal of UAX #31's
 rule — a declaration is what a caller has to spell, and folding them would make a name that looks
 right refuse to resolve for a reason nothing on the screen shows.
 
@@ -425,6 +431,18 @@ val `match`: int = 5
 struct `Grid Cell`
     `row index`: int
 end `Grid Cell`
+```
+
+Written bare, a reserved word in a name's place is refused at the word, and the refusal names the
+quoted form:
+
+```sysl
+match() -> int = 1
+
+print(1)
+```
+```error
+'match' is a reserved word, so it cannot stand as a function's name — write it '`match`'
 ```
 
 It is a name and nothing more: `` `match` `` *is* the identifier `match`. A contextual word written
