@@ -230,6 +230,69 @@ there is nothing left to declare — the slot holds a class or a register.
 An operand must be a plain variable, and its type must fit a general-purpose register: the integers,
 the pointers, `bool`. A float needs a floating class, which does not exist yet.
 
+**A name bound by `ref` is not an operand.** It names a place somewhere else rather than a variable
+of its own, so there is no slot for the register to be loaded from or stored back to:
+
+```sysl
+f()
+    var xs: [3]int = [1, 2, 3]
+    ref r = xs[1]
+    var v: int = 0
+    asm
+        [x86_64]
+            "movl {r}, {v}"
+            in r : reg
+            out v : reg
+        [aarch64, thumb]
+            "mov {v}, {r}"
+            in r : reg
+            out v : reg
+        [riscv64, riscv32, craft]
+            "mv {v}, {r}"
+            in r : reg
+            out v : reg
+        [wasm32] unavailable "there are no registers for an operand to land in"
+
+f()
+```
+
+```error
+'r' is bound by 'ref', so it names storage somewhere else rather than a variable of its own, and there is nothing here for an operand to be
+```
+
+Copy it into a `var` and hand the instructions that, writing the result back through the `ref` if
+they set it:
+
+```sysl
+f()
+    var xs: [3]int = [1, 2, 3]
+    ref r = xs[1]
+    var n: int = r
+    var v: int = 0
+    asm
+        [x86_64]
+            "movl {n}, {v}"
+            in n : reg
+            out v : reg
+        [aarch64, thumb]
+            "mov {v}, {n}"
+            in n : reg
+            out v : reg
+        [riscv64, riscv32, craft]
+            "mv {v}, {n}"
+            in n : reg
+            out v : reg
+        [wasm32] unavailable "there are no registers for an operand to land in"
+    r = v + 40
+    print(xs[0], xs[1], xs[2])
+
+f()
+```
+
+```output
+1 42 3
+```
+
 Reading and writing the same variable is refused, because it is two operands and so possibly two
 registers — the instructions would read one and write another:
 

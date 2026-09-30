@@ -599,6 +599,42 @@ second
 itself — and runs when control leaves that block by any ordinary route: falling off the end,
 `return`, `break`, `continue`, or a `?` taking its failure arm.
 
+**A deferred statement may not contain a jump that leaves it** — a `return`, or a `break` or
+`continue` of a loop outside it — at any depth, since it runs while its block is already being left
+and there is no second exit to take. A loop written inside the statement is its own, so a jump of
+that loop stays inside and is fine, and so is a jump inside a closure or a nested function written
+there:
+
+```sysl
+first(c: bool) -> int
+    defer if c then return 1
+
+    2
+
+print(first(true))
+```
+
+```error
+a deferred statement runs while its block is being left, so it cannot 'return' — there is no exit left to take
+```
+
+```sysl
+work()
+    defer for i in 0..<5
+        if i == 2 then break
+        print(i)
+
+    print("body")
+
+work()
+```
+
+```output
+body
+0
+1
+```
+
 **Several in one block run last-registered-first**, as above, so they undo in the reverse of the
 order they were set up — the order that lets a later one depend on an earlier one's resource.
 

@@ -81,7 +81,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // One more runnable and one more refusal: a `for` may take its element apart with the pattern a
     // binding takes, and the comma spelling is refused because a three-clause header already begins
     // that way.
-    "docs/content/reference/statements.md"            -> (18, 4, 1),
+    "docs/content/reference/statements.md"            -> (19, 5, 1),
     // Two more runnable: a default is read at the type its parameter declares, which is what lets a
     // method take a bare `None` and a callable parameter default to a closure — so the section shows
     // one of each being taken and then written over.
@@ -167,7 +167,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // A `type` names itself in the header too: one more fragment, the `build=c` module declaring a
     // `typedef`, and one more refusal, for a `type` over a struct.
     "docs/content/reference/ffi.md"                    -> (22, 33, 16),
-    "docs/content/reference/inline-assembly.md"        -> (3, 3, 6),
+    "docs/content/reference/inline-assembly.md"        -> (4, 4, 6),
     // One more runnable: a `volatile` bitfield is a volatile access of its container, so the block
     // that asserted a refusal is now a register written through and read back. One more refusal:
     // that a member takes no annotation is a sentence now, so the page can show it being said.
