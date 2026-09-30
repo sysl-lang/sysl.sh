@@ -155,6 +155,12 @@ a different build of the same version never reads back another build's archive.*
 names the binaries `sysl run` and `sysl test` keep, so neither replays what an earlier compiler made
 for an unchanged program. A compiler before 0.0.151 keyed both on the version alone.
 
+**A kept binary is also keyed on where the program's files are, not only on what they say**, because
+the binary names its sources by their full path — a test report heads each file with it, and a trap
+reports it. So moving a project to another directory costs one rebuild of it, and two identical
+trees in two directories are two programs. Before 0.0.152 the second was handed the first one's
+binary and reported the other directory's paths as its own.
+
 **The fingerprint also carries the optimization level and, where they are asked for, LTO and a
 profile** — the archive is compiled the way the rest of the build is, so `-O3`, `--lto thin` and a
 `--profile-use` file each earn their own entry rather than sharing one built at the default level.
