@@ -981,6 +981,33 @@ the other. Four rules govern them:
   not have written and cannot name. And a default may not lead back to the declaration it belongs to,
   directly or through another's.
 
+A **value parameter** may carry one too, and it is the argument a use would have written in its
+place — so the same four rules govern it. It fills the same gap, counts toward the same arity and
+sits in the same suffix, a type default and a value default may share one list, and a value default
+may be a constant expression over the value parameters written before it:
+
+```sysl
+struct Ring[T, const N: usize = 4]
+    items: [N]T
+
+struct Pad[const M: usize, const N: usize = M * 2]
+    a: [M]int
+    b: [N]int
+
+val r: Ring[int] = Ring([1, 2, 3, 4])
+val p: Pad[2] = Pad([1, 2], [3, 4, 5, 6])
+
+print(r.items.len, p.b.len)
+```
+
+```output
+4 4
+```
+
+`Ring[int]` is `Ring[int, 4]` — one instantiation, filled before anything is keyed. The default has
+to fit the parameter's declared type, exactly as a written argument does: `[const N: u8 = 300]` is
+refused with *"the default for 'N' does not fit byte: 300"*.
+
 **`Self` is the case the feature exists for.** In a trait's default it means the implementing type,
 exactly as in a method's signature — so `impl Scale for P` is the `impl Scale[P] for P` it reads as,
 and `[T: Scale]` asks for `Scale[T]`. A struct and an enum have no implementing type, so `Self` in one
@@ -1003,6 +1030,19 @@ print(f(1))
 
 What would be useful there is a fallback for an inference that found nothing, which is a different
 feature; `f[T = int](x: T)` is refused rather than quietly meaning that.
+
+A value parameter of a function is solved from an array's length exactly as a type parameter is
+from an argument's type, so its default is refused in the same words:
+
+```sysl
+total[const N: usize = 3](xs: [N]int) -> usize = N
+
+print(total([1, 2]))
+```
+
+```error
+'N' is a value parameter of the function 'total', whose type parameters are solved from what it is given rather than written where it is used — so '= 3' has nothing to stand in for
+```
 
 ## Converting through a parameter
 
