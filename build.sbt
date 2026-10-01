@@ -25,10 +25,10 @@ ThisBuild / evictionErrorLevel := Level.Warn
 
 // The compiler release this site documents. Raising it is how the docs follow the language.
 //
-// It must be a release that is **both** on Maven Central (for the jar) and tagged in the compiler's
+// It must be a release that is **both** on GitHub Packages (for the jar) and tagged in the compiler's
 // repository (for the standard library's source). 0.0.5 was the first to satisfy that; 0.0.1-0.0.3
-// were tagged and released without ever reaching Central, and 0.0.4 reached Central with no tag and
-// no GitHub release.
+// were tagged and released without a published jar, and 0.0.4 had a jar with no tag and no GitHub
+// release.
 //
 // **0.0.6 was the first release these pages could pass on**, which is not a coincidence: the site's
 // own CI is what found the bug it fixes. Every page that prints failed to link on Linux, because the
@@ -80,16 +80,10 @@ lazy val root = project
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,
     ),
 
-    // A second place to find the compiler, because Central can take hours to propagate and these
-    // pages cannot be written until one resolves. `~/dev/sysl-lang/sysl-bootstrap` publishes the same
-    // artifacts to GitHub Packages as well (`SYSL_PUBLISH_GITHUB=1 sbt publish`), which answers in
-    // minutes.
-    //
-    // **Listed after Central deliberately.** Once Central has the version it is what resolves, so
-    // this is a head start and not a fork in the road — the ordinary state of this build is that
-    // the resolver below is never reached. What it must never become is the reason a release looks
-    // finished: a Central upload that silently failed would still build green here, so the check
-    // against `maven-metadata.xml` stays a step of the release rather than something this implies.
+    // Where the compiler comes from. `~/dev/sysl-lang/sysl-bootstrap` publishes `sh.sysl` to GitHub
+    // Packages (`SYSL_PUBLISH_GITHUB=1 sbt publish`) and to nowhere else, so this is the one
+    // resolver that has it. Maven Central stays in sbt's default resolvers for the other
+    // dependencies (scalatest and the like) and holds no `sh.sysl` artifact.
     resolvers += "GitHub Packages" at "https://maven.pkg.github.com/sysl-lang/sysl-bootstrap",
 
     // GitHub Packages authenticates every request, a public package included, so a build here needs
@@ -104,10 +98,8 @@ lazy val root = project
     // be used. Found on 2026-08-06 releasing 0.0.9 — the first release whose push landed inside the
     // propagation window, and so the first time anything reached this resolver at all.
     //
-    // CI is the case this exists for. The resolver above is only reached in the window where Central
-    // has not propagated a new release yet — which is precisely when someone has bumped
-    // `syslVersion` and pushed, so a CI run with no credentials would 401 on the one occasion the
-    // fallback was supposed to help.
+    // CI is the case this exists for: a run with no credentials would 401 on the one resolver that
+    // has the compiler.
     //
     // The file wins where it exists, so a workstation set up before this behaves as it did.
     credentials ++= {
