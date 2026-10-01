@@ -295,8 +295,8 @@ is read in order, and it is the only way that answers truthfully.
 
 ```sysl
 struct List[T]
-    cell: Option[&Cell[T]]
-    count: usize
+    private cell: Option[&Cell[T]]
+    private count: usize
 ```
 
 A list, which is a first cell or nothing, and the number of cells after it.
@@ -322,7 +322,7 @@ constant time for the rest of the list's life.
 
 ```sysl
 struct ListCursor[T]
-    at: Option[&Cell[T]]
+    private at: Option[&Cell[T]]
 ```
 
 A position in a list, which is just the cell to look at next -- there is nothing else to remember,

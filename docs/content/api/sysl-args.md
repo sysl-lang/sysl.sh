@@ -7,8 +7,7 @@ module: sysl.args
 summary: "How a program's arguments become a `[]string`, written here because every line of it is ordinary sysl."
 ---
 
-How a program's arguments become a `[]string`, written here because every line of it is ordinary
-sysl. What the platform hands the entry point is C's `argc` and `argv` -- a count and a vector of
+What the platform hands the entry point is C's `argc` and `argv` -- a count and a vector of
 NUL-terminated byte runs -- and what a sysl program asks for is a slice of strings, so something
 has to walk the one and build the other. Doing it in the library is what keeps the pair out of
 every sysl signature: a `main(args: []string)` is called with the result of this, and the two

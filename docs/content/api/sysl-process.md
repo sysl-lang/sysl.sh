@@ -22,11 +22,14 @@ assert -- and neither exists outside POSIX. It said `os` until the WASI row arri
 difference visible: preview1 has no way to start a program at all, and Windows was already the
 same case with nobody building for it.
 
-**What is deliberately absent is process *management*.** There is no pid here, no process group
-and no way to hold a running child -- every call starts one program and waits for it. That covers
-what a build tool, an installer or a command-line front end does, and it is the whole of what the
-org needs; a program that wants to supervise children wants a different surface and can have one
-under `sysl.posix` when something actually needs it.
+**A child can be held while it runs, and that is as far as management goes.** `run` and `capture`
+start one program and wait for it; `start` is `capture` with the wait taken out, answering a
+`Child` whose `wait` hands back exactly what `capture` would have. That is what a build tool
+running several compilers at once needs -- start them all, then collect them in whatever order
+suits it. What is still absent is everything a *supervisor* wants: no pid is handed out, no
+process group is made, and no signal of the caller's choosing can be sent. A program that wants
+those wants a different surface and can have one under `sysl.posix` when something actually
+needs it.
 
 **The one thing a call that waits cannot do without is a way to stop waiting.** "Runs a program
 and waits for it" says nothing about a program that never ends, and a caller with no bound has no
@@ -44,7 +47,7 @@ the vector as it is given, so a path is a path whatever is in it.
 
 ## Index
 
-[`capture`](#capture) [`run`](#run) [`Output`](#output) [`Status`](#status) [`Var`](#var) [Display for Status](#display-for-status) [Eq for Status](#eq-for-status)
+[`capture`](#capture) [`run`](#run) [`start`](#start) [`Child`](#child) [`Output`](#output) [`Status`](#status) [`Var`](#var) [Display for Status](#display-for-status) [Drop for Child](#drop-for-child) [Eq for Status](#eq-for-status)
 
 ## Functions
 
@@ -78,6 +81,9 @@ hands over the half, which is usually what says where it stopped.
 
 The files are removed before this returns, whether the child succeeded or not.
 
+It is `start` followed at once by `wait`, and is written as exactly that, so the two can never
+come to answer differently.
+
 ### `run`
 
 ```sysl
@@ -104,7 +110,62 @@ answer rather than a failure of this call. **A child that ran out of time is `Ok
 same reason and with `TimedOut`: this call did what it was asked, and what happened is about the
 child.
 
+### `start`
+
+```sysl
+start(program: string, args: []const string = [], dir: string = "", env: []const Var = [], stderr: bool = false, timeout: int = 0) -> Result[&Child, IoError]
+```
+
+Start a program and answer it as a `Child`, without waiting for it.
+
+It takes what `capture` takes, meaning the same things, and `wait` answers what `capture` answers
+-- so `capture(p, args)` and `start(p, args)?.wait()` are the same call with room in the middle.
+That room is the point: start several, then wait for them in any order, and they run at the same
+time.
+
+**The error half is for a child that could not be started**, exactly as in `capture`: a program
+that is not there is `NotFound` here, at the start, rather than later at the wait -- there is no
+child to hand back, and no files left behind for one.
+
+`timeout` bounds the child's whole life from this call, but it is kept by `wait`: a child is only
+stopped for outstaying it while somebody is waiting for it, or when its `Child` is dropped.
+
 ## Types
+
+### `Child`
+
+```sysl
+struct Child
+    private[process] pid: i32
+    private began: i64
+    private timeout: int
+    private out_path: string
+    private err_path: string
+    private answer: Option[Result[Output, IoError]]
+```
+
+A child that has been started and not yet waited for.
+
+**It owns the child and the files its streams go to**, so it is only ever reached through a
+`&Child` -- `start` answers one -- and when the last reference goes, whatever it still holds is
+let go of. A child that was waited for has nothing left but its answer. One that was *not* is
+ended and reaped there and then, so dropping a `Child` never leaves a zombie behind: a child that
+had already finished is reaped, and one still running is asked to stop, made to after a short
+grace, and reaped -- the same two steps a `timeout` takes. Stopping it rather than leaving it to
+run is not severity for its own sake: its output files are removed in the same breath, so a child
+left running would be writing into files nobody can open any more, and a program that genuinely
+wanted it to carry on should have waited for it.
+
+**The streams go to files, not pipes, and that is what makes several at once safe.** A pipe has a
+buffer, and a child that fills it blocks until somebody reads -- so with pipes, a program waiting
+for one child while a second fills its pipe deadlocks, and one waiting for the second while the
+first fills its pipe deadlocks the other way. Reading every pipe as it fills would need a loop
+polling all of them while also polling for exits. A file never fills, so every child runs to the
+end on its own and `wait` reads what it wrote afterwards, in whatever order the caller chooses.
+
+| Member | Signature | Description |
+|---|---|---|
+| `wait` | `wait(*self) -> Result[Output, IoError]` | Wait for the child to end, and answer what `capture` would have answered for it. |
 
 ### `Output`
 
@@ -185,6 +246,12 @@ path. Consistent, and surprising exactly once.
 
 ```sysl
 impl Display for Status
+```
+
+### Drop for Child
+
+```sysl
+impl Drop for Child
 ```
 
 ### Eq for Status

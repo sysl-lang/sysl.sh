@@ -8,9 +8,6 @@ summary: "What is at the end of a path: reading and writing whole files, metadat
 requires: "requires { os }"
 ---
 
-What is at the end of a path: reading and writing whole files, metadata, directories, links, and
-the errors any of it can answer with.
-
 `read_text`, `write_bytes`, `write_text_atomic` and the other publishing calls, `metadata`,
 `make_dir_all`, `copy_file`, `canonicalize`, the walk, and
 `IoError` — which carries the platform's own number so that a caller can act on *which* failure it
@@ -711,9 +708,9 @@ make an ordinary use of the older name ambiguous, one program away.
 
 ```sysl
 struct Matching
-    inner: Walk
-    root: string
-    pattern: string
+    private inner: Walk
+    private root: string
+    private pattern: string
 ```
 
 A walk with a glob over it -- what `Walk.matching` answers, and not a thing to construct.
@@ -762,12 +759,12 @@ the library's resolution everywhere and is finer than any filesystem here record
 
 ```sysl
 struct Walk
-    stack: Buf[Frame]
-    root: string
-    started: bool
-    up: bool
-    open_next: Option[Entry]
-    pruned: bool
+    private stack: Buf[Frame]
+    private root: string
+    private started: bool
+    private up: bool
+    private open_next: Option[Entry]
+    private pruned: bool
 ```
 
 A cursor over a directory tree, reporting the root and then everything under it.

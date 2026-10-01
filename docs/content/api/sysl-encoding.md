@@ -7,9 +7,6 @@ module: sysl.encoding
 summary: "Bytes as text and text as bytes: hexadecimal, base64, UUIDs, and fixed-width integers at either byte order."
 ---
 
-Bytes as text and text as bytes: hexadecimal, base64, UUIDs, and fixed-width integers at either
-byte order.
-
 Every conversion here is total in one direction and fallible in the other — encoding cannot fail,
 decoding can — so the decoders answer a `Result` carrying `DecodeError`, which says why at the
 granularity a caller can act on rather than only that something was wrong.
@@ -20,7 +17,21 @@ a field of anything. What the bytes *mean* belongs to whatever asked for them.
 
 ## Index
 
-[`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`of_bytes`](#of_bytes) [`parse`](#parse) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`to_string`](#to_string) [`v4`](#v4) [`v4_of`](#v4_of) [`v7`](#v7) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [`Uuid`](#uuid) [Display for DecodeError](#display-for-decodeerror) [Display for Uuid](#display-for-uuid)
+[`nil`](#nil) [`base64_decode`](#base64_decode) [`base64_decoded_len`](#base64_decoded_len) [`base64_encode`](#base64_encode) [`base64_string`](#base64_string) [`get_u16_be`](#get_u16_be) [`get_u16_le`](#get_u16_le) [`get_u32_be`](#get_u32_be) [`get_u32_le`](#get_u32_le) [`get_u64_be`](#get_u64_be) [`get_u64_le`](#get_u64_le) [`hex_decode`](#hex_decode) [`hex_decoded_len`](#hex_decoded_len) [`hex_encode`](#hex_encode) [`hex_string`](#hex_string) [`of_bytes`](#of_bytes) [`parse`](#parse) [`put_u16_be`](#put_u16_be) [`put_u16_le`](#put_u16_le) [`put_u32_be`](#put_u32_be) [`put_u32_le`](#put_u32_le) [`put_u64_be`](#put_u64_be) [`put_u64_le`](#put_u64_le) [`to_string`](#to_string) [`v4`](#v4) [`v4_of`](#v4_of) [`v7`](#v7) [`Alphabet`](#alphabet) [`DecodeError`](#decodeerror) [`Uuid`](#uuid) [Display for DecodeError](#display-for-decodeerror) [Display for Uuid](#display-for-uuid)
+
+## Values
+
+### `nil`
+
+```sysl
+val nil: Uuid = Uuid(…)
+```
+
+The UUID that names nothing: sixteen zero bytes, `00000000-0000-0000-0000-000000000000`.
+
+Its version and variant both read as zero, which is not a mistake in the constant -- RFC 9562
+exempts it, and a reader checking `version() == 4` on an unset field is meant to see that it is
+unset rather than to see a well-formed value.
 
 ## Functions
 
@@ -327,7 +338,7 @@ discovering the requirement one byte at a time.
 
 ```sysl
 struct Uuid
-    raw: [16]u8
+    private raw: [16]u8
 ```
 
 Sixteen bytes with a layout: what the version is, what the variant is, and -- for a v7 -- when it

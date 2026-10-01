@@ -611,8 +611,8 @@ Zero, which is the empty magnitude.
 
 ```sysl
 struct BigInt
-    minus: bool
-    mag: []const u32
+    private[bigint] minus: bool
+    private[bigint] mag: []const u32
 ```
 
 An integer of no fixed width.

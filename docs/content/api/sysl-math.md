@@ -8,9 +8,6 @@ summary: "Mathematics on the numeric types: the float functions, the integer one
 requires: "no alloc"
 ---
 
-Mathematics on the numeric types: the float functions, the integer ones, and the traits that let
-a program write both at whichever width it is already using.
-
 `max`, `min` and `clamp` over anything ordered; `pi` and the constants a float program stops to
 look up; `Float` so that `x.sqrt()` is the same three words at `real` and at `f32`; `Signed` and
 `Bits` over the integer widths, with `pow`, `gcd`, `lcm`, `divmod`, `is_power_of_two` and

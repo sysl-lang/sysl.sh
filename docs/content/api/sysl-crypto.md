@@ -344,7 +344,7 @@ enum Fault
 
 ```sysl
 struct Md5
-    inner: Sha[Md5C]
+    private[crypto] inner: Sha[Md5C]
 ```
 
 An MD5 hash in progress. **MD5 is broken** -- see `md5` for what that does and does not rule out.
@@ -358,7 +358,7 @@ An MD5 hash in progress. **MD5 is broken** -- see `md5` for what that does and d
 
 ```sysl
 struct Sha1
-    inner: Sha[Sha1C]
+    private[crypto] inner: Sha[Sha1C]
 ```
 
 A SHA-1 hash in progress. **SHA-1 is broken** -- see `sha1` for what that does and does not
@@ -373,7 +373,7 @@ rule out.
 
 ```sysl
 struct Sha224
-    inner: Sha[Sha2Narrow]
+    private[crypto] inner: Sha[Sha2Narrow]
 ```
 
 | Member | Signature | Description |
@@ -385,7 +385,7 @@ struct Sha224
 
 ```sysl
 struct Sha256
-    inner: Sha[Sha2Narrow]
+    private[crypto] inner: Sha[Sha2Narrow]
 ```
 
 | Member | Signature | Description |
@@ -397,7 +397,7 @@ struct Sha256
 
 ```sysl
 struct Sha384
-    inner: Sha[Sha2Wide]
+    private[crypto] inner: Sha[Sha2Wide]
 ```
 
 | Member | Signature | Description |
@@ -409,7 +409,7 @@ struct Sha384
 
 ```sysl
 struct Sha512
-    inner: Sha[Sha2Wide]
+    private[crypto] inner: Sha[Sha2Wide]
 ```
 
 | Member | Signature | Description |

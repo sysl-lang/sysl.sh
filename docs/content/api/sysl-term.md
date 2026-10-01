@@ -8,9 +8,6 @@ summary: "What a terminal understands: the escape sequences that colour text, em
 requires: "no alloc"
 ---
 
-What a terminal understands: the escape sequences that colour text, emphasise it, and move the
-cursor about.
-
 **Every one of these is a `const string`, and that is the whole design.** A string literal is
 immortal -- it lives in the program's own image with no owner and no reference count (`04`) -- so
 naming forty of them costs nothing at run time and nothing in storage, and a module that has
@@ -63,79 +60,79 @@ invisible in review.
 ### `black`
 
 ```sysl
-const black: string = "[30m"
+const black: string = "\u{1b}[30m"
 ```
 
 ### `blink`
 
 ```sysl
-const blink: string = "[5m"
+const blink: string = "\u{1b}[5m"
 ```
 
 ### `blue`
 
 ```sysl
-const blue: string = "[34m"
+const blue: string = "\u{1b}[34m"
 ```
 
 ### `bold`
 
 ```sysl
-const bold: string = "[1m"
+const bold: string = "\u{1b}[1m"
 ```
 
 ### `bright_black`
 
 ```sysl
-const bright_black: string = "[90m"
+const bright_black: string = "\u{1b}[90m"
 ```
 
 ### `bright_blue`
 
 ```sysl
-const bright_blue: string = "[94m"
+const bright_blue: string = "\u{1b}[94m"
 ```
 
 ### `bright_cyan`
 
 ```sysl
-const bright_cyan: string = "[96m"
+const bright_cyan: string = "\u{1b}[96m"
 ```
 
 ### `bright_green`
 
 ```sysl
-const bright_green: string = "[92m"
+const bright_green: string = "\u{1b}[92m"
 ```
 
 ### `bright_magenta`
 
 ```sysl
-const bright_magenta: string = "[95m"
+const bright_magenta: string = "\u{1b}[95m"
 ```
 
 ### `bright_red`
 
 ```sysl
-const bright_red: string = "[91m"
+const bright_red: string = "\u{1b}[91m"
 ```
 
 ### `bright_white`
 
 ```sysl
-const bright_white: string = "[97m"
+const bright_white: string = "\u{1b}[97m"
 ```
 
 ### `bright_yellow`
 
 ```sysl
-const bright_yellow: string = "[93m"
+const bright_yellow: string = "\u{1b}[93m"
 ```
 
 ### `clear_below`
 
 ```sysl
-const clear_below: string = "[0J"
+const clear_below: string = "\u{1b}[0J"
 ```
 
 From the cursor onwards, which is what a program redrawing the tail of something wants.
@@ -143,13 +140,13 @@ From the cursor onwards, which is what a program redrawing the tail of something
 ### `clear_line`
 
 ```sysl
-const clear_line: string = "[2K"
+const clear_line: string = "\u{1b}[2K"
 ```
 
 ### `clear_screen`
 
 ```sysl
-const clear_screen: string = "[2J"
+const clear_screen: string = "\u{1b}[2J"
 ```
 
 The whole screen, and the whole line the cursor is on. Neither moves the cursor, which is why
@@ -158,19 +155,19 @@ The whole screen, and the whole line the cursor is on. Neither moves the cursor,
 ### `clear_to_line_end`
 
 ```sysl
-const clear_to_line_end: string = "[0K"
+const clear_to_line_end: string = "\u{1b}[0K"
 ```
 
 ### `cyan`
 
 ```sysl
-const cyan: string = "[36m"
+const cyan: string = "\u{1b}[36m"
 ```
 
 ### `default_color`
 
 ```sysl
-const default_color: string = "[39m"
+const default_color: string = "\u{1b}[39m"
 ```
 
 The colour a terminal was already using, which is not the same as `reset`: this ends the colour
@@ -179,25 +176,25 @@ and leaves the emphasis where it was.
 ### `dim`
 
 ```sysl
-const dim: string = "[2m"
+const dim: string = "\u{1b}[2m"
 ```
 
 ### `green`
 
 ```sysl
-const green: string = "[32m"
+const green: string = "\u{1b}[32m"
 ```
 
 ### `hidden`
 
 ```sysl
-const hidden: string = "[8m"
+const hidden: string = "\u{1b}[8m"
 ```
 
 ### `hide_cursor`
 
 ```sysl
-const hide_cursor: string = "[?25l"
+const hide_cursor: string = "\u{1b}[?25l"
 ```
 
 Hiding it is what stops a full-screen redraw from leaving the cursor skittering across the
@@ -206,7 +203,7 @@ picture. A program that hides it owns showing it again, including on the way out
 ### `home`
 
 ```sysl
-const home: string = "[H"
+const home: string = "\u{1b}[H"
 ```
 
 The top left corner.
@@ -214,127 +211,127 @@ The top left corner.
 ### `italic`
 
 ```sysl
-const italic: string = "[3m"
+const italic: string = "\u{1b}[3m"
 ```
 
 ### `magenta`
 
 ```sysl
-const magenta: string = "[35m"
+const magenta: string = "\u{1b}[35m"
 ```
 
 ### `on_black`
 
 ```sysl
-const on_black: string = "[40m"
+const on_black: string = "\u{1b}[40m"
 ```
 
 ### `on_blue`
 
 ```sysl
-const on_blue: string = "[44m"
+const on_blue: string = "\u{1b}[44m"
 ```
 
 ### `on_bright_black`
 
 ```sysl
-const on_bright_black: string = "[100m"
+const on_bright_black: string = "\u{1b}[100m"
 ```
 
 ### `on_bright_blue`
 
 ```sysl
-const on_bright_blue: string = "[104m"
+const on_bright_blue: string = "\u{1b}[104m"
 ```
 
 ### `on_bright_cyan`
 
 ```sysl
-const on_bright_cyan: string = "[106m"
+const on_bright_cyan: string = "\u{1b}[106m"
 ```
 
 ### `on_bright_green`
 
 ```sysl
-const on_bright_green: string = "[102m"
+const on_bright_green: string = "\u{1b}[102m"
 ```
 
 ### `on_bright_magenta`
 
 ```sysl
-const on_bright_magenta: string = "[105m"
+const on_bright_magenta: string = "\u{1b}[105m"
 ```
 
 ### `on_bright_red`
 
 ```sysl
-const on_bright_red: string = "[101m"
+const on_bright_red: string = "\u{1b}[101m"
 ```
 
 ### `on_bright_white`
 
 ```sysl
-const on_bright_white: string = "[107m"
+const on_bright_white: string = "\u{1b}[107m"
 ```
 
 ### `on_bright_yellow`
 
 ```sysl
-const on_bright_yellow: string = "[103m"
+const on_bright_yellow: string = "\u{1b}[103m"
 ```
 
 ### `on_cyan`
 
 ```sysl
-const on_cyan: string = "[46m"
+const on_cyan: string = "\u{1b}[46m"
 ```
 
 ### `on_default`
 
 ```sysl
-const on_default: string = "[49m"
+const on_default: string = "\u{1b}[49m"
 ```
 
 ### `on_green`
 
 ```sysl
-const on_green: string = "[42m"
+const on_green: string = "\u{1b}[42m"
 ```
 
 ### `on_magenta`
 
 ```sysl
-const on_magenta: string = "[45m"
+const on_magenta: string = "\u{1b}[45m"
 ```
 
 ### `on_red`
 
 ```sysl
-const on_red: string = "[41m"
+const on_red: string = "\u{1b}[41m"
 ```
 
 ### `on_white`
 
 ```sysl
-const on_white: string = "[47m"
+const on_white: string = "\u{1b}[47m"
 ```
 
 ### `on_yellow`
 
 ```sysl
-const on_yellow: string = "[43m"
+const on_yellow: string = "\u{1b}[43m"
 ```
 
 ### `red`
 
 ```sysl
-const red: string = "[31m"
+const red: string = "\u{1b}[31m"
 ```
 
 ### `reset`
 
 ```sysl
-const reset: string = "[0m"
+const reset: string = "\u{1b}[0m"
 ```
 
 Ends **everything**: colour, background and every attribute at once. ANSI has no way to end one
@@ -344,19 +341,19 @@ colour back without losing an emphasis.
 ### `restore_cursor`
 
 ```sysl
-const restore_cursor: string = "[u"
+const restore_cursor: string = "\u{1b}[u"
 ```
 
 ### `reverse`
 
 ```sysl
-const reverse: string = "[7m"
+const reverse: string = "\u{1b}[7m"
 ```
 
 ### `save_cursor`
 
 ```sysl
-const save_cursor: string = "[s"
+const save_cursor: string = "\u{1b}[s"
 ```
 
 One remembered position -- the terminal's own, so nesting two of these does not work and the
@@ -365,29 +362,29 @@ second save is the one that is restored.
 ### `show_cursor`
 
 ```sysl
-const show_cursor: string = "[?25h"
+const show_cursor: string = "\u{1b}[?25h"
 ```
 
 ### `strike`
 
 ```sysl
-const strike: string = "[9m"
+const strike: string = "\u{1b}[9m"
 ```
 
 ### `underline`
 
 ```sysl
-const underline: string = "[4m"
+const underline: string = "\u{1b}[4m"
 ```
 
 ### `white`
 
 ```sysl
-const white: string = "[37m"
+const white: string = "\u{1b}[37m"
 ```
 
 ### `yellow`
 
 ```sysl
-const yellow: string = "[33m"
+const yellow: string = "\u{1b}[33m"
 ```

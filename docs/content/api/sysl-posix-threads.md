@@ -128,9 +128,9 @@ lock may not be running at all and nothing else will make it so.
 
 ```sysl
 struct Channel[T]
-    held: i32
-    ring: Ring[T]
-    closed: i32
+    private held: i32
+    private ring: Ring[T]
+    private closed: i32
 ```
 
 A bounded queue two threads hand values across, and the one place the language's rule about what
@@ -185,8 +185,8 @@ refused here exactly as it is at `spawn`, and the relaxation waits on something 
 
 ```sysl
 struct Mutex[T]
-    held: i32
-    value: T
+    private held: i32
+    private value: T
 ```
 
 Mutual exclusion that **owns what it protects**, which is the difference `library/threads.md §

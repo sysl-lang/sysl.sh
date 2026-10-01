@@ -8,9 +8,6 @@ summary: "A queue of a **fixed** capacity, laid over storage the caller supplies
 requires: "no alloc"
 ---
 
-A queue of a **fixed** capacity, laid over storage the caller supplies, cheap to take from at
-either end and needing no allocator at all.
-
 **The reason this exists beside `Deque` is the storage, not the shape.** A `Deque[T]` is the same
 ring with a growth path under it, so it owns its elements and needs a heap to widen them. This one
 cannot grow: its capacity is the length of the slice it was handed, a full ring answers rather than
@@ -70,10 +67,10 @@ its address and its length.
 
 ```sysl
 struct Ring[T]
-    slots: *T
-    room: usize
-    head: usize
-    live: usize
+    private slots: *T
+    private room: usize
+    private head: usize
+    private live: usize
 ```
 
 The ring itself: where the caller's storage is, how much of it there is, and the live run inside

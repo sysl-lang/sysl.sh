@@ -114,8 +114,8 @@ library shares, for a condition only this one can produce.
 
 ```sysl
 struct Address
-    bytes: [addr_bytes]u8
-    used: i32
+    private bytes: [addr_bytes]u8
+    private used: i32
 ```
 
 Somewhere a socket can be connected to, or bound to.
@@ -161,7 +161,7 @@ How much of a connection is being given up.
 
 ```sysl
 struct Socket
-    fd: i32
+    private fd: i32
 ```
 
 A connection, or something listening for one. One type, because POSIX has one.

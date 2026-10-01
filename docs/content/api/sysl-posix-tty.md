@@ -46,7 +46,15 @@ the answer cannot change under a running program in any way that matters:
 
 ## Index
 
-[`color`](#color) [`color_err`](#color_err) [`color_on`](#color_on) [`color_wanted`](#color_wanted) [`cooked`](#cooked) [`flush`](#flush) [`is_tty`](#is_tty) [`raw`](#raw) [`tty_writer`](#tty_writer) [`TtyWriter`](#ttywriter) [Fallible for TtyWriter](#fallible-for-ttywriter) [Writer for TtyWriter](#writer-for-ttywriter)
+[`tty_sink`](#tty_sink) [`color`](#color) [`color_err`](#color_err) [`color_on`](#color_on) [`color_wanted`](#color_wanted) [`cooked`](#cooked) [`flush`](#flush) [`is_tty`](#is_tty) [`raw`](#raw) [`tty_writer`](#tty_writer) [`TtyWriter`](#ttywriter) [Fallible for TtyWriter](#fallible-for-ttywriter) [Writer for TtyWriter](#writer-for-ttywriter)
+
+## Values
+
+### `tty_sink`
+
+```sysl
+val tty_sink: *TtyWriter = ptr_cast(0usize)
+```
 
 ## Functions
 

@@ -7,9 +7,6 @@ module: sysl.time.tzif
 summary: "Reading a zone out of the bytes of a TZif file (RFC 8536), which is what the IANA time zone database is distributed as."
 ---
 
-Reading a zone out of the bytes of a TZif file (RFC 8536), which is what the IANA time zone
-database is distributed as.
-
 **This module asks for no capability, and that is the whole reason it is a module of its own.** A
 zone by name lives in a file, and reading a file needs an operating system -- so a decoder written
 beside `sysl.fs` would take the whole of `sysl.time` down with it, exactly as a `now()` written

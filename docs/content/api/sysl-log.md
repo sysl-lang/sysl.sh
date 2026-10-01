@@ -62,7 +62,7 @@ interpolation has `f"..."` and knows what it costs.
 
 ## Index
 
-[`clear_sink`](#clear_sink) [`debug`](#debug) [`enabled`](#enabled) [`error`](#error) [`info`](#info) [`json`](#json) [`json_sink`](#json_sink) [`level`](#level) [`log`](#log) [`log_at`](#log_at) [`set_level`](#set_level) [`set_sink`](#set_sink) [`stderr_sink`](#stderr_sink) [`text`](#text) [`warn`](#warn) [`writer_sink`](#writer_sink) [`Level`](#level-1) [`Record`](#record) [`WriterSink`](#writersink) [`Sink`](#sink) [Sink for WriterSink](#sink-for-writersink)
+[`clear_sink`](#clear_sink) [`debug`](#debug) [`enabled`](#enabled) [`error`](#error) [`info`](#info) [`json`](#json) [`json_sink`](#json_sink) [`level`](#level) [`log`](#log) [`log_at`](#log_at) [`set_level`](#set_level) [`set_sink`](#set_sink) [`stderr_sink`](#stderr_sink) [`text`](#text) [`warn`](#warn) [`writer_sink`](#writer_sink) [`Level`](#level-1) [`Record`](#record) [`WriterSink`](#writersink) [`Field`](#field) [`Sink`](#sink) [Sink for WriterSink](#sink-for-writersink)
 
 ## Functions
 
@@ -287,8 +287,8 @@ the same reason.
 
 ```sysl
 struct WriterSink
-    out: *Writer
-    as_json: bool
+    private out: *Writer
+    private as_json: bool
 ```
 
 A sink over any `Writer`, rendering each record with one of the two renderings.
@@ -301,6 +301,17 @@ render a record and hand it to a stream -- batching, filtering, sending it somew
 
 **It holds a borrowed pointer**, so whatever it writes into has to outlive it, exactly as
 `set_sink` says of the sink itself.
+
+## Aliases
+
+### `Field`
+
+```sysl
+type Field = (string, string)
+```
+
+One named string on a record. A pair rather than a struct, because that is all it is and a tuple
+of two strings already compares, orders, hashes and renders.
 
 ## Traits
 

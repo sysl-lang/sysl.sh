@@ -7,9 +7,6 @@ module: sysl.unicode
 summary: "What the Unicode Character Database says about a character, and the operations over text that only that database can answer."
 ---
 
-What the Unicode Character Database says about a character, and the operations over text that
-only that database can answer.
-
 **The module is three files and the boundary is the allocator**, which is the same split
 `sysl.text` draws between `find.sysl` and `edit.sysl` and for the same reason: a program that only
 asks what a character is should not link an allocator on account of a `normalize` it never calls.

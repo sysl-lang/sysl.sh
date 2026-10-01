@@ -257,7 +257,7 @@ f()
 ```
 
 ```error
-'r' is bound by 'ref', so it names storage somewhere else rather than a variable of its own, and there is nothing here for an operand to be
+'r' is bound by 'ref', so it names storage somewhere else rather than a variable of its own, and there is nothing here for an operand to be. Copy it into a 'var' first, and write that back afterwards if the instructions set it
 ```
 
 Copy it into a `var` and hand the instructions that, writing the result back through the `ref` if

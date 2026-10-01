@@ -7,9 +7,6 @@ module: sysl.seq
 summary: "What a sequence of values can be asked, in one trait, so that a slice and a `Buf` answer the same names."
 ---
 
-What a sequence of values can be asked, in one trait, so that a slice and a `Buf` answer the same
-names.
-
 **This is the surface `sysl.slices` deliberately does not have.** That module asks *where is this
 value* -- `index_of`, `contains`, `min_index` -- and every one of its questions is answered by
 comparing elements. This one asks *which of these satisfies this predicate*, and every question is

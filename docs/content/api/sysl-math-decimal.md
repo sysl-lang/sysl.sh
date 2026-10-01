@@ -225,8 +225,8 @@ Zero, at a scale of zero.
 
 ```sysl
 struct Decimal
-    coef: BigInt
-    places: i32
+    private[decimal] coef: BigInt
+    private[decimal] places: i32
 ```
 
 A number written in decimal, exactly.

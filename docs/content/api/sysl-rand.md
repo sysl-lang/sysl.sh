@@ -8,9 +8,6 @@ summary: "Pseudo-random numbers: a named, seedable, reproducible generator, and 
 requires: "no alloc"
 ---
 
-Pseudo-random numbers: a named, seedable, reproducible generator, and the distributions that are
-easy to get wrong.
-
 **This is NOT a source of unpredictability, and nothing here should be used as one.** The generator
 is fast, small and completely determined by its seed -- which is exactly what a test that must
 reproduce, a simulation that must replay and a shuffle all want, and exactly what a key, a token, a
