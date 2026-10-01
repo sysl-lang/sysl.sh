@@ -66,7 +66,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // so the page shows one taken on a value and through a bound. Two more runnable for the
     // sixteen-bit floats: a program showing the precision and range difference between `f16` and
     // `bf16`, and the conversion between them.
-    "docs/content/reference/types.md"                 -> (23, 3, 0),
+    "docs/content/reference/types.md"                 -> (24, 3, 0),
     // Six more runnable and two more refusals: `with` — a struct again with some of its fields
     // changed — is a postfix tail of its own, and the two refusals are the readings that would
     // otherwise be silently wrong (a reference rather than a struct) and silently pointless (one

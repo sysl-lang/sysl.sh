@@ -775,6 +775,32 @@ whole purpose — an argument a callee may not want should cost nothing to offer
 **Each use is an evaluation**, because each use is a call — so a body that names the parameter twice
 runs the argument twice. A body wanting one evaluation binds it to a `val` first.
 
+That holds inside a closure or a nested function in the body too: the parameter is still read by
+name, and the argument is evaluated each time the closure is called rather than once when it is
+made.
+
+```sysl
+static var built: int = 0
+
+message() -> int
+    built += 1
+    built * 10
+
+show_twice(m: -> int)
+    val show = () -> print(m + 1)
+    show()
+    show()
+
+show_twice(message())
+print(built)
+```
+
+```output
+11
+21
+2
+```
+
 It costs nothing at runtime. `x: -> T` has the type `Fn() -> T`, so it lowers to a bounded type
 parameter exactly as the ordinary bare arrow does — one specialized copy per call site, called
 directly, with no allocation.
