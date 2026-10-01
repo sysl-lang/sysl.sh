@@ -1,13 +1,14 @@
 ---
 title: The process module
-summary: "`sysl.process` — starting another program and waiting for it: `run`, `capture`, `Status`, how long a child may take, and why there is no shell anywhere in it."
+summary: "`sysl.process` — starting another program and waiting for it: `run`, `capture`, `start` and `Child`, `Status`, how long a child may take, and why there is no shell anywhere in it."
 weight: 74
 ---
 
 **Every declaration in `sysl.process`, with its signature:** [the generated API page](/api/sysl-process/#index). This page is the argument — what the module is for, and how its pieces fit; that one is the list.
 
 `sysl.process` starts another program and waits for what it does. Two functions: `run`, which lets
-the child share this program's streams, and `capture`, which collects what it wrote.
+the child share this program's streams, and `capture`, which collects what it wrote — and a third,
+`start`, for when the waiting should come [later](#starting-now-waiting-later).
 
 ```sysl
 import sysl.process.{run, capture}
@@ -162,6 +163,72 @@ returns.
 does, which is what a shell's `$(...)` leaves it doing — a tool asking a program a question wants the
 answer without a warning mixed into the middle of it, and the warning is still worth seeing.
 
+## Starting now, waiting later
+
+`start` is `capture` with the wait taken out. It takes the same arguments meaning the same things, and
+answers a `Child`; the child's `wait` answers exactly what `capture` would have — the same `Output`, the
+same `TimedOut`. `capture` is in fact written as `start` followed by `wait`, so the two cannot come to
+disagree.
+
+The room in the middle is the point. Start several, then collect them in whatever order suits you, and
+they run at the same time:
+
+```sysl
+import sysl.process.start
+
+val slow = start("sh", ["-c", "sleep 0.2; echo slow"]).unwrap()
+val fast = start("sh", ["-c", "echo fast; echo why >&2; exit 3"], stderr = true).unwrap()
+
+val f = fast.wait().unwrap()
+val s = slow.wait().unwrap()
+
+print(f.text)
+print(f.status)
+print(f.err)
+print(s.text)
+```
+
+```output
+fast
+
+exited 3
+Some(why
+)
+slow
+
+```
+
+**A program that is not there fails at the start**, not at the wait — there is no child to hand back:
+
+```sysl
+import sysl.process.start
+
+print(start("no-such-program-anywhere").is_err())
+```
+
+```output
+true
+```
+
+**Several at once is where capturing through a file earns its keep.** With pipes, a child that writes
+more than a pipe holds stops until somebody reads — and a parent waiting for a *different* child is not
+reading. Through files nothing fills: every child runs to its end on its own, and `wait` reads what it
+wrote afterwards. A megabyte on each stream from one child, collected after two others, is one of the
+module's own tests.
+
+**`timeout` is measured from `start`, and kept by `wait`.** A child that outstays it while somebody is
+waiting is stopped and reported as `TimedOut`; one that finished before anybody came to wait for it is
+reported as it finished — it did not outstay anything, its parent was busy.
+
+**Waiting twice answers the first answer again**, since by then the kernel has forgotten the child.
+
+**A `Child` owns its child.** It is a `&Child`, and when the last reference goes, a child that was never
+waited for is ended — asked to stop, made to after a short grace, the same two steps a timeout takes —
+and reaped, so no zombie is left in the process table; one that had already finished is only reaped.
+Ending it rather than letting it run on is not severity for its own sake: its output files are removed
+at the same moment, so it would be writing into files nobody can open. A program that wants a child's
+work should wait for it.
+
 ## Reading why a child failed
 
 A child that exits non-zero has usually said why, on the stream `capture` lets through to the
@@ -252,12 +319,11 @@ watching, and the wrong ones for a tool that has hung on somebody's machine once
 
 ## What is not here
 
-**Process *management*.** There is no pid, no process group, no signal of your own choosing, and no
-way to hold a running child: every call starts one program and waits for it — for as long as it
-takes, or for as long as you said. That covers what a build tool,
-an installer or a command-line front end does. A program that wants to supervise children wants a
-different surface, and it would belong under `sysl.posix`, where a binding goes when it *is* POSIX
-rather than merely implemented with it.
+**Process *supervision*.** A running child can be held — that is `start` — but no pid is handed out,
+no process group is made, and no signal of your own choosing can be sent. That covers what a build
+tool, an installer or a command-line front end does, including one running several compilers at once.
+A program that wants to supervise children wants a different surface, and it would belong under
+`sysl.posix`, where a binding goes when it *is* POSIX rather than merely implemented with it.
 
 **And that is why this module is `sysl.process` rather than `sysl.posix.process`.** Starting a child
 is the same idea on every hosted system — a program, its arguments, and how it ended — and only the

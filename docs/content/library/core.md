@@ -44,6 +44,7 @@ print(maybe.unwrap_or(0), "— and not one import above this line")
 | a range as a value | `Range` | [expressions](/reference/expressions/), and [seq](/library/seq/) |
 | subscripting and walking | `Index`, `IndexSet`, `Iterate` | below |
 | calling | `Fn0` … `Fn4` | below |
+| the platform | `os`, `cpu`, `cpu_count` | below |
 
 **None of it is a language feature.** `Option` is a generic enum, `Display` is a trait, `panic` is a
 function that prints and exits. What the compiler knows is a short list of *names* — it asks
@@ -344,6 +345,21 @@ is a libc and a host underneath, which is `os()`. A module built for `wasm32-unk
 the instruction set that a program gating on a processor has to be right about. A program that wants
 an **address width** should ask for one: `sizeof(usize)` is that question, and it is right for a
 processor this list has not got yet.
+
+**`cpu_count()` is the one question here that is not about the target.** It answers how many logical
+processors are online on the machine the program is *running* on — the number to size a pool of
+workers by — so the same binary answers differently on a laptop and a build server. It is never less
+than one. It needs an operating system to ask, and says so — a module that has given up `os` is
+refused at the call — and where there is no POSIX `sysconf` to ask, a freestanding image or WASI, it
+answers one.
+
+```sysl
+print(cpu_count() >= 1)
+```
+
+```output
+true
+```
 
 ## Rendering to standard output
 

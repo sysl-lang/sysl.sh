@@ -190,8 +190,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // section shows that beside the six digits `str` gives a person and the seventeen that keep
     // every value — which is the comparison the function exists for.
     // `os()` and `cpu()` gained a section of their own -- one runnable block, since what the platform
-    // constants add over a directive is that they can be compared, passed and matched on.
-    "docs/content/library/core.md"                     -> (36, 6, 12),
+    // constants add over a directive is that they can be compared, passed and matched on. One more
+    // for `cpu_count`, the one platform question about the running machine rather than the target.
+    "docs/content/library/core.md"                     -> (37, 6, 12),
     // Three more runnable: trimming a `string` against trimming its bytes, the `_fold` family
     // against `to_lower`, and `grapheme_columns` against `columns` on a joined emoji.
     "docs/content/library/text.md"                      -> (22, 6, 4),
@@ -239,8 +240,9 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     "docs/content/library/env.md"                        -> (1, 0, 0),
     // Two of them for `capture`'s `stderr`: the reason a failed child gives, and the difference
     // between a stream nobody collected and one that was collected and empty. One more for the
-    // bound a caller puts on how long a child may take.
-    "docs/content/library/process.md"                    -> (8, 0, 0),
+    // bound a caller puts on how long a child may take. Two for `start`: several children running
+    // at once, and a missing program refused at the start rather than the wait.
+    "docs/content/library/process.md"                    -> (10, 0, 0),
     // Four runnable blocks and no refusals: `sysl.posix.net` is a surface rather than a set of
     // rules, so what a page about it can show is connections it actually makes.
     "docs/content/library/net.md"                        -> (4, 0, 0),
