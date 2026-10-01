@@ -139,7 +139,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // `where`, so the section runs the clause form, the two spellings bounding one parameter
     // between them, a struct written that way, and the word still doing its other two jobs — then
     // refuses a clause naming a parameter the declaration has not got, and one naming a value.
-    "docs/content/reference/generics.md"              -> (38, 20, 0),
+    "docs/content/reference/generics.md"              -> (40, 21, 0),
     // One more of each: a constant may be declared at a transparent subtype now, so the `const`
     // section shows one in range and refuses one outside it.
     // Two more fragments: the shipping file and the `@tests` file of one module, which is a shape no

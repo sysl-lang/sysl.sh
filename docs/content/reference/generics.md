@@ -1329,6 +1329,77 @@ print(s.seen)
 
 Both calls reach one written method and neither passes a length, because `N` is read off the argument
 the same way it is for a free function.
+### A trait declares one too
+
+A trait's parameter list is a parameter list like a struct's, so it may take a value. The members
+read it in their signatures and in their default bodies, and an `impl` fixes it — the way
+`impl Mul[int]` fixes a type:
+
+```sysl
+trait Bytes[const N: usize]
+    bytes(self) -> [N]u8
+    size(self) -> usize = N
+
+struct W
+    x: u8
+
+impl Bytes[4] for W
+    bytes(self) -> [4]u8 = [self.x, 0, 0, 0]
+
+val w = W(7)
+
+print(w.size())
+print(w.bytes()[0])
+print(w.bytes().len)
+```
+
+```output
+4
+7
+4
+```
+
+A bound names it at a value, `f[T: Bytes[4]]`, and so does a trait object, `&Bytes[4]`. Two values
+are two implementations, exactly as two type arguments are, so one type may implement `Bytes[2]` and
+`Bytes[4]` side by side. A generic block may abstract over the value too:
+`impl[const M: usize] Bytes[M] for Bits[M]`.
+
+A default follows the struct rules (`§ A parameter may carry a default`): a block or an object that leaves the
+argument out takes it.
+
+```sysl
+trait Hash[const N: usize = 32]
+    digest_len(self) -> usize = N
+
+struct Sha
+    x: int
+
+impl Hash for Sha
+
+val o: &Hash = Sha(0)
+
+print(o.digest_len())
+```
+
+```output
+32
+```
+
+A value is checked against the parameter's type wherever it is written, the default included:
+
+```sysl
+trait Small[const N: u8]
+    n(self) -> u8 = N
+
+struct S
+    x: int
+
+impl Small[300] for S
+```
+
+```error
+this argument does not fit byte: 300
+```
 
 ## A parameter may stand for a list of types
 
