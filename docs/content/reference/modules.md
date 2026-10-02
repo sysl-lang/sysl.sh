@@ -605,6 +605,8 @@ need on, so *its* callers are refused at their call in turn.
 module graph leaves out what such a body reaches, for the capabilities the declaration names. So a
 module may hold one function that touches the filesystem beside a hundred that do not, and a `@no_os`
 program imports the hundred and hears nothing — the only line refused is a call that reaches the one.
+So does what its signature names, and an import that only such declarations use: a `@needs(os)`
+function returning `Result[unit, sysl.fs.IoError]` charges `os` to its callers, not to its module.
 A body covers what its own annotation names and nothing else, so a `@needs(heap)` function reaching
 `sysl.fs` still makes its module require `os`.
 
