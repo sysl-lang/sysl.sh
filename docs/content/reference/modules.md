@@ -601,13 +601,12 @@ It is **transitive**, because reaching is: a module that gave a capability up ma
 a declaration through a third that has it. A function that says nothing and calls `fetch` passes the
 need on, so *its* callers are refused at their call in turn.
 
-**What the declaration's body reaches is charged the same way, and not to the module holding it.** A
-`@needs(os)` function whose body reads a file does not make its module require `os`: the module graph
-leaves out what such a body reaches, for the capabilities the declaration names. So a module may hold
-one function that touches the filesystem beside a hundred that do not, and a `@no_os` program imports
-the hundred and hears nothing — the only line refused is a call that reaches the one. A body covers
-what its own annotation names and nothing else, so a `@needs(heap)` function reaching `sysl.fs` still
-makes its module require `os`.
+**What the declaration's body reaches is charged the same way, and not to the module holding it.** The
+module graph leaves out what such a body reaches, for the capabilities the declaration names. So a
+module may hold one function that touches the filesystem beside a hundred that do not, and a `@no_os`
+program imports the hundred and hears nothing — the only line refused is a call that reaches the one.
+A body covers what its own annotation names and nothing else, so a `@needs(heap)` function reaching
+`sysl.fs` still makes its module require `os`.
 
 **The declaration it exists for is `extern`.** Every other declaration has a body the compiler reads —
 a function that makes heap storage is found by looking — so an `extern` was the one route by which a
