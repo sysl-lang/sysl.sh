@@ -598,7 +598,16 @@ this reaches 'fetch', which needs 'os', and this module declared '@no_os'
 ```
 
 It is **transitive**, because reaching is: a module that gave a capability up may not arrive at such
-a declaration through a third that has it.
+a declaration through a third that has it. A function that says nothing and calls `fetch` passes the
+need on, so *its* callers are refused at their call in turn.
+
+**What the declaration's body reaches is charged the same way, and not to the module holding it.** A
+`@needs(os)` function whose body reads a file does not make its module require `os`: the module graph
+leaves out what such a body reaches, for the capabilities the declaration names. So a module may hold
+one function that touches the filesystem beside a hundred that do not, and a `@no_os` program imports
+the hundred and hears nothing — the only line refused is a call that reaches the one. A body covers
+what its own annotation names and nothing else, so a `@needs(heap)` function reaching `sysl.fs` still
+makes its module require `os`.
 
 **The declaration it exists for is `extern`.** Every other declaration has a body the compiler reads —
 a function that makes heap storage is found by looking — so an `extern` was the one route by which a
@@ -622,7 +631,9 @@ rest are about is not there to describe.
 ### A `@tests` file states its own capabilities
 
 A [`@tests` file](/reference/attributes/) is scaffolding: `sysl test` keeps it and every other build
-drops it, so nothing it declares reaches a program that links this module. The module's clause is a
+drops it, so nothing it declares reaches a program that links this module — and nothing it imports
+is charged to the module either. A library whose tests read a fixture with `sysl.fs` is still one a
+program on a machine with no operating system can link. The module's clause is a
 promise about what **ships**, and it was therefore never a promise about that file — so **the
 agreement above stops at the header `@tests`, and such a file states what the module's *tests* need.**
 
@@ -695,6 +706,11 @@ error: this reaches 'sysl.fs', which requires 'os', and 'aarch64-none-elf' does 
 target's capabilities are what 'package.hocon' declares, so either this reference cannot be made on
 this machine or the config is understating it
 ```
+
+**A target the config says nothing about provides everything, `os` included** — and so does every
+target of a project with no `package.hocon` at all. A board is not assumed to lack an operating
+system: a program built for `thumbv6m-freestanding` may reach `sysl.fs` as far as this check is
+concerned until its config says `capabilities { os = false }`, which is the line that makes the refusal above possible.
 
 The message names the config rather than a clause, because that is where the answer is. Where the
 module *did* write `@no_os`, that is what it hears about instead — a reader sent to the config over
