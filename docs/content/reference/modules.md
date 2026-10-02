@@ -547,7 +547,7 @@ would describe different modules, while a link requirement is a property of the 
 file.
 
 **Propagation is over the module graph.** A module's effective requirement is its own uses plus the
-requirements of every module it imports, transitively, and the whole graph must fit the target. A
+requirements of every module it reaches, transitively, and the whole graph must fit the target. A
 `@no_alloc` module importing a `@requires(heap)` module is an error **at the import**, not deep in
 codegen. Because the graph is acyclic, propagation is a **single sweep in reverse topological order**
 — each module's requirement set is final before any importer of it is visited — rather than an
@@ -605,8 +605,8 @@ need on, so *its* callers are refused at their call in turn.
 module graph leaves out what such a body reaches, for the capabilities the declaration names. So a
 module may hold one function that touches the filesystem beside a hundred that do not, and a `@no_os`
 program imports the hundred and hears nothing — the only line refused is a call that reaches the one.
-So does what its signature names, and an import that only such declarations use: a `@needs(os)`
-function returning `Result[unit, sysl.fs.IoError]` charges `os` to its callers, not to its module.
+So does an import that only such declarations use: a `@needs(os)` function writing through
+`import sysl.fs.write_bytes` charges `os` to its callers, not to its module.
 A body covers what its own annotation names and nothing else, so a `@needs(heap)` function reaching
 `sysl.fs` still makes its module require `os`.
 
@@ -628,6 +628,32 @@ annotation additive — a program that writes none is refused exactly what it wa
 
 An `extern` takes this and no other annotation. It has no body, so what `@pure`, `@tailrec` and the
 rest are about is not there to describe.
+
+### A type costs what it runs
+
+**Naming a type runs none of its code, so it charges nothing.** A module may hold a field of a type
+whose module requires `os`, carry one in a variant's payload, name it in a signature or pass it as a
+type argument, and a `@no_os` program may still import that module — and may construct a value of
+such a type itself, construction being nothing but laying the value out. What a module requires is
+the cost of its **code**, and a type is charged where that code runs:
+
+- **A method called on it charges its module**, exactly as calling a function of that module does.
+  So does taking a method's address, and erasing a value into a trait object, which hands over the
+  implementation for whoever calls through it to run.
+- **A destructor runs wherever a value can die.** A type with an `impl Drop` charges its module at
+  every place a value of it is named — and so does every type that holds one, through a field, a
+  `&T`, a slice or an array, since the outer value's death is the inner one's. A `*T` and a
+  `weak T` own nothing and stop it. The refusal says which: *"a 'store.Handle' can die here, and its
+  destructor reaches 'store', which requires 'os'"*.
+
+So the shape this exists for is a module whose error enum wraps the filesystem's error for its one
+`@needs(os)` function: the enum names `sysl.fs.IoError`, the function reads a file, and a `@no_os`
+program importing anything else from the module hears nothing — only a call to the function is
+refused, at the call.
+
+A method called **inside a generic instantiation** is not charged to the generic's module: the type
+was its caller's choice, made in a module of its own
+([a generic answers for what it wrote](#a-generic-answers-for-what-it-wrote-not-for-what-its-caller-chose)).
 
 ### A `@tests` file states its own capabilities
 
