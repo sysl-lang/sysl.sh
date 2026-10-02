@@ -908,6 +908,43 @@ var v = boxed[..]
 a slice does not record whether its owner's count is atomic
 ```
 
+**Nor can an array that lives inside a `&sync` box**, whether it is a field, a field of a field, or
+handed to a parameter that takes a view. A view of it would hold its share of the box, and take and
+give back that share the ordinary way while another domain changes the same count atomically:
+
+```sysl
+struct Ring
+    samples: [8]i16
+
+val r: &sync Ring = Ring([1, 2, 3, 4, 5, 6, 7, 8])
+val recent = r.samples[2..<5]
+print(recent.len)
+```
+
+```error
+a slice does not record whether its owner's count is atomic, so storage inside a '&sync Ring' cannot be sliced — a view of it would take its share of the box with a count update that is not atomic. Read it by index, or walk it with 'for'
+```
+
+Neither of those takes a share, so both work through the same box:
+
+```sysl
+struct Ring
+    samples: [8]i16
+
+val r: &sync Ring = Ring([1, 2, 3, 4, 5, 6, 7, 8])
+r.samples[3] = 40
+
+var sum = 0
+for x in r.samples
+    sum += int(x)
+
+print(r.samples[3], sum)
+```
+
+```output
+40 72
+```
+
 This is the one place where the read-only bit's existence does not help, and the reason is the
 asymmetry between the two properties. A `[]const T` can be *made* out of a writable view by giving
 something up, which is why widening is safe and why the bit costs nothing at run time. An atomic
