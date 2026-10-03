@@ -617,8 +617,8 @@ the text, not about the call.
 
 **A file that belongs to no package has no version to read**, so `__VERSION__` is refused there — a
 lone `sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `version` key. The
-refusal names which: *"'__VERSION__' reads the 'version' in package.hocon, and 'tool.sysl' is not part
-of a package"*, or *"… and …/package.hocon states none"*.
+refusal names which: *"'__VERSION__' is the 'version' in package.hocon, and this file is not part of a
+package"*, or *"… and …/package.hocon declares none"*.
 
 ## Literals
 
