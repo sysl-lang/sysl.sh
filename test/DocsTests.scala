@@ -60,7 +60,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and two more refusals: a block comment nests, which is what lets a block of
     // commented-out code carry comments — and which makes a glob pattern in one end the comment
     // early or not at all, in two diagnostics that mention no comment.
-    "docs/content/reference/lexical.md"               -> (21, 7, 4),
+    "docs/content/reference/lexical.md"               -> (21, 8, 3),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound. Two more runnable for the
@@ -91,7 +91,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // an ordinary property and is not.
     // One more runnable: a variant that carries nothing is constant data, so a module-level slot may
     // start out unset — which is what `Option[T] = None` is and what a board program needs it to be.
-    "docs/content/reference/declarations.md"          -> (43, 16, 2),
+    "docs/content/reference/declarations.md"          -> (44, 16, 1),
     // Two more runnable and one more refusal: a binding a match makes is written once, so the page
     // refuses the write, runs the 'var' taken from the binding — which is what makes the copy
     // visible — and runs the edge where the payload is a '&T' and the store goes through after all.

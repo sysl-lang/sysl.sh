@@ -601,10 +601,16 @@ a firmware build stamp and worth not reaching for otherwise.
 **`__VERSION__` is the `version` the [manifest](/reference/packages/#what-a-project-is-called)
 states, so `package.hocon` is the one place a program's version is written.** A `--version` flag or an
 About screen reads it rather than keeping a `const VERSION = "…"` of its own that has to be
-remembered at every release:
+remembered at every release. In a package whose manifest says `version = "1.4.0"`, this prints
+`mytool 1.4.0` — and a block on this page is a lone file with no manifest beside it, so here it is
+refused, for the reason the last paragraph of this section gives:
 
 ```sysl
 print("mytool ", __VERSION__)
+```
+
+```error
+'__VERSION__' is the 'version' in package.hocon, and this file is not part of a package
 ```
 
 It is a string literal like `__FILE__`, folded where it is written, so a `const` or a module-level

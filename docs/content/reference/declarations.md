@@ -694,6 +694,10 @@ tuned[F: Float](f: F, a4: F = F(440.0)) -> F = f + a4
 print(offset(2.5), offset(7), tuned(0.5))
 ```
 
+```output
+2.5 7 440.5
+```
+
 The default takes **no part** in settling that type: a call that leaves the argument out and gives
 nothing else to settle `T` from — `start[T: Zero](x: T = T.zero())` called as `start()` with nothing
 expected of it — is refused as one whose type argument cannot be inferred. What the default may *not*
