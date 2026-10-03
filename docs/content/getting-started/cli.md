@@ -948,6 +948,21 @@ depending on one should not have to write down which it got. `build-lib` is what
 into the second, and the only difference downstream is what the compilation *cost*: an artifact is a
 linear decode where source is a parse.
 
+**A source tree that is a dependency's package overrides that dependency.** Building against a
+working copy of something the manifest names is one flag, with the manifest left alone:
+
+```
+sysl build . --lib ../geom
+```
+
+Where `../geom/package.hocon` names the package `geom` and the project depends on
+`github.com/e/geom`, the checkout is what is compiled — for that dependency and for any other package
+in the graph that depends on it — and the coordinate is never fetched, so a version nobody has
+published yet is no obstacle. A tree that only *holds* a module a dependency also offers, without
+being that package, is refused as a collision instead.
+[`reference/packages.md` § A source root stands in for the package it is](/reference/packages/#a-source-root-stands-in-for-the-package-it-is)
+has the rule.
+
 ### `--target`, and the one thing `run` will not do
 
 Given no `--target`, a build is for the machine it is running on. If that is a machine sysl has no
