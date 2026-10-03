@@ -570,6 +570,7 @@ private extern "__errno_location" errno_location() -> *i32
 | `__FUNCTION__` | `string` | the enclosing function's name |
 | `__DATE__` | `string` | build date, `Mmm dd yyyy` (UTC) |
 | `__TIME__` | `string` | build time, `hh:mm:ss` (UTC) |
+| `__VERSION__` | `string` | the `version` in the `package.hocon` of the package the file belongs to |
 
 `__LINE__` and `__COLUMN__` are ordinary integer literals, so each takes the type its context asks
 for and is range-checked with it.
@@ -594,6 +595,30 @@ optional. Where a default fills another default, the outermost call is the one r
 
 `__DATE__` and `__TIME__` make a build non-reproducible, in the way C's do. They are worth having for
 a firmware build stamp and worth not reaching for otherwise.
+
+### `__VERSION__` is the package's version
+
+**`__VERSION__` is the `version` the [manifest](/reference/packages/#what-a-project-is-called)
+states, so `package.hocon` is the one place a program's version is written.** A `--version` flag or an
+About screen reads it rather than keeping a `const VERSION = "…"` of its own that has to be
+remembered at every release:
+
+```sysl
+print("mytool ", __VERSION__)
+```
+
+It is a string literal like `__FILE__`, folded where it is written, so a `const` or a module-level
+`val` may be initialized with it.
+
+**It belongs to the package whose file it is written in.** A library's `__VERSION__` is the library's
+own version wherever it is called from, never its consumer's — and that holds in a default argument
+too, where `__FILE__` and `__LINE__` report the caller: a version is a fact about the package holding
+the text, not about the call.
+
+**A file that belongs to no package has no version to read**, so `__VERSION__` is refused there — a
+lone `sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `version` key. The
+refusal names which: *"'__VERSION__' reads the 'version' in package.hocon, and 'tool.sysl' is not part
+of a package"*, or *"… and …/package.hocon states none"*.
 
 ## Literals
 

@@ -59,7 +59,9 @@ are predeclared identifiers, not reserved.
 
 **`__NAME__`** — leading and trailing `__` with capitals between — is reserved to the language;
 nothing may declare one. The built-ins are `__FILE__`, `__LINE__`, `__COLUMN__`, `__FUNCTION__`,
-`__DATE__`, `__TIME__`. Written as a **default argument** they report the caller.
+`__DATE__`, `__TIME__`, `__VERSION__`. Written as a **default argument** the location ones report
+the caller; `__VERSION__` is always the `package.hocon` version of the package whose file it is written in,
+and is refused in a file that belongs to no package.
 
 **Operators**, closed set, longest match, no user-defined symbols:
 

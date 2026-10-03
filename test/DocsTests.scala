@@ -60,7 +60,7 @@ class DocsTests extends AnyFreeSpec with DocsSupport with ParallelTestExecution 
     // Two more runnable and two more refusals: a block comment nests, which is what lets a block of
     // commented-out code carry comments — and which makes a glob pattern in one end the comment
     // early or not at all, in two diagnostics that mention no comment.
-    "docs/content/reference/lexical.md"               -> (21, 7, 3),
+    "docs/content/reference/lexical.md"               -> (21, 7, 4),
     // One more runnable: the two callable spellings differ in what a call costs and in what the
     // declaration becomes, which is a rule about *types* — and a trait's member may write either,
     // so the page shows one taken on a value and through a bound. Two more runnable for the
