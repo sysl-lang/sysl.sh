@@ -570,6 +570,7 @@ private extern "__errno_location" errno_location() -> *i32
 | `__FUNCTION__` | `string` | the enclosing function's name |
 | `__DATE__` | `string` | build date, `Mmm dd yyyy` (UTC) |
 | `__TIME__` | `string` | build time, `hh:mm:ss` (UTC) |
+| `__NAME__` | `string` | the `name` in the `package.hocon` of the package the file belongs to — as a default, the caller's |
 | `__VERSION__` | `string` | the `version` in the `package.hocon` of the package the file belongs to — as a default, the caller's |
 
 `__LINE__` and `__COLUMN__` are ordinary integer literals, so each takes the type its context asks
@@ -630,6 +631,40 @@ reports the program using it rather than itself.
 lone `sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `version` key. The
 refusal names which: *"'__VERSION__' is the 'version' in package.hocon, and this file is not part of a
 package"*, or *"… and …/package.hocon declares none"*.
+
+### `__NAME__` is the package's name
+
+**`__NAME__` is the `name` the [manifest](/reference/packages/#what-a-project-is-called) states, so a
+program can name itself without writing its name a second time.** It is `__VERSION__`'s twin: the
+same manifest, read the same way, with the same rules. The motivating use is a log tag. In a package
+whose manifest says `name = "skitter-app"`, a logging library that defaults its tag —
+
+```text
+logcat(msg: string, tag: string = __NAME__)
+```
+
+— tags every message with `skitter-app` when the application calls `logcat("started")`, because a
+default reports the caller.
+
+It is a string literal, folded where it is written, so a `const` or a module-level `val` may be
+initialized with it.
+
+**It belongs to the package whose file it is written in, except as a default argument.** A library's
+`__NAME__` is the library's own name wherever it is called from; written as a default, it is the name
+of whichever package the call sits in — the program's when the program calls it, a second library's
+when that library does. That is the rule `__VERSION__` and `__FILE__` follow, for the same reason.
+
+**A file that belongs to no package has no name to read**, so `__NAME__` is refused there — a lone
+`sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `name` key. The two
+refusals:
+
+```text
+'__NAME__' is the 'name' in package.hocon, and this file is not part of a package — no package.hocon stands at the root of its tree
+'__NAME__' is the 'name' in package.hocon, and …/package.hocon declares none
+```
+
+A manifest may state either field without the other: one with a `name` and no `version` answers
+`__NAME__` and refuses `__VERSION__`.
 
 ## Literals
 
