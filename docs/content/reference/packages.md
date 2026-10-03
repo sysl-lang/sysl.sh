@@ -755,6 +755,8 @@ declare — so a root with no `package.hocon` goes on building exactly as it alw
 All three are read for one reason: each is a property of the *package* rather than of the road the
 package arrived by. A directory handed over with `--lib` is the same package as one named by a
 coordinate, so it brings its heap, its header requirements and what it is written against either way.
+Where a manifest names that coordinate as well, the directory is the copy that is built and the
+coordinate is never fetched ([§ A source root stands in for the package it is](#a-source-root-stands-in-for-the-package-it-is)).
 
 The allocator used to be read only from a coordinate, and the two roads then disagreed **in silence**:
 the package's own objects came out of its heap and every string, `Buf` and box in the same program out
@@ -1319,16 +1321,21 @@ hands out a `&Fn() -> &View` and `View` belongs to the toolkit it is built on, s
 could not name the toolkit could not call the one function that package exists for. Declaring it
 anyway is a line that says nothing the build could not work out.
 
-**Three levels of precedence, and only a tie inside one of them is an error:**
+**Three levels of precedence:**
 
 1. your own modules, and every `--lib` source root's;
 2. what your manifest declared;
 3. what arrived through something else.
 
-A nearer name wins, quietly — a project with its own `json/`, or a dependency it mounted as `json`,
-keeps that name however many packages three levels down offer one. A name nobody asked for never
-takes one somebody wrote, and refusing there would mean a package you have never heard of could break
-your own module names.
+A nearer name wins over one that **arrived through something else**, quietly — a project with its own
+`json/`, or a dependency it mounted as `json`, keeps that name however many packages further down
+offer one. A name nobody asked for never takes one somebody wrote, and refusing there would mean a
+package you have never heard of could break your own module names.
+
+**What the levels do not do is let a nearer name beat one your manifest declared.** A name of your
+own and a declared dependency's are both names somebody wrote, so the two meeting is the collision
+below rather than a win for the first level. The one way a source root replaces a declared
+dependency is by **being** it, which is the override further down.
 
 **Two packages at the *same* level wanting one name is the collision below**, and it is refused
 whether they were declared or inherited. Naming one of them yourself is what settles an inherited
@@ -1349,10 +1356,13 @@ one offering `sh.sysl.table` share no name, but an import of `sh.sysl.table` cou
 and resolving it to the longer would be a rule nobody wrote down.
 
 **"Your own modules" includes every `--lib` source root**, since a root's modules are filed under your
-project's names rather than under a prefix of their own. So a root that declares a dependency offering
-a name the root itself declares is refused in the same words, and the message names the root as you
-gave it. Without that, the root's own module answered, its dependency's was unreachable, and the build
-was green — the silent winner the whole rule exists to refuse.
+project's names rather than under a prefix of their own. So a root holding a module that a dependency
+also offers — yours or the root's own — is refused in the same words, and the message names the root
+as you gave it. Without that, the root's module answered, the dependency's was unreachable, and the
+build was green — the silent winner the whole rule exists to refuse.
+
+**Unless the root is that dependency's package** ([below](#a-source-root-stands-in-for-the-package-it-is)): then it is not a second
+claim on the name but the package itself, handed over from a directory instead of a coordinate.
 
 Write a `mount` to say what one of them is called here:
 
@@ -1377,6 +1387,50 @@ versions of one library and both are in this graph, and their modules have the s
 Selection cannot fold those together — a major above the first is a different coordinate, which is
 the whole point of the suffix — while their module names are identical, because a module's name is
 its directory. A `mount` is still the answer where you genuinely want both.
+
+### A source root stands in for the package it is
+
+**A `--lib` root that is a coordinate's package replaces that coordinate in the build.** It is the
+loop for working on a dependency and the program that uses it at once — Cargo's `[patch]`, Go's
+`replace` — and it needs no edit to the manifest:
+
+```text
+sysl build . --lib ../geom
+```
+
+over a project declaring `g { git = "github.com/e/geom", version = "1.0.0" }` compiles the checkout
+in `../geom`, not the published 1.0.0.
+
+**The coordinate is dropped before anything is selected, so nothing is fetched for it.** A package
+that has not been published yet, a tag that does not exist, or no network at all does not stop the
+build — the coordinate is never reached. Nothing is recorded in `sysl.sum` for it either, since
+nothing was fetched to record.
+
+**It wins wherever in the graph the coordinate is named.** A dependency that itself depends on
+`github.com/e/geom` is built against the root too, so the program holds one `geom` — the one you
+named — rather than your import reading the working copy and the dependency's reading the release.
+What the root's own manifest depends on comes with it, as the coordinate's would have.
+
+**A root is that package when its `package.name` is the coordinate's repository name** — the last
+segment of the path, with a major-version suffix set aside, so a root naming itself `json` stands in
+for `github.com/e/json` and for `github.com/e/json/v2` alike. That is the one identity both sides
+state without anything being fetched: a coordinate names a repository, and a checkout of it — a
+clone, a worktree, a fork — carries that repository's manifest. Comparing modules would need the
+coordinate's tree, which is the fetch an override exists to avoid; and a dependency's label is a name
+each consumer chooses for itself, so two manifests may spell one package two ways.
+
+**Overriding is not the silent winner the collision rule refuses**, because nothing about it is
+silent: `--lib` is something you typed, naming the directory that wins. A root that is **not** the
+package — one that merely holds a module the coordinate also offers — is still refused, and the
+refusal says what would have made it an override:
+
+```text
+'geom' is both a module of the source root '../shapes' and one github.com.e.geom offers — give the
+dependency a 'mount' to say what it is called here. A source root stands in for a coordinate only when
+it is that package — when its package.hocon names it 'geom'
+```
+
+A `mount` on the stood-in dependency still renames it for the manifest that wrote one.
 
 ## `sysl.sum`
 
