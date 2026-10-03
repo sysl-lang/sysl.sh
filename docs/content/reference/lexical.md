@@ -636,15 +636,23 @@ package"*, or *"… and …/package.hocon declares none"*.
 
 **`__NAME__` is the `name` the [manifest](/reference/packages/#what-a-project-is-called) states, so a
 program can name itself without writing its name a second time.** It is `__VERSION__`'s twin: the
-same manifest, read the same way, with the same rules. The motivating use is a log tag. In a package
-whose manifest says `name = "skitter-app"`, a logging library that defaults its tag —
+same manifest, read the same way, with the same rules. The motivating use is a log tag: a logging
+function that defaults its tag to `__NAME__` tags every message with the name of the package that
+called it, because a default reports the caller. In a package whose manifest says
+`name = "skitter-app"`, this prints `[ skitter-app ] started` — and a block on this page is a lone
+file with no manifest beside it, so here it is refused, for the reason the last paragraph of this
+section gives:
 
-```text
+```sysl
 logcat(msg: string, tag: string = __NAME__)
+    print("[", tag, "] ", msg)
+
+logcat("started")
 ```
 
-— tags every message with `skitter-app` when the application calls `logcat("started")`, because a
-default reports the caller.
+```error
+'__NAME__' is the 'name' in package.hocon, and this file is not part of a package — no package.hocon stands at the root of its tree
+```
 
 It is a string literal, folded where it is written, so a `const` or a module-level `val` may be
 initialized with it.
@@ -655,13 +663,20 @@ of whichever package the call sits in — the program's when the program calls i
 when that library does. That is the rule `__VERSION__` and `__FILE__` follow, for the same reason.
 
 **A file that belongs to no package has no name to read**, so `__NAME__` is refused there — a lone
-`sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `name` key. The two
-refusals:
+`sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `name` key. The refusal
+lands where `__NAME__` is read, so a `const` initialized with it is refused at the `const`:
 
-```text
-'__NAME__' is the 'name' in package.hocon, and this file is not part of a package — no package.hocon stands at the root of its tree
-'__NAME__' is the 'name' in package.hocon, and …/package.hocon declares none
+```sysl
+const TAG: string = __NAME__
+print(TAG)
 ```
+
+```error
+'__NAME__' is the 'name' in package.hocon, and this file is not part of a package
+```
+
+A manifest with no `name` key is refused with *"'__NAME__' is the 'name' in package.hocon, and
+…/package.hocon declares none"* instead.
 
 A manifest may state either field without the other: one with a `name` and no `version` answers
 `__NAME__` and refuses `__VERSION__`.
