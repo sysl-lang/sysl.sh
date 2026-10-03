@@ -1248,6 +1248,14 @@ parameter list:
 | `&sync self` | by reference, and safe to share across threads |
 | *(none)* | an **associated function** — no receiver, called on the type |
 
+**"A copy" is a promise about what the method can observe, not a cost it pays.** Nothing done to
+the caller's value while the method runs reaches its `self`, and nothing the method does to its
+`self` reaches the caller. A method that only reads a large receiver is therefore not handed a fresh
+copy of it: it reads the caller's value in place, and the compiler stages a snapshot only where the
+original could change during the call — through a `*T` aliasing it, say — or where the method
+writes to its own `self`. So a `self` method on a struct of kilobytes costs no more stack than a
+`*self` one, and the choice between them is about what the method may do, never about size.
+
 ```sysl
 struct Point
     x: int
