@@ -651,6 +651,45 @@ So the shape this exists for is a module whose error enum wraps the filesystem's
 program importing anything else from the module hears nothing — only a call to the function is
 refused, at the call.
 
+A `@no_os` program may name the filesystem's error, carry it in a variant and match on it, because
+none of that runs a line of `sysl.fs`:
+
+```sysl
+@no_os
+
+import sysl.fs.IoError
+
+enum Failure
+    Io(e: IoError)
+    Short(n: int)
+
+describe(f: Failure) -> string = f match
+    Io(_) -> "a file operation failed"
+    Short(n) -> f"short by $n%d"
+
+print(describe(Short(3)))
+```
+
+```output
+short by 3
+```
+
+Calling one of its methods runs `sysl.fs`'s code, and that is refused:
+
+```sysl
+@no_os
+
+import sysl.fs.IoError
+
+val e = IoError.NotFound
+
+print(e.message())
+```
+
+```error
+this reaches 'sysl.fs', which requires 'os', and this module declared 'no os'
+```
+
 A method called **inside a generic instantiation** is not charged to the generic's module: the type
 was its caller's choice, made in a module of its own
 ([a generic answers for what it wrote](#a-generic-answers-for-what-it-wrote-not-for-what-its-caller-chose)).
