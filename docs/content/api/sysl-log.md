@@ -16,8 +16,9 @@ for the same reason, and leave the interesting sinks outside it.
 
 A **`Record`** is what happened: when, how bad, what about, and a handful of named strings. A
 **`Sink`** is where it goes -- one method, taking the record by pointer. **`text`** and **`json`**
-are two renderings, each writing into a `Writer`, and a sink is what chooses between them. That
-is the whole of the module; everything else people want from a logger is a sink somebody writes.
+are two renderings, each writing into a `Writer`, and a sink is what chooses between them;
+**`message_text`** is the third, for a destination that stamps its own time and level. That is
+the whole of the module; everything else people want from a logger is a sink somebody writes.
 
 ```
 info("listening", [("port", "8080"), ("tls", "on")])
@@ -62,7 +63,7 @@ interpolation has `f"..."` and knows what it costs.
 
 ## Index
 
-[`clear_sink`](#clear_sink) [`debug`](#debug) [`enabled`](#enabled) [`error`](#error) [`info`](#info) [`json`](#json) [`json_sink`](#json_sink) [`level`](#level) [`log`](#log) [`log_at`](#log_at) [`set_level`](#set_level) [`set_sink`](#set_sink) [`stderr_sink`](#stderr_sink) [`text`](#text) [`warn`](#warn) [`writer_sink`](#writer_sink) [`Level`](#level-1) [`Record`](#record) [`WriterSink`](#writersink) [`Field`](#field) [`Sink`](#sink) [Sink for WriterSink](#sink-for-writersink)
+[`clear_sink`](#clear_sink) [`debug`](#debug) [`enabled`](#enabled) [`error`](#error) [`info`](#info) [`json`](#json) [`json_sink`](#json_sink) [`level`](#level) [`log`](#log) [`log_at`](#log_at) [`message_text`](#message_text) [`set_level`](#set_level) [`set_sink`](#set_sink) [`stderr_sink`](#stderr_sink) [`text`](#text) [`warn`](#warn) [`writer_sink`](#writer_sink) [`Level`](#level-1) [`Record`](#record) [`WriterSink`](#writersink) [`Field`](#field) [`Sink`](#sink) [Sink for WriterSink](#sink-for-writersink)
 
 ## Functions
 
@@ -167,6 +168,27 @@ A record at `l`, timestamped `t`, delivered if the threshold admits it.
 **This is the one to call where there is no clock**, and `log` is this with `sysl.time.now()` in
 front of it. A freestanding program that has not supplied the clock seam links this and nothing
 from `sysl.time` but the `Instant` type.
+
+### `message_text`
+
+```sysl
+message_text(r: *Record, out: *Writer)
+```
+
+The message and its fields alone, quoted exactly as `text` quotes them, with no time, no level
+and no newline.
+
+```
+underrun frames=512
+```
+
+**This is the rendering for a destination that stamps its own time and level** -- Android's
+logcat, syslog, the systemd journal -- where `text` would write both a second time inside an
+entry that already shows them. Such a destination frames each entry itself, which is why there is
+no newline either.
+
+Nothing here reaches the calendar, so a sink that calls only this links no date code. An empty
+message with fields starts at the first field rather than at a space.
 
 ### `set_level`
 

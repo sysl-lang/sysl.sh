@@ -1256,6 +1256,34 @@ original could change during the call — through a `*T` aliasing it, say — or
 writes to its own `self`. So a `self` method on a struct of kilobytes costs no more stack than a
 `*self` one, and the choice between them is about what the method may do, never about size.
 
+Both halves of the promise, on a receiver of four kilobytes. `snap` is handed a pointer to the very
+value it was called on and writes through it, and its `self` does not move; `bumped` writes its own
+`self`, and the caller's value does not move:
+
+```sysl
+struct Big
+    n: int
+    table: [1024]u32
+
+    snap(self, p: *Big) -> int
+        val before = self.n
+        p.n += 1
+        before * 100 + self.n
+
+    bumped(self) -> int
+        self.n += 1
+        self.n
+
+var b = Big(1, [0; 1024])
+print(b.snap(&b))
+print(b.bumped(), b.n)
+```
+
+```output
+101
+3 2
+```
+
 ```sysl
 struct Point
     x: int

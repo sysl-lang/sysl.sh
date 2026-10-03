@@ -1,6 +1,6 @@
 ---
 title: The log module
-summary: "`sysl.log` — levels, a sink trait, and two renderings: a line for a person and an object for a machine."
+summary: "`sysl.log` — levels, a sink trait, and three renderings: a line for a person, an object for a machine, and the bare message for a sink that stamps its own."
 weight: 92
 ---
 
@@ -40,7 +40,7 @@ Four pieces, and the whole module is these:
 |---|---|
 | `Record` | when, how bad, what about, and a handful of named strings |
 | `Sink` | one method — `write(*self, r: *Record)` |
-| `text` and `json` | two renderings, each writing into a `Writer` |
+| `text`, `json` and `message_text` | three renderings, each writing into a `Writer` — `message_text` is the message and fields alone, for a sink that stamps its own time and level |
 | the threshold | `set_level`, `level`, `enabled` |
 
 A `Sink` is a trait with one member, so writing one is a struct and four lines. `WriterSink` is here
