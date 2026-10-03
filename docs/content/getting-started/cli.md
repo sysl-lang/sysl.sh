@@ -28,10 +28,11 @@ the path is standing on.
 | `sysl deps <path>` | print the dependency graph the project resolves to |
 | `sysl add <coordinate>` | add a dependency to the project's manifest |
 | `sysl vendor <path>` | put what the project depends on into `vendor/` |
+| `sysl tidy [<path>]` | drop the `sysl.sum` lines for versions the project no longer resolves |
 | `sysl doc <path>` | generate an API reference from declarations and their doc comments |
 | `sysl targets` | list the machines sysl can build for |
 
-`sysl prove` is a sixteenth, and it has a page of its own — see
+`sysl prove` is a seventeenth, and it has a page of its own — see
 [verification](/reference/verification/#sysl-prove).
 
 A subcommand is required; sysl with none exits 2 and prints its usage.
@@ -511,6 +512,30 @@ disappearing; leave it out of the repository where you would rather fetch.
 **A path dependency is not vendored and cannot be.** It is a directory you are editing beside this
 one — which is why nothing keeps a sum for it — so freezing a copy is the one thing it is there not
 to do. The command says how many there were.
+
+### `tidy`
+
+`sysl.sum`, cut down to the packages the project resolves to now. A build only ever adds a line to
+it, so a version the project has moved off stays recorded until this runs.
+
+```text
+sysl tidy
+```
+
+```text
+removed github.com/sysl-lang/skitter v0.1.0
+removed github.com/sysl-lang/box2d v0.1.0
+```
+
+It takes the working directory where no path is given. The graph it resolves is the whole one —
+every feature the manifest declares and the `dev_dependencies` too — because a build that pruned
+would drop the lines of whichever features it had not been asked for. A line that stays is left
+byte for byte where it was, a file that is already tidy is left alone with nothing printed, and a
+project depending on nothing but paths ends with no `sysl.sum` at all.
+
+`--check` writes nothing and fails where the file is not tidy, naming what it would change — the
+form to put in CI. Outside a project, with no `package.hocon`, the command is refused.
+[`reference/packages.md`](/reference/packages/#sysl-sum) has the rule.
 
 ### `doc`
 

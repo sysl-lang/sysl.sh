@@ -1450,6 +1450,40 @@ nothing to record about which versions were chosen. The first time a package is 
 and recorded; reviewing the line that appears is the part a person does. A `path` dependency gets no
 entry, because a directory beside you is expected to change.
 
+**A build only ever adds a line.** Move a dependency from 0.1.0 to 0.3.0 and the 0.1.0 line stays,
+alongside every version any earlier build resolved. A build does not prune, because it resolves only
+the part of the graph its `--features` turn on: it would drop the lines of every feature it was not
+asked for, and the next build with that feature on would write them back.
+
+`sysl tidy` is what removes them. It resolves the project's whole graph — every feature the manifest
+declares, and `dev_dependencies` as well as `dependencies` — and rewrites `sysl.sum` to exactly the
+packages that resolution reads, saying what it dropped:
+
+```text
+sysl tidy
+removed github.com/sysl-lang/skitter v0.1.0
+removed github.com/sysl-lang/sdl3 v0.3.0
+```
+
+A line that stays is the line that was there, hash and position unchanged, so the diff it makes is
+removals and nothing else. It fetches only what a build of the same graph would fetch, a package
+with no line yet is recorded exactly as a build would record it, and a file that is already tidy is
+left alone with nothing printed. A version that resolution reads on its way to a higher one keeps
+its line, since every build reads it again. A project that depends on nothing, or only on paths, is
+tidy with no `sysl.sum` at all, which is what a build leaves for it.
+
+`sysl tidy --check` asks the same question and writes nothing. It fails, naming the lines it would
+remove or add, when the file is not tidy, which makes it the check a CI job runs:
+
+```text
+sysl tidy --check
+would remove github.com/sysl-lang/skitter v0.1.0
+sysl: error: sysl.sum is not tidy — 'sysl tidy' rewrites it to what this project resolves to
+```
+
+It is refused where there is no `package.hocon`, since only a project with a manifest resolves
+anything to record.
+
 ## Adding one, and vendoring the lot
 
 A dependency is a line in `package.hocon` and you may write it yourself, but `sysl add` is what
