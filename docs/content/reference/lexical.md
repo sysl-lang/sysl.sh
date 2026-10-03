@@ -570,7 +570,7 @@ private extern "__errno_location" errno_location() -> *i32
 | `__FUNCTION__` | `string` | the enclosing function's name |
 | `__DATE__` | `string` | build date, `Mmm dd yyyy` (UTC) |
 | `__TIME__` | `string` | build time, `hh:mm:ss` (UTC) |
-| `__VERSION__` | `string` | the `version` in the `package.hocon` of the package the file belongs to |
+| `__VERSION__` | `string` | the `version` in the `package.hocon` of the package the file belongs to — as a default, the caller's |
 
 `__LINE__` and `__COLUMN__` are ordinary integer literals, so each takes the type its context asks
 for and is range-checked with it.
@@ -611,9 +611,14 @@ It is a string literal like `__FILE__`, folded where it is written, so a `const`
 `val` may be initialized with it.
 
 **It belongs to the package whose file it is written in.** A library's `__VERSION__` is the library's
-own version wherever it is called from, never its consumer's — and that holds in a default argument
-too, where `__FILE__` and `__LINE__` report the caller: a version is a fact about the package holding
-the text, not about the call.
+own version wherever it is called from, never its consumer's.
+
+**Except as a default argument, where it reports the caller — exactly as `__FILE__` and `__LINE__`
+do.** A default stands where the argument would have been written, so a library's
+`stamp(v: string = __VERSION__)` answers the version of whichever package the call to `stamp()` sits
+in: the program's when the program calls it, a second library's when that library does, and the
+library's own only when it calls itself. That is what lets a library offer a `--version` helper that
+reports the program using it rather than itself.
 
 **A file that belongs to no package has no version to read**, so `__VERSION__` is refused there — a
 lone `sysl run tool.sysl` with no `package.hocon` beside it, or a manifest with no `version` key. The
