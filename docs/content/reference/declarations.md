@@ -615,7 +615,8 @@ conditional supplies several results.
 
 A parameter may say what a call that leaves it out gets instead. The default is a full expression, so
 a call or a conditional may stand there — it is evaluated at the call site that omitted it, and it
-may not name anything local to the declaration.
+may not name anything local to the declaration. Its declaration's type parameters are not local in
+that sense; see below.
 
 An argument may be written `name = value`, which stands at the parameter it names rather than at the
 one its position would have given it.
@@ -677,6 +678,30 @@ print(apply(), apply(x -> x + 1))
 ```output
 42 22
 ```
+
+A default may name **its declaration's type parameters**, in either position: an associated function
+reached through one, a conversion written at its name, or a type written inside the expression. A
+type parameter is part of the signature rather than something local to it, and a call knows it once
+the call is solved — from the arguments it wrote and the type it is expected to have — so the default
+is read at each call, at the type that call settled.
+
+```sysl
+import sysl.math.Float
+
+offset[T: Zero + Add](x: T, step: T = T.zero()) -> T = x + step
+tuned[F: Float](f: F, a4: F = F(440.0)) -> F = f + a4
+
+print(offset(2.5), offset(7), tuned(0.5))
+```
+
+The default takes **no part** in settling that type: a call that leaves the argument out and gives
+nothing else to settle `T` from — `start[T: Zero](x: T = T.zero())` called as `start()` with nothing
+expected of it — is refused as one whose type argument cannot be inferred. What the default may *not*
+name is unchanged: another parameter, and anything else local to the declaration, are as undefined
+there as anywhere outside a body. And it is held to what the bounds promise where it is written, as a
+body is — `T.zero()` with no `Zero` among `T`'s bounds is refused at the declaration, whether or not
+anything calls it — while a conversion written at `T` is checked at each call, as one in a body is
+([Converting through a parameter](/reference/generics/#converting-through-a-parameter)).
 
 A **closure's** parameter declares no default. A call reaches a closure through the `Fn` traits,
 which carry the types and not the names, so there would be nothing at the call to fill one from.
